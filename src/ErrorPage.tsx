@@ -10,7 +10,7 @@ export default function ErrorPage() {
       <p>Sorry, an unexpected error has occurred.</p>
       <p>
         {/* @ts-ignore */}
-      <i>{error.statusText || error.message}</i> // @ts-ignore
+      <i>{error.statusText || error.message}</i>
       </p>
     </div>
   );

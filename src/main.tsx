@@ -55,7 +55,7 @@ const router = createBrowserRouter([
     path: "/sign-up",
     element: <SignUp />,
   },
-]);
+], {basename: "/cloudwatch-web"});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
