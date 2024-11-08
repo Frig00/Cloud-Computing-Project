@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model users {
+  id       String   @id
+  username String   @unique(map: "sqlite_autoindex_users_2")
+  password String
+  name     String
+  videos   videos[]
+}
+
+model videos {
+  id         String @id
+  userId     String
+  title      String
+  uploadTime Int
+  videoRef   String
+  users      users  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}

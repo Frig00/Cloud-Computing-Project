@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import path from 'path';
 
 export default async function swaggerPlugin(fastify: FastifyInstance) {
   // Register Swagger for JSON specs
@@ -12,22 +13,12 @@ export default async function swaggerPlugin(fastify: FastifyInstance) {
         description: 'Testing the Fastify swagger API',
         version: '0.1.0'
       },
-      servers: [
-        {
-          url: 'http://localhost:3000',
-          description: 'Development server'
-        }
-      ],
-      tags: [
-        { name: 'user', description: 'User related end-points' },
-        { name: 'code', description: 'Code related end-points' }
-      ],
       components: {
         securitySchemes: {
-          apiKey: {
-            type: 'apiKey',
-            name: 'apiKey',
-            in: 'header'
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT'
           }
         }
       },
@@ -42,10 +33,9 @@ export default async function swaggerPlugin(fastify: FastifyInstance) {
   await fastify.register(swaggerUi, {
     routePrefix: '/docs',
     uiConfig: {
-      docExpansion: 'list',
+      docExpansion: 'full',
       deepLinking: false
-    },
-    staticCSP: true,
-    transformStaticCSP: (header) => header
-  });
+    }
+  })
+
 }
