@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 
 import { Static, Type } from "@sinclair/typebox";
 import { UserService } from "../services/userService";
+import { UploadService } from "../services/uploadService";
 
 const LoginRequestSchema = Type.Object({
   username: Type.String(),
@@ -84,6 +85,10 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  app.get('/upload-url', async (request, reply) => {
+    const url = await UploadService.getPresignedUrl();
+    return { url };
+  });
 
   app.get(
     "/protected",

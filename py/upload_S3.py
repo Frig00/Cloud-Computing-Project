@@ -1,6 +1,6 @@
 import boto3
 from botocore.client import Config
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
 
 import pika
 import json
@@ -10,8 +10,8 @@ import string
 
 # Configure your MinIO connection details
 minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
-access_key = "m0aC1Ion2J2HlbJOODTo"                  # Replace with your MinIO access key
-secret_key = "GRI0BCHVKYJ7An1MN1xwBCGInt4YTSBg2biPbr8D"                  # Replace with your MinIO secret key
+access_key = "zHFWxmfAWV36ECT3RlKb"                  # Replace with your MinIO access key
+secret_key = "m64FerDnuBgXaKctXT6BCIm5UiS8N00pgNmE3ITJ"                  # Replace with your MinIO secret key
 
 # Initialize the S3 client
 s3_client = boto3.client(
@@ -88,7 +88,36 @@ def publish_video(video_path):
 def random_string(length):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-obj_id = random_string(8)
-upload_file("videos\sample-30s.mp4", "video", obj_id)
-publish_video(obj_id)
+# obj_id = random_string(8)
+# upload_file("videos\sample-30s.mp4", "video", obj_id)
+# publish_video(obj_id)
 
+def generate_presigned_url(bucket_name, object_name, expiration=3600):
+    """
+    Generate a pre-signed URL to upload a file to an S3 bucket.
+    """
+    
+    try:
+        # Generate a pre-signed URL for the S3 object
+        response = s3_client.generate_presigned_url(
+            'put_object',
+            Params={'Bucket': bucket_name, 'Key': object_name},
+            ExpiresIn=expiration
+        )
+    except ClientError as e:
+        print(f"Error generating pre-signed URL: {e}")
+        return None
+
+    # Return the pre-signed URL
+    return response
+
+
+presign = generate_presigned_url("video", "sample-30s.mp4")
+print(presign)
+
+# Usage:
+# curl --location --request PUT '' --header 'Content-Type: video/mp4'--data-binary '@/C:/path/file.mp4'
+
+# Come sapere quando il front-end ha finito di caricare il file?
+# - Il frontend può inviare un messaggio al backend quando il caricamento è completato con un ID univoco
+# - Impostare un S3 Event Notification per inviare un messaggio a una coda SQS quando un file viene caricato (richiede SQS o Lambda)
