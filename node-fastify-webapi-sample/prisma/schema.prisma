@@ -7,19 +7,64 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model comments {
+  id      String  @id
+  videoId String
+  userId  String
+  content String
+  date    Decimal
+  users   users   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  videos  videos  @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model likes {
+  videoId String
+  userId  String
+  users   users  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  videos  videos @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([videoId, userId])
+}
+
+model subscriptions {
+  subscriberId                              String
+  subscribedToId                            String
+  users_subscriptions_subscribedToIdTousers users  @relation("subscriptions_subscribedToIdTousers", fields: [subscribedToId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_subscriptions_subscriberIdTousers   users  @relation("subscriptions_subscriberIdTousers", fields: [subscriberId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([subscriberId, subscribedToId])
+}
+
 model users {
-  id       String   @id
-  username String   @unique(map: "sqlite_autoindex_users_2")
-  password String
-  name     String
-  videos   videos[]
+  id                                                String          @id
+  username                                          String          @unique(map: "sqlite_autoindex_users_2")
+  password                                          String
+  name                                              String
+  comments                                          comments[]
+  likes                                             likes[]
+  subscriptions_subscriptions_subscribedToIdTousers subscriptions[] @relation("subscriptions_subscribedToIdTousers")
+  subscriptions_subscriptions_subscriberIdTousers   subscriptions[] @relation("subscriptions_subscriberIdTousers")
+  videos                                            videos[]
+  views                                             views[]
 }
 
 model videos {
-  id         String @id
+  id         String     @id
   userId     String
   title      String
-  uploadTime Int
+  uploadDate Int
   videoRef   String
-  users      users  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  comments   comments[]
+  likes      likes[]
+  users      users      @relation(fields: [userId], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  views      views[]
+}
+
+model views {
+  videoId String
+  userId  String
+  users   users  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  videos  videos @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([videoId, userId])
 }
