@@ -7,11 +7,18 @@ import json
 import sys
 import random
 import string
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Configure your MinIO connection details
 minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
-access_key = "zHFWxmfAWV36ECT3RlKb"                  # Replace with your MinIO access key
-secret_key = "m64FerDnuBgXaKctXT6BCIm5UiS8N00pgNmE3ITJ"                  # Replace with your MinIO secret key
+access_key = os.getenv("MINIO_ACCESS_KEY")                  # Replace with your MinIO access key
+secret_key = os.getenv("MINIO_SECRET_KEY")                  # Replace with your MinIO secret key
+
+print("Access key: " + access_key)
+print("Secret key: " + secret_key + "\n\n")
 
 # Initialize the S3 client
 s3_client = boto3.client(
@@ -63,18 +70,18 @@ def publish_video(video_path):
     channel = connection.channel()
 
     # Fanout exchange configuration
-    exchange_name = 'video.transcode'
+    queue_name = 'video.transcode'
 
     # Prepare the message
     message = {
         "videoId": video_path,
-        "quality": "all"
+        "quality": "720p"
     }
 
     # Publish message to the fanout exchange (no routing key needed)
     channel.basic_publish(
-        exchange=exchange_name,
-        routing_key='',  # Fanout exchange ignores routing keys
+        exchange='',
+        routing_key=queue_name,  # Fanout exchange ignores routing keys
         body=json.dumps(message),
         properties=pika.BasicProperties(content_type="application/json")
     )
@@ -88,9 +95,9 @@ def publish_video(video_path):
 def random_string(length):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-# obj_id = random_string(8)
-# upload_file("videos\sample-30s.mp4", "video", obj_id)
-# publish_video(obj_id)
+obj_id = random_string(8)
+upload_file("videos\sample-30s.mp4", "video", obj_id)
+publish_video(obj_id)
 
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
     """

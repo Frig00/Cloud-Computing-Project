@@ -10,6 +10,9 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import os
 import json
 
+from dotenv import load_dotenv
+import subprocess
+
 class Quality:
     def __init__(self, resolution, bitrate):
         self.resolution = resolution
@@ -21,12 +24,14 @@ qualities = {
     "4k": Quality(resolution="3840:2160", bitrate="10000k")
 }
 
+load_dotenv()
+
 
 # RabbitMQ setup
 # Read from environment variable, default to 'localhost'
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
 # Read from environment variable, default to 'transcoder'
-QUEUE_NAME = os.getenv('QUEUE_NAME', 'video.transcode_queue')
+QUEUE_NAME = os.getenv('QUEUE_NAME', 'video.transcode')
 # Read from environment variable, no default
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'video')
 # Read from environment variable, no default
@@ -34,9 +39,9 @@ S3_BUCKET_ENCODED_NAME = os.getenv('S3_BUCKET_ENCODED_NAME', 'video-encoded')
 
 minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
 # Replace with your MinIO access key
-access_key = "c66RftmS8Zm6vUWKcyDc"
+access_key = os.getenv("MINIO_ACCESS_KEY")
 # Replace with your MinIO secret key
-secret_key = "0AH2mR2LmeQ4TNMWOT7vpt6MZsheO2TmwLw2L2HI"
+secret_key = os.getenv("MINIO_SECRET_KEY")
 
 # Initialize the S3 client
 s3_client = boto3.client(
@@ -79,6 +84,22 @@ def upload_s3_folder(local_path, object_name, encoded_bucked):
             s3_client.upload_file(local, encoded_bucked, s3_path)
 
 
+def get_total_frames(file_path):
+    """Get the total number of frames in a video using ffprobe."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=nb_frames", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        frames = result.stdout.decode('utf-8').strip()
+        if frames:
+            return int(frames)
+        else:
+            raise ValueError("Could not retrieve the total number of frames.")
+    except Exception as e:
+        print(f"Error getting total frames: {e}")
+        return 0
+
 
 def process_file(file_path, output, quality):
     """Stub function to perform work on the downloaded file."""
@@ -92,6 +113,13 @@ def process_file(file_path, output, quality):
     os.makedirs(segmentsPath, exist_ok=True)
 
     print(f"Processing file at {file_path}...")
+
+        # Get video duration before processing
+    video_total_frame = get_total_frames(file_path)
+    if video_total_frame == 0:
+        print("Unable to get video duration. Exiting.")
+        return
+
     ffmpeg = (
         FFmpeg()
         .option("y")  # Overwrite output files without asking
@@ -119,7 +147,8 @@ def process_file(file_path, output, quality):
 
     @ffmpeg.on("progress")
     def on_progress(progress: Progress):
-        print(f"progress: {progress.frame}")
+        percentage = (float(progress.frame) / video_total_frame) * 100
+        print(f"Progress: {percentage:.2f}%")
 
     @ffmpeg.on("completed")
     def on_completed():
