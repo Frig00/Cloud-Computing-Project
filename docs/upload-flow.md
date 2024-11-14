@@ -10,7 +10,8 @@ sequenceDiagram
     Controller--)Transcoder: Avvio encoding video
     Transcoder--)Controller: Report progresso su queue (x10)
     Controller--)Frontend: Report progresso su SSE (x10)
-    Transcoder--)Controller: Fine ultimo encoding
+    Transcoder--)S3: Upload HLS su S3
+    Transcoder--)Controller: Report fine ultimo encoding
     Note over Controller: Memorizzo su DB
     Controller--)Frontend: Report fine, chiusura SSE
 ```
