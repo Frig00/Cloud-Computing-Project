@@ -12,6 +12,7 @@ import json
 
 from dotenv import load_dotenv
 import subprocess
+import shutil
 
 class Quality:
     def __init__(self, resolution, bitrate):
@@ -160,10 +161,6 @@ def process_file(file_path, output, quality):
 
     ffmpeg.execute()
 
-    # Clean up after processing
-    os.remove(file_path)
-    print(f"File {file_path} processed and deleted.")
-
 
 def callback(ch, method, properties, body):
     """Callback function for RabbitMQ consumer."""
@@ -182,6 +179,14 @@ def callback(ch, method, properties, body):
     # Acknowledge message processing completion
     ch.basic_ack(delivery_tag=method.delivery_tag)
     print(f"Message processed and acknowledged: {object_name}")
+
+    # Clean up after processing
+    try:
+        shutil.rmtree("./tmp")
+        shutil.rmtree("./encoded")
+        print("Cleaned up temporary files and folders.")
+    except Exception as e:
+        print(f"Error deleting file: {e}")
 
 
 def main():
