@@ -14,6 +14,9 @@ import { Box, Container } from "@mui/material";
 import SignIn from "./SignIn.tsx";
 import SignUp from "./SignUp.tsx";
 import Watch from "./Watch.tsx";
+import Upload from "./Upload.tsx";
+import Search from "./Search.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const theme = createTheme({
   typography: {
@@ -32,10 +35,10 @@ const router = createBrowserRouter([
           <>
             <Container maxWidth="xl">
               <div className="flex gap-2 flex-wrap m-2">
-                <VideoThumbnail src="" alt="" />
-                <VideoThumbnail src="" alt="" />
-                <VideoThumbnail src="" alt="" />
-                <VideoThumbnail src="" alt="" />
+                <VideoThumbnail src="" alt="" variant="small" />
+                <VideoThumbnail src="" alt="" variant="small" />
+                <VideoThumbnail src="" alt="" variant="small" />
+                <VideoThumbnail src="" alt="" variant="small" />
               </div>
             </Container>
           </>
@@ -43,8 +46,16 @@ const router = createBrowserRouter([
       },
       {
         path: "/watch",
-        element: <Watch/>,
-      }
+        element: <Watch />,
+      },
+      {
+        path: "/upload",
+        element: <Upload />,
+      },
+      {
+        path: "/search",
+        element: <Search />,
+      },
     ],
   },
   {
@@ -55,13 +66,17 @@ const router = createBrowserRouter([
     path: "/sign-up",
     element: <SignUp />,
   },
-], {basename: "/cloudwatch-web"});
+], { basename: "/cloudwatch-web" });
+
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <RouterProvider router={router} />
-    </ThemeProvider>
-  </StrictMode>,
+  <QueryClientProvider client={queryClient}>
+    <StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </StrictMode>
+  </QueryClientProvider>,
 );

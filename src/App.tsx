@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { AccountCircle } from "@mui/icons-material";
+import { AccountCircle, FileUpload } from "@mui/icons-material";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -115,17 +115,29 @@ function App() {
                 inputProps={{ "aria-label": "search" }}
               />
             </Search>
-            <IconButton
-              size="large"
-              edge="end"
-              aria-label="account of current user"
-              aria-controls={menuId}
-              aria-haspopup="true"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
+            <div className="actions">
+            <Link to="/search">
+                <IconButton aria-label="search" size="large" color="inherit">
+                  <SearchIcon />
+                </IconButton>
+              </Link>
+              <Link to="/upload">
+                <IconButton aria-label="upload" size="large" color="inherit">
+                  <FileUpload />
+                </IconButton>
+              </Link>
+              <IconButton
+                size="large"
+                edge="end"
+                aria-label="account of current user"
+                aria-controls={menuId}
+                aria-haspopup="true"
+                onClick={handleProfileMenuOpen}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+            </div>
           </Toolbar>
         </AppBar>
         {renderMenu}
