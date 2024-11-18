@@ -1,4 +1,4 @@
-/minio
+/docker/minio
 .venv/
 node_modules/
 
