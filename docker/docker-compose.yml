@@ -22,6 +22,16 @@ services:
     command: server /data --console-address ":9001"
     networks:
       - cloud_network
+  
+  node1:
+    build:
+      context: .
+      dockerfile: Dockerfile-ubuntu
+    container_name: node1
+    ports:
+      - "8022:22"
+    networks:
+      - cloud_network
 
 networks:
   cloud_network:
