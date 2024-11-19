@@ -20,13 +20,28 @@ const ErrorResponseSchema = Type.Object({
 const SignUpRequestSchema = Type.Object({
   username: Type.String(),
   password: Type.String(),
-  email: Type.String(),
+  name: Type.String(),
 });
 
 const SignUpResponseSchema = Type.Object({
   id: Type.String(),
   username: Type.String(),
-  email: Type.String(),
+  password: Type.String(),
+});
+
+const UpdateUserParamsSchema = Type.Object({
+  userId: Type.String(),
+});
+
+const UpdateUserBodySchema = Type.Object({
+  name: Type.Optional(Type.String()),
+  password: Type.Optional(Type.String()),
+});
+
+const UpdateUserResponseSchema = Type.Object({
+  id: Type.String(),
+  username: Type.String(),
+  password: Type.String(),
 });
 
 type LoginRequest = Static<typeof LoginRequestSchema>;
@@ -34,8 +49,14 @@ type LoginResponse = Static<typeof LoginResponseSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type SignUpRequest = Static<typeof SignUpRequestSchema>;
 type SignUpResponse = Static<typeof SignUpResponseSchema>;
+type UpdateUserParams = Static<typeof UpdateUserParamsSchema>;
+type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
+type UpdateUserResponse = Static<typeof UpdateUserResponseSchema>;
 
 export default async function authRoutes(app: FastifyInstance) {
+
+
+
   app.post<{ Body: LoginRequest; Reply: LoginResponse | ErrorResponse }>(
     "/login",
     {
@@ -61,6 +82,45 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  app.put<{ Body: UpdateUserBody; Params: UpdateUserParams; Reply: UpdateUserResponse | Static<typeof ErrorResponseSchema>;
+  }>(
+    "/user/:userId",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        description: "Update user profile",
+        tags: ["User"],
+        summary: "Update user profile endpoint",
+        body: UpdateUserBodySchema,
+        params: UpdateUserParamsSchema,
+        response: {
+          200: UpdateUserResponseSchema,
+          401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (request, reply) => {
+      const { userId } = request.params;
+      const { name, password } = request.body;
+  
+      try {
+        const user = await UserService.updateUserProfile(userId, { name, password }, app);
+        return { id: user.userId, username: user.name, password: user.password };
+      } catch (error) {
+        if (error instanceof Error && error.message === "User not found") {
+          reply.status(404).send({ error: error.message });
+        } else if (error instanceof Error && error.message === "Unauthorized") {
+          reply.status(401).send({ error: error.message });
+        } else {
+          reply.status(500).send({ error: "Error updating user profile" });
+        }
+      }
+    }
+  );
+  
+
   app.post<{ Body: SignUpRequest; Reply: SignUpResponse | ErrorResponse }>(
     "/signup",
     {
@@ -75,10 +135,10 @@ export default async function authRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { username, password, email } = request.body;
+      const { username, password, name } = request.body;
       try {
-        const user = await UserService.signUp(username, password, app);
-        return { id: user.id, username: user.username, email: user.id };
+        const user = await UserService.signUp(name, username, password, app);
+        return { id: user.userId, username: user.userId, password: user.userId };
       } catch (error) {
         reply.status(500).send({ error: "Error creating user" });
       }
@@ -89,6 +149,40 @@ export default async function authRoutes(app: FastifyInstance) {
     const url = await UploadService.getPresignedUrl();
     return { url };
   });
+
+  app.get<{ Params: { userId: string }; Reply: SignUpResponse | ErrorResponse }>(
+    "/user/:userId",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        description: "Get user by ID",
+        tags: ["User"],
+        summary: "Get user by ID endpoint",
+        params: Type.Object({
+          userId: Type.String(),
+        }),
+        response: {
+          200: SignUpResponseSchema,
+          404: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (request, reply) => {
+      const { userId } = request.params;
+      try {
+        const user = await UserService.getUserById(userId);
+        if (!user) {
+          reply.status(404).send({ error: "User not found" });
+        } else {
+          return { id: user.userId, username: user.name, password: user.password };
+        }
+      } catch (error) {
+        reply.status(500).send({ error: "Error retrieving user" });
+      }
+    }
+  );
+
 
   app.get(
     "/protected",
@@ -113,6 +207,45 @@ export default async function authRoutes(app: FastifyInstance) {
       return { message: `Hello ${JSON.stringify(user)}!` };
     },
   );
+
+  app.delete<{ Params: { userId: string }; Reply: { success: boolean } | ErrorResponse }>(
+    "/user/:userId",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        description: "Delete user by ID",
+        tags: ["User"],
+        summary: "Delete user endpoint",
+        params: Type.Object({
+          userId: Type.String(),
+        }),
+        response: {
+          200: Type.Object({
+            success: Type.Boolean(),
+          }),
+          401: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (request, reply) => {
+      const { userId } = request.params;
+      try {
+        await UserService.deleteUser(userId);
+        return { success: true };
+      } catch (error) {
+        if (error instanceof Error && error.message === "User not found") {
+          reply.status(404).send({ error: error.message });
+        } else if (error instanceof Error && error.message === "Unauthorized") {
+          reply.status(401).send({ error: error.message });
+        } else {
+          reply.status(500).send({ error: "Error deleting user" });
+        }
+      }
+    }
+  );
+
 
   const SSEDemoResponseSchema = Type.Object({
     message: Type.String(),
