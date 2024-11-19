@@ -4,13 +4,41 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError, Cli
 
 import pika
 import json
-import sys
 import random
 import string
 from dotenv import load_dotenv
 import os
+import subprocess
+from enum import Enum
 
 load_dotenv()
+
+class VideoQuality(Enum):
+    LOW = "360p"
+    SD = "480p"
+    HD = "720p"
+    FULL_HD = "1080p"
+    QHD = "1440p"  # 2K
+    UHD = "2160p"  # 4K
+
+    @classmethod
+    def from_height(cls, height):
+        """Map a video height to a VideoQuality enum."""
+        if height >= 2160:
+            return cls.UHD
+        elif height >= 1440:
+            return cls.QHD
+        elif height >= 1080:
+            return cls.FULL_HD
+        elif height >= 720:
+            return cls.HD
+        elif height >= 480:
+            return cls.SD
+        elif height >= 360:
+            return cls.LOW
+        else:
+            return None
+
 
 # Configure your MinIO connection details
 minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
@@ -60,11 +88,41 @@ def upload_file(file_path, bucket_name, object_name=None):
     except Exception as e:
         print(f"Error uploading file: {e}")
 
-# Usage
+
+def get_video_quality(file_path):
+    """Get the resolution-based quality of a video using ffprobe and map to VideoQuality."""
+    try:
+        # Run ffprobe to get video resolution
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height",
+                "-of", "csv=p=0",
+                file_path
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        # Parse the output for width and height
+        output = result.stdout.strip()
+        if not output:
+            raise ValueError("Could not retrieve video resolution.")
+        width, height = map(int, output.split(','))
+
+        # Use the VideoQuality enum to map the height
+        quality = VideoQuality.from_height(height)
+        return quality.value if quality else "Unknown quality"
+
+    except Exception as e:
+        print(f"Error determining video quality: {e}")
+        return "Unknown quality"
 
 
-
-def publish_video(video_path):
+def publish_video(video_id, video_res):
     # RabbitMQ connection
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
@@ -72,24 +130,26 @@ def publish_video(video_path):
     # Fanout exchange configuration
     queue_name = 'video.transcode'
 
-    # Prepare the message
-    message = {
-        "videoId": video_path,
-        "quality": "720p"
-    }
+    for quality in VideoQuality:
+        if quality.value != video_res:
+        # Prepare the message
+            message = {
+                "videoId": video_id,
+                "quality": quality.value
+            }
 
-    # Publish message to the fanout exchange (no routing key needed)
-    channel.basic_publish(
-        exchange='',
-        routing_key=queue_name,  # Fanout exchange ignores routing keys
-        body=json.dumps(message),
-        properties=pika.BasicProperties(content_type="application/json")
-    )
+            # Publish message to the fanout exchange (no routing key needed)
+            channel.basic_publish(
+                exchange='',
+                routing_key=queue_name,  # Fanout exchange ignores routing keys
+                body=json.dumps(message),
+                properties=pika.BasicProperties(content_type="application/json")
+            )
 
-    print(f"Published video {video_path} to all quality queues.")
+            print(f"Published video {video_id} to quality {message['quality']}.")
+    
+    
     connection.close()
-
-
 
 
 def random_string(length):
@@ -97,7 +157,7 @@ def random_string(length):
 
 obj_id = random_string(8)
 upload_file("videos\sample-30s.mp4", "video", obj_id)
-publish_video(obj_id)
+publish_video(obj_id, get_video_quality("videos\sample-30s.mp4"))
 
 def generate_presigned_url(bucket_name, object_name, expiration=3600):
     """
