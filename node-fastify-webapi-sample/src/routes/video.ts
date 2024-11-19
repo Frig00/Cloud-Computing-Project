@@ -1,32 +1,29 @@
 import { FastifyInstance } from 'fastify';
 import { Static, Type } from '@sinclair/typebox';
-import { VideoService } from '../services/videoService';
+import { UploadService } from '../services/uploadService';
 
 
-export const VideoRequestSchema = Type.Object({
-    title: Type.String(),
-    user: Type.String(),
-    videoUrl: Type.String(),
-  });
+const UploadUrlResponseSchema = Type.Object({
+  url: Type.String(),
+});
 
-type VideoRequest = Static<typeof VideoRequestSchema>;
+type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
-  app.post<{Body: VideoRequest}>(
-    '/',
+
+  app.get<{Reply: UploadUrlResponse}>("/upload-url", 
     {
       schema: {
-        description: 'Uploads a new video',
+        description: 'Get a pre-signed URL for video uploads',
         tags: ['Video'],
-        summary: 'Video upload',
-        body: VideoRequestSchema,
+        summary: 'Get pre-signed URL',
         response: {
-          200: VideoRequestSchema,
+          200: UploadUrlResponseSchema,
         },
-      },
+      }
     },
     async (request, reply) => {
-      await VideoService.uploadVideo(request.body.title, request.body.user, request.body.videoUrl);
-    }
-  );
+       const url = await UploadService.getPresignedUrl();
+       return { url: url ?? "not valid" };
+  });
 }

@@ -85,11 +85,6 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get("/upload-url", async (request, reply) => {
-    const url = await UploadService.getPresignedUrl();
-    return { url };
-  });
-
   app.get(
     "/protected",
     {
