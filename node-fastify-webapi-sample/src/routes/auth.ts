@@ -3,6 +3,7 @@ import { FastifyInstance } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import { UserService } from "../services/userService";
 import { UploadService } from "../services/uploadService";
+import { VideoService } from "../services/videoService";
 
 const LoginRequestSchema = Type.Object({
   username: Type.String(),
@@ -290,4 +291,46 @@ export default async function authRoutes(app: FastifyInstance) {
 
     return reply;
   });
+
+  
+  //vodeoService
+  app.get("/api/videos", async (request, reply) => {
+    const videos = await VideoService.getAllVideos();
+    reply.send(videos);
+  });
+
+  app.get("/api/videos/:videoId", async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    const video = await VideoService.getVideoById(videoId);
+    if (!video) {
+      reply.status(404).send({ error: "Video not found" });
+    } else {
+      reply.send(video);
+    }
+  });
+
+  app.get("/api/videos/title/:title", async (request, reply) => {
+    const { title } = request.params as { title: string };
+    const videos = await VideoService.searchVideos(title);
+    if (videos.length === 0) {
+      reply.status(404).send({ error: "No videos found with the given title" });
+    } else {
+      reply.send(videos);
+    }
+  });
+
+  app.post("/api/videos/like/:videoId", async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    const { userId } = request.body as { userId: string };
+    await VideoService.likeVideo(videoId, userId);
+    reply.send({ success: true });
+  });
+
+  app.post("/api/videos/comment/:videoId", async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    const { userId, content } = request.body as { userId: string; content: string };
+    const comment = await VideoService.addComment(videoId, userId, content);
+    reply.send(comment);
+  });
+
 }
