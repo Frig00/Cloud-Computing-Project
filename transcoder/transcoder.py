@@ -151,6 +151,9 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality):
     os.makedirs(segmentsPath, exist_ok=True)
     video_total_frame = get_total_frames(file_path)
 
+    if quality.label == "1080p":
+        create_video_thumbnail(file_path, os.path.join(base_path, "thumbnail.jpg"))
+
     # Configure FFmpeg command for transcoding
     ffmpeg = (
         FFmpeg()
@@ -209,7 +212,44 @@ def process_file(file_path, output):
     with Pool(processes=len(qualities_to_process)) as pool:
         pool.starmap(transcode_to_quality, [(file_path, basePath, quality) for quality in qualities_to_process])
 
+import subprocess
+import os
 
+def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00:00:01"):
+    """
+    Create a thumbnail from a video using ffmpeg.
+
+    Parameters:
+    - video_path (str): Path to the input video file.
+    - thumbnail_path (str): Path to save the generated thumbnail image.
+    - time (str): Timestamp to capture the thumbnail (format: HH:MM:SS). Default is 00:00:01.
+
+    Returns:
+    - bool: True if the thumbnail was created successfully, False otherwise.
+    """
+    if not os.path.exists(video_path):
+        print("Error: The specified video file does not exist.")
+        return False
+
+    try:
+        # Execute the ffmpeg command
+        command = [
+            "ffmpeg",
+            "-i", video_path,
+            "-ss", time,  # Seek to the specified time
+            "-vframes", "1",  # Capture a single frame
+            "-q:v", "2",  # Set quality level for the output image
+            thumbnail_path
+        ]
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"Thumbnail created at {thumbnail_path}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error: ffmpeg command failed. {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return False
 
 
 def upload_s3_file(local_path, object_name, encoded_bucked):

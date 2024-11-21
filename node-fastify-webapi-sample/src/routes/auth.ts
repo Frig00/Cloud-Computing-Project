@@ -241,57 +241,6 @@ export default async function authRoutes(app: FastifyInstance) {
       }
     }
   );
-
-
-  const SSEDemoResponseSchema = Type.Object({
-    message: Type.String(),
-    timestamp: Type.Optional(Type.Number()),
-  });
-  type SSEDemoResponse = Static<typeof SSEDemoResponseSchema>;
-
-  app.get("/sse", async (request, reply) => {
-    // Set the headers to keep the connection open and indicate SSE
-    reply.raw.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-    });
-
-    // Function to send data to the client
-    const sendSSE = (data: SSEDemoResponse) => {
-      reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    // Send an initial message
-    sendSSE({ message: "Connected to SSE!" });
-
-    let messageCount = 0; // Initialize message counter
-    const maxMessages = 3; // Close connection after 3 messages
-
-    // Send messages at intervals
-    const interval = setInterval(() => {
-      messageCount += 1;
-      sendSSE({
-        message: `Message ${messageCount} from the server!`,
-        timestamp: Date.now(),
-      });
-
-      // Check if we've sent the maximum number of messages
-      if (messageCount >= maxMessages) {
-        clearInterval(interval);
-        reply.raw.end();
-      }
-    }, 2000);
-
-    // Cleanup when the client disconnects
-    request.raw.on("close", () => {
-      clearInterval(interval);
-      reply.raw.end();
-    });
-
-    return reply;
-  });
-
   
   //vodeoService
   app.get("/api/videos", async (request, reply) => {
