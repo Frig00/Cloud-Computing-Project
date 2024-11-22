@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
+import { LogInIcon } from "lucide-react";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -116,6 +117,11 @@ function App() {
               />
             </Search>
             <div className="actions">
+            <Link to="/sign-in">
+                <IconButton aria-label="login" size="large" color="inherit">
+                  <LogInIcon />
+                </IconButton>
+              </Link>
             <Link to="/search">
                 <IconButton aria-label="search" size="large" color="inherit">
                   <SearchIcon />

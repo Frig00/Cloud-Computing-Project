@@ -1,22 +1,22 @@
 import { Container } from "@mui/material";
 import VideoThumbnail from "./components/VideoThumbnail";
-import { StoreApi } from "./api";
+
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Search() {
   
   
-  const pet = new StoreApi();
+  // const pet = new StoreApi();
 
-  const { isPending, error, data } = useQuery({
-    queryKey: ['repoData'],
-    queryFn: () => pet.getInventory(),
-  })
+  // const { isPending, error, data } = useQuery({
+  //   queryKey: ['repoData'],
+  //   queryFn: () => pet.getInventory(),
+  // })
 
-  if (isPending) return 'Loading...'
+  // if (isPending) return 'Loading...'
 
-  if (error) return 'An error has occurred: ' + error.message
+  // if (error) return 'An error has occurred: ' + error.message
 
   return (
     <Container maxWidth="xl">

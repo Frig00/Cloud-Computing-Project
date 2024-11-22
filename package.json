@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "gen-api": "docker run --rm -v \"%cd%/src/api:/local/out/api\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/openapitools/openapi-generator/master/modules/openapi-generator/src/test/resources/3_0/petstore.yaml -g typescript-fetch -o /local/out/api"
+    "gen-api": "docker run --rm -v \"%cd%/src/api:/local/out/api\" -v \"%cd%/openapi.json:/local/in/openapi.json\" openapitools/openapi-generator-cli generate -i /local/in/openapi.json -g typescript-fetch -o /local/out/api"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
