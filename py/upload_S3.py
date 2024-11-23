@@ -1,14 +1,11 @@
 import boto3
 from botocore.client import Config
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
-import pika
-import json
 import random
 import string
 from dotenv import load_dotenv
 import os
-import subprocess
 from enum import Enum
 
 load_dotenv()

@@ -53,28 +53,21 @@ class VideoQuality(Enum):
 load_dotenv()
 
 
-# RabbitMQ setup
-# Read from environment variable, default to 'localhost'
-RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-# Read from environment variable, default to 'transcoder'
-QUEUE_NAME = os.getenv('QUEUE_NAME', 'video.transcode')
-# Read from environment variable, no default
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'video')
-# Read from environment variable, no default
-S3_BUCKET_ENCODED_NAME = os.getenv('S3_BUCKET_ENCODED_NAME', 'video-encoded')
-
-minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
-# Replace with your MinIO access key
-access_key = os.getenv("MINIO_ACCESS_KEY")
-# Replace with your MinIO secret key
-secret_key = os.getenv("MINIO_SECRET_KEY")
+RABBITMQ_HOST = os.getenv('RABBITMQ_HOST')
+QUEUE_NAME = os.getenv('QUEUE_NAME')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+S3_BUCKET_ENCODED_NAME = os.getenv('S3_BUCKET_ENCODED_NAME')
+STATUS_QUEUE_NAME = os.getenv('STATUS_QUEUE_NAME')
+MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
+MINIO_ACCESS_KEY= os.getenv("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 
 # Initialize the S3 client
 s3_client = boto3.client(
     's3',
-    endpoint_url=f"http://{minio_endpoint}",
-    aws_access_key_id=access_key,
-    aws_secret_access_key=secret_key,
+    endpoint_url=f"http://{os.getenv('MINIO_ENDPOINT')}",
+    aws_access_key_id=MINIO_ACCESS_KEY,
+    aws_secret_access_key=MINIO_SECRET_KEY,
     config=Config(signature_version="s3v4"))
 
 
@@ -142,16 +135,44 @@ def get_video_quality(file_path):
     except Exception as e:
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
+    
+def send_progress_to_status_queue(video_id, progress, quality):
+    """Send transcoding progress to the 'video.status' queue."""
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+    channel = connection.channel()
+
+    # Declare the 'video.status' queue (if it doesn't already exist)
+    channel.queue_declare(queue=STATUS_QUEUE_NAME, durable=True)
+
+    # Message structure
+    message = {
+        "videoId": video_id,
+        "quality": quality,
+        "progress": progress
+    }
+
+    # Publish the progress message to the queue
+    channel.basic_publish(
+        exchange='',
+        routing_key=STATUS_QUEUE_NAME,
+        body=json.dumps(message),
+        properties=pika.BasicProperties(
+            delivery_mode=2,  # Make the message persistent
+        )
+    )
+
+    print(f"Sent progress to status queue: {message}")
+    connection.close()
 
 
-def transcode_to_quality(file_path, base_path, quality: VideoQuality):
+def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality):
     """Transcode the video to a specific quality."""
     print(f"Transcoding to {quality.label}...")
     segmentsPath = os.path.join(base_path, quality.label)
     os.makedirs(segmentsPath, exist_ok=True)
     video_total_frame = get_total_frames(file_path)
 
-    if quality.label == "1080p":
+    if quality == actual_quality:
         create_video_thumbnail(file_path, os.path.join(base_path, "thumbnail.jpg"))
 
     # Configure FFmpeg command for transcoding
@@ -174,8 +195,11 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality):
 
     @ffmpeg.on("progress")
     def on_progress(progress: Progress):
-        percentage = (float(progress.frame) / video_total_frame) * 100
-        print(f"Progress: {percentage:.2f}% for quality: {quality.label}")
+        percentage = int((float(progress.frame) / video_total_frame) * 100)
+        #print(f"Progress: {percentage:.2f}% for quality: {quality.label}")
+
+        # Send progress to RabbitMQ queue 'video.status'
+        send_progress_to_status_queue(file_path.split('/')[-1], percentage, quality.label)
 
     @ffmpeg.on("completed")
     def on_completed():
@@ -210,10 +234,11 @@ def process_file(file_path, output):
 
     # Create a pool of workers (one per transcoding task)
     with Pool(processes=len(qualities_to_process)) as pool:
-        pool.starmap(transcode_to_quality, [(file_path, basePath, quality) for quality in qualities_to_process])
+        pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality) for quality in qualities_to_process])
 
-import subprocess
-import os
+    # Create a master playlist for all qualities
+    create_master_playlist(basePath, qualities_to_process, "master.m3u8")
+
 
 def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00:00:01"):
     """
@@ -250,6 +275,35 @@ def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00
     except Exception as e:
         print(f"Unexpected error: {e}")
         return False
+
+def create_master_playlist(base_path: str, qualities: list[VideoQuality], output_file: str):
+    """
+    Create a master playlist (.m3u8) that references individual quality playlists.
+
+    Parameters:
+    - base_path (str): The base directory containing the individual quality playlists.
+    - qualities (list[VideoQuality]): List of qualities to include in the master playlist.
+    - output_file (str): Path to save the master playlist file.
+    """
+    master_playlist_path = os.path.join(base_path, output_file)
+
+    try:
+        with open(master_playlist_path, 'w') as f:
+            # M3U8 header
+            f.write("#EXTM3U\n")
+
+            for quality in qualities:
+                playlist_path = os.path.join(quality.label, "playlist.m3u8")
+                bandwidth = int(quality.bitrate[:-1]) * 1000  # Convert bitrate to an integer in bits
+                resolution = quality.resolution
+
+                # M3U8 entry for each quality
+                f.write(f"#EXT-X-STREAM-INF:BANDWIDTH={bandwidth},RESOLUTION={resolution}\n")
+                f.write(f"{playlist_path}\n")
+
+        print(f"Master playlist created at {master_playlist_path}")
+    except Exception as e:
+        print(f"Error creating master playlist: {e}")
 
 
 def upload_s3_file(local_path, object_name, encoded_bucked):
