@@ -179,27 +179,4 @@ export class DefaultApi extends runtime.BaseAPI {
         await this.authApiVideosVideoIdGetRaw(requestParameters, initOverrides);
     }
 
-    /**
-     */
-    async authSseGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/auth/sse`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     */
-    async authSseGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.authSseGetRaw(initOverrides);
-    }
-
 }

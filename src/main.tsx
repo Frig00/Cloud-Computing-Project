@@ -17,7 +17,12 @@ import Upload from "./Upload.tsx";
 import Search from "./Search.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./services/authService.tsx";
-import { ProtectedRoute, ProtectedWrapper } from "./ProtectedRoute.tsx";
+import { ProtectedRoute } from "./ProtectedRoute.tsx";
+import Bench from "./Bench.tsx";
+import { Configuration, DefaultConfig } from "./api/runtime.ts";
+
+
+DefaultConfig.config = new Configuration({basePath: "http://localhost:3000"});
 
 const theme = createTheme({
   typography: {
@@ -48,6 +53,7 @@ createRoot(document.getElementById("root")!).render(
             <Routes>
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/sign-up" element={<SignUp />} />
+              <Route path="/bench" element={<Bench />} />
               <Route path="/" element={<App />} errorElement={<ErrorPage />}>
                 <Route element={<ProtectedRoute />}>
                   <Route index element={<HomePage />} />

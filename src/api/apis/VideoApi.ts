@@ -35,6 +35,33 @@ export interface VideoTranscodeVideoPostOperationRequest {
 export class VideoApi extends runtime.BaseAPI {
 
     /**
+     * Get transcoding percentage
+     * Get transcoding percentage
+     */
+    async videoSseGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/video/sse`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Get transcoding percentage
+     * Get transcoding percentage
+     */
+    async videoSseGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.videoSseGetRaw(initOverrides);
+    }
+
+    /**
      * Transcode a video
      * Transcode video
      */
