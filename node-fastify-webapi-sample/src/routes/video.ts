@@ -67,6 +67,7 @@ export default async function videoRoutes(app: FastifyInstance) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
+      "Access-Control-Allow-Origin": "*",
     });
 
     // Function to send data to the client
