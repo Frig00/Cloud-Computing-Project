@@ -6,7 +6,7 @@ import { UploadService } from "../services/uploadService";
 import { VideoService } from "../services/videoService";
 
 const LoginRequestSchema = Type.Object({
-  username: Type.String(),
+  userId: Type.String(),
   password: Type.String(),
 });
 
@@ -19,14 +19,14 @@ const ErrorResponseSchema = Type.Object({
 });
 
 const SignUpRequestSchema = Type.Object({
-  username: Type.String(),
+  userId: Type.String(),
   password: Type.String(),
   name: Type.String(),
 });
 
 const SignUpResponseSchema = Type.Object({
-  id: Type.String(),
-  username: Type.String(),
+  userId: Type.String(),
+  name: Type.String(),
   password: Type.String(),
 });
 
@@ -35,13 +35,14 @@ const UpdateUserParamsSchema = Type.Object({
 });
 
 const UpdateUserBodySchema = Type.Object({
+  userId: Type.Optional(Type.String()),
   name: Type.Optional(Type.String()),
   password: Type.Optional(Type.String()),
 });
 
 const UpdateUserResponseSchema = Type.Object({
-  id: Type.String(),
-  username: Type.String(),
+  userId: Type.String(),
+  name: Type.String(),
   password: Type.String(),
 });
 
@@ -57,7 +58,7 @@ type UpdateUserResponse = Static<typeof UpdateUserResponseSchema>;
 export default async function authRoutes(app: FastifyInstance) {
 
 
-
+  //login endpoint
   app.post<{ Body: LoginRequest; Reply: LoginResponse | ErrorResponse }>(
     "/login",
     {
@@ -73,18 +74,18 @@ export default async function authRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { username, password } = request.body;
+      const { userId, password } = request.body;
       try {
-        const { token } = await UserService.login(username, password, app);
+        const { token } = await UserService.login(userId, password, app);
         return { token };
       } catch (error) {
-        reply.status(500).send({ error: JSON.stringify(error) });
-      }
+          reply.status(500).send({ error: "Error logging in (username or password wrong)" });
+        }
     },
   );
 
-  app.put<{ Body: UpdateUserBody; Params: UpdateUserParams; Reply: UpdateUserResponse | Static<typeof ErrorResponseSchema>;
-  }>(
+  //update user profile endpoint
+  app.put<{ Body: UpdateUserBody; Params: UpdateUserParams; Reply: { message: string } | Static<typeof ErrorResponseSchema>;}>(
     "/user/:userId",
     {
       onRequest: [app.authenticate],
@@ -95,9 +96,10 @@ export default async function authRoutes(app: FastifyInstance) {
         body: UpdateUserBodySchema,
         params: UpdateUserParamsSchema,
         response: {
-          200: UpdateUserResponseSchema,
+          200: Type.Object({ message: Type.String() }),
           401: ErrorResponseSchema,
           404: ErrorResponseSchema,
+          500: ErrorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
       },
@@ -107,22 +109,24 @@ export default async function authRoutes(app: FastifyInstance) {
       const { name, password } = request.body;
   
       try {
-        const user = await UserService.updateUserProfile(userId, { name, password }, app);
-        return { id: user.userId, username: user.name, password: user.password };
+        const updatedUser = await UserService.updateUserProfile(userId, { name, password }, app);
+        reply.status(200).send({ message: "Profile updated" });
+        //return { message: "Profile updated" };
       } catch (error) {
+        console.error("Error updating user profile:", error);
         if (error instanceof Error && error.message === "User not found") {
           reply.status(404).send({ error: error.message });
         } else if (error instanceof Error && error.message === "Unauthorized") {
           reply.status(401).send({ error: error.message });
         } else {
-          reply.status(500).send({ error: "Error updating user profile" });
+          reply.status(500).send({ error: "Error updating user profile!!" });
         }
       }
     }
   );
   
 
-  app.post<{ Body: SignUpRequest; Reply: SignUpResponse | ErrorResponse }>(
+  app.post<{ Body: SignUpRequest; Reply: { message: string } | ErrorResponse }>(
     "/signup",
     {
       schema: {
@@ -131,21 +135,23 @@ export default async function authRoutes(app: FastifyInstance) {
         summary: "Sign up endpoint",
         body: SignUpRequestSchema,
         response: {
-          200: SignUpResponseSchema,
+          200: { type: "object", properties: { message: { type: "string" } } },
+          500: { type: "object", properties: { error: { type: "string" } } },
         },
       },
     },
     async (request, reply) => {
-      const { username, password, name } = request.body;
+      const { userId, password, name } = request.body;
       try {
-        const user = await UserService.signUp(name, username, password, app);
-        return { id: user.userId, username: user.userId, password: user.userId };
+        await UserService.signUp(name, userId, password, app);
+        return { message: "Account registered correctly!" };
       } catch (error) {
-        reply.status(500).send({ error: "Error creating user" });
+        reply.status(500).send({ error: "Error creating user!" });
       }
     },
   );
 
+  //get user ID endpoint
   app.get<{ Params: { userId: string }; Reply: SignUpResponse | ErrorResponse }>(
     "/user/:userId",
     {
@@ -159,6 +165,7 @@ export default async function authRoutes(app: FastifyInstance) {
         }),
         response: {
           200: SignUpResponseSchema,
+          401: ErrorResponseSchema,
           404: ErrorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
@@ -166,12 +173,19 @@ export default async function authRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { userId } = request.params;
+      const loggedInUserId = (request.user as { userId: string }).userId; // Assuming the user ID is stored in the JWT payload
+
+      if (userId !== loggedInUserId) {
+        reply.status(401).send({ error: "Unauthorized" });
+        return;
+      }
+
       try {
         const user = await UserService.getUserById(userId);
         if (!user) {
           reply.status(404).send({ error: "User not found" });
         } else {
-          return { id: user.userId, username: user.name, password: user.password };
+          return { userId: user.userId, name: user.name, password: user.password };
         }
       } catch (error) {
         reply.status(500).send({ error: "Error retrieving user" });
@@ -204,6 +218,7 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  //delete user endpoint
   app.delete<{ Params: { userId: string }; Reply: { success: boolean } | ErrorResponse }>(
     "/user/:userId",
     {
@@ -221,6 +236,7 @@ export default async function authRoutes(app: FastifyInstance) {
           }),
           401: ErrorResponseSchema,
           404: ErrorResponseSchema,
+          500: ErrorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
       },
@@ -231,6 +247,7 @@ export default async function authRoutes(app: FastifyInstance) {
         await UserService.deleteUser(userId);
         return { success: true };
       } catch (error) {
+        console.error("Error deleting user:", error);
         if (error instanceof Error && error.message === "User not found") {
           reply.status(404).send({ error: error.message });
         } else if (error instanceof Error && error.message === "Unauthorized") {
@@ -241,13 +258,15 @@ export default async function authRoutes(app: FastifyInstance) {
       }
     }
   );
-  
-  //vodeoService
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  //videoService
   app.get("/api/videos", async (request, reply) => {
     const videos = await VideoService.getAllVideos();
     reply.send(videos);
   });
 
+  //video searching by ID endpoint
   app.get("/api/videos/:videoId", async (request, reply) => {
     const { videoId } = request.params as { videoId: string };
     const video = await VideoService.getVideoById(videoId);
@@ -258,15 +277,32 @@ export default async function authRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get("/api/videos/title/:title", async (request, reply) => {
-    const { title } = request.params as { title: string };
-    const videos = await VideoService.searchVideos(title);
+//video search by string endpoint
+app.get("/api/videos/title/:title", async (request, reply) => {
+  const { title } = request.params as { title: string };
+
+  if (!title.trim()) {
+    reply.status(400).send({ error: "Invalid search query" });
+    return;
+  }
+
+  const searchWords = title.split(/\s+/); // Split input into words
+  console.log("Search words:", searchWords);
+
+  try {
+    const videos = await VideoService.searchVideos(searchWords); // Pass array of words to the service
     if (videos.length === 0) {
       reply.status(404).send({ error: "No videos found with the given title" });
     } else {
       reply.send(videos);
     }
-  });
+  } catch (error) {
+    console.error("Error searching videos:", error);
+    reply.status(500).send({ error: "Internal server error" });
+  }
+});
+
+
 
   app.post("/api/videos/like/:videoId", async (request, reply) => {
     const { videoId } = request.params as { videoId: string };

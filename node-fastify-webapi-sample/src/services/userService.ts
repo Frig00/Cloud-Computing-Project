@@ -29,7 +29,7 @@ export class UserService {
       throw new Error('Invalid password');
     }
 
-    const token = fastify.jwt.sign({ id: user.userId });
+    const token = fastify.jwt.sign({ id: user.userId });//
     return { token };
   }
 
@@ -59,10 +59,10 @@ export class UserService {
       throw new Error('User not found');
     }
 
-    const token = fastify.jwt.sign({ id: user.userId });
-    const decoded = fastify.jwt.verify<{ id: string }>(token);
+    const token = fastify.jwt.sign({ id: user.userId }); //
+    const decoded = fastify.jwt.verify<{ id: string }>(token);//
 
-    if (decoded.id !== userId) {
+    if (decoded.id !== userId) {//
       throw new Error('Unauthorized');
     }
 
