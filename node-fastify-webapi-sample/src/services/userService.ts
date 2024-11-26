@@ -54,6 +54,7 @@ export class UserService {
 
 
   static async updateUserProfile(userId: string, data: { name?: string; password?: string }, fastify: FastifyInstance) {
+
     const user = await prisma.users.findUnique({ where: { userId } });
     if (!user) {
       throw new Error('User not found');

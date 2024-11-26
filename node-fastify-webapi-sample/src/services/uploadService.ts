@@ -11,8 +11,8 @@ dotenv.config();
 
 // MinIO Configuration
 const s3Client = new S3Client({
-  region: "us-east-1",
-  endpoint: "http://localhost:9000", // MinIO endpoint
+  region: process.env.S3_REGION,
+  endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
   forcePathStyle: true, // Needed for MinIO
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY!,
@@ -30,15 +30,16 @@ export class UploadService {
     const bucketName = "video";
     const expiresIn = 3600; // 1 hour
 
+    const videoId = this.randomString(16)
     const command = new PutObjectCommand({
       Bucket: bucketName,
-      Key: this.randomString(16) + ".original.mp4",
+      Key: videoId + ".original.mp4",
       ContentType: "video/mp4",
     });
 
     // Generate the pre-signed URL
     const url = await getSignedUrl(s3Client, command, { expiresIn });
-    return url;
+    return {videoId, url};
   }
 
   // Generate a random string

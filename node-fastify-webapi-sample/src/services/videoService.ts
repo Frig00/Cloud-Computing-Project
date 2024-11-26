@@ -17,13 +17,7 @@ export class VideoService {
 
   // Get all videos
   static async getAllVideos() {
-    return await prisma.videos.findMany({
-      include: {
-        comments: true,
-        likes: true,
-        views: true,
-      },
-    });
+    return await prisma.videos.findMany();
   }
 
   // Get a video by ID

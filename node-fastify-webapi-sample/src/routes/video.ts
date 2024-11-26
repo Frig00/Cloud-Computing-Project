@@ -1,107 +1,205 @@
-import { FastifyInstance } from 'fastify';
-import { Static, Type } from '@sinclair/typebox';
-import { UploadService } from '../services/uploadService';
+import { FastifyInstance } from "fastify";
 
+import { Static, Type } from "@sinclair/typebox";
+import { UserService } from "../services/userService";
+import { UploadService } from "../services/uploadService";
+import { VideoService } from "../services/videoService";
+import { JWTPayload } from "../plugins/auth";
 
-const UploadUrlResponseSchema = Type.Object({
-  url: Type.String(),
+const LoginRequestSchema = Type.Object({
+  userId: Type.String(),
+  password: Type.String(),
 });
 
-const TranscodeVideoRequestSchema = Type.Object({
-  videoID: Type.String(),
+const LoginResponseSchema = Type.Object({
+  token: Type.String(),
 });
 
-const SSEDemoResponseSchema = Type.Object({
-  message: Type.String(),
-  timestamp: Type.Optional(Type.Number()),
+const ErrorResponseSchema = Type.Object({
+  error: Type.String(),
 });
 
-type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
-type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
-type SSEDemoResponse = Static<typeof SSEDemoResponseSchema>;
+const SignUpRequestSchema = Type.Object({
+  userId: Type.String(),
+  password: Type.String(),
+  name: Type.String(),
+});
+
+const SignUpResponseSchema = Type.Object({
+  userId: Type.String(),
+  name: Type.String()
+});
+
+const SuccessUpdateUserSchema = Type.Object({
+  success: Type.Boolean(),
+});
+
+
+const UpdateUserBodySchema = Type.Object({
+  name: Type.Optional(Type.String()),
+  password: Type.Optional(Type.String()),
+});
+
+const UpdateUserResponseSchema = Type.Object({
+  userId: Type.String(),
+  name: Type.String(),
+  password: Type.String(),
+});
+
+const FindVideoSchema =Type.Array(Type.Object({
+    id: Type.String(),
+    userId: Type.String(),
+    title: Type.String(),
+    uploadDate: Type.Number(),
+    videoRef: Type.String()
+}));
+
+const AllInfosVideoSchema = Type.Object({
+    id: Type.String(),
+    userId: Type.String(),
+    title: Type.String(),
+    uploadDate: Type.Number(),
+    videoRef: Type.String(),
+    //aggiumgere commenti like views
+});
+
+const IdVideoSchema =  Type.Object({id: Type.String()});
+const TitleVideoSchema =  Type.Object({title: Type.String()});
+
+type LoginRequest = Static<typeof LoginRequestSchema>;
+type LoginResponse = Static<typeof LoginResponseSchema>;
+type ErrorResponse = Static<typeof ErrorResponseSchema>;
+type SignUpRequest = Static<typeof SignUpRequestSchema>;
+type SignUpResponse = Static<typeof SignUpResponseSchema>;
+type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
+type UpdateUserResponse = Static<typeof UpdateUserResponseSchema>;
+type AllInfosVideo = Static<typeof AllInfosVideoSchema>;
+type FindVideo = Static<typeof FindVideoSchema>;
+type IdVideo = Static<typeof IdVideoSchema>;
+type TitleVideo = Static<typeof TitleVideoSchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
-
-  app.get<{Reply: UploadUrlResponse}>("/upload-url", 
-    {
-      schema: {
-        description: 'Get a pre-signed URL for video uploads',
-        tags: ['Video'],
-        summary: 'Get pre-signed URL',
+//videoService
+app.get<{Reply: FindVideo | ErrorResponse}>("/all videos", {
+    schema: {
         response: {
-          200: UploadUrlResponseSchema,
+            200: FindVideoSchema,
+            500: ErrorResponseSchema,
         },
-      }
-    },
-    async (request, reply) => {
-       const url = await UploadService.getPresignedUrl();
-       return { url: url ?? "not valid" };
-  });
-
-  app.post<{Body: TranscodeVideoRequest}>("/transcode-video",
-    {
-      schema: {
-        description: 'Transcode a video',
         tags: ['Video'],
-        summary: 'Transcode video',
-        body: TranscodeVideoRequestSchema,
-      }
     },
-    async (request, reply) => {
-      const videoID = request.body.videoID;
-      const result = await UploadService.transcodeVideo(videoID);
+}, async (_, reply) => {
+    try {
+        const videos = await VideoService.getAllVideos();
+        reply.send(videos);
+    } catch (error) {
+        reply.status(500).send({ error: "Internal server error" });
     }
-  );
+});
 
-  app.get("/sse",
-    {
-      schema: {
-        description: 'Get transcoding percentage',
+//video searching by ID endpoint
+app.get<{Reply: AllInfosVideo | ErrorResponse}>("/:videoId", {
+    schema: {
+        params: IdVideoSchema,
+        response: {
+            200: AllInfosVideoSchema,
+            404: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+        },
         tags: ['Video'],
-        summary: 'Get transcoding percentage',
-      }
     },
-    async (request, reply) => {
-    // Set the headers to keep the connection open and indicate SSE
-    reply.raw.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-    });
+}, async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    try {
+        const video = await VideoService.getVideoById(videoId);
+        if (!video) {
+            reply.status(404).send({ error: "Video not found" });
+        } else {
+            reply.send(video);
+        }
+    } catch (error) {
+        reply.status(500).send({ error: "Internal server error" });
+    }
+});
 
-    // Function to send data to the client
-    const sendSSE = (data: SSEDemoResponse) => {
-      reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
+//video search by string endpoint
+app.post<{Reply: FindVideo | ErrorResponse}>("/search", {
+    schema: {
+        params: TitleVideoSchema,
+        response: {
+            200: FindVideoSchema,
+            400: ErrorResponseSchema,
+            404: ErrorResponseSchema,
+            500: ErrorResponseSchema,
+        },
+        tags: ['Video'],
+    },
+}, async (request, reply) => {
+    const { title } = request.params as { title: string };
 
-    // Send an initial message
-    sendSSE({ message: "Connected to SSE!" });
+    if (!title.trim()) {
+        reply.status(400).send({ error: "Invalid search query" });
+        return;
+    }
 
-    let messageCount = 0; // Initialize message counter
-    const maxMessages = 3; // Close connection after 3 messages
+    const searchWords = title.split(/\s+/); // Split input into words
+    console.log("Search words:", searchWords);
 
-    // Send messages at intervals
-    const interval = setInterval(() => {
-      messageCount += 1;
-      sendSSE({
-        message: `Message ${messageCount} from the server!`,
-        timestamp: Date.now(),
-      });
+    try {
+        const videos = await VideoService.searchVideos(searchWords); // Pass array of words to the service
+        if (videos.length === 0) {
+            reply.status(404).send({ error: "No videos found with the given title" });
+        } else {
+            reply.send(videos);
+        }
+    } catch (error) {
+        console.error("Error searching videos:", error);
+        reply.status(500).send({ error: "Internal server error" });
+    }
+});
 
-      // Check if we've sent the maximum number of messages
-      if (messageCount >= maxMessages) {
-        clearInterval(interval);
-        reply.raw.end();
-      }
-    }, 2000);
+app.get("/:videoId/like", {
+    schema: {
+        params: IdVideoSchema,
+        response: {
+            200: Type.Object({
+                success: Type.Boolean(),
+            }),
+            500: ErrorResponseSchema,
+        },
+        tags: ['Video'],
+    },
+}, async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    const { userId } = request.body as { userId: string };
+    try {
+        await VideoService.likeVideo(videoId, userId);
+        reply.send({ success: true });
+    } catch (error) {
+        reply.status(500).send({ error: "Internal server error" });
+    }
+});
 
-    // Cleanup when the client disconnects
-    request.raw.on("close", () => {
-      clearInterval(interval);
-      reply.raw.end();
-    });
+app.get("/:videoId/commit", {
+    schema: {
+        params: IdVideoSchema,
+        response: {
+            200: Type.Object({
+                success: Type.Boolean(),
+            }),
+            500: ErrorResponseSchema,
+        },
+        tags: ['Video'],
+    },
+}, async (request, reply) => {
+    const { videoId } = request.params as { videoId: string };
+    const { userId, content } = request.body as { userId: string; content: string };
+    try {
+        const comment = await VideoService.addComment(videoId, userId, content);
+        reply.send(comment);
+    } catch (error) {
+        reply.status(500).send({ error: "Internal server error" });
+    }
+});
 
-    return reply;
-  });
 }
