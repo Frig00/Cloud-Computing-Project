@@ -13,6 +13,9 @@ from enum import Enum
 from multiprocessing import Pool
 
 
+load_dotenv()
+
+
 class VideoQuality(Enum):
     LOW = ("360p", "640:360", "800k")
     SD = ("480p", "854:480", "1200k")
@@ -50,8 +53,6 @@ class VideoQuality(Enum):
         qualities = list(cls)
         return qualities[:qualities.index(quality) + 1]
 
-load_dotenv()
-
 
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST')
 QUEUE_NAME = os.getenv('QUEUE_NAME')
@@ -61,6 +62,7 @@ STATUS_QUEUE_NAME = os.getenv('STATUS_QUEUE_NAME')
 MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
 MINIO_ACCESS_KEY= os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
+
 
 # Initialize the S3 client
 s3_client = boto3.client(
@@ -82,10 +84,15 @@ def download_s3_file(object_name):
     # Temp directory to store downloaded file
     local_path = f'{temp_dir}/{file_name}'
 
-    print(f"Downloading {object_name} from S3...")
-    s3_client.download_file(S3_BUCKET_NAME, object_name, local_path)
+    try:
+        # Attempt to download the file
+        s3_client.download_file(S3_BUCKET_NAME, object_name, local_path)
+        print(f"Downloaded {object_name} to {local_path}")
+        return local_path
+    except Exception as e:
+        print(f"File {object_name} not found in bucket {S3_BUCKET_NAME} or bucket {S3_BUCKET_NAME} does not exist.")
+        return None
 
-    return local_path
 
 
 def get_total_frames(file_path):
@@ -138,11 +145,9 @@ def get_video_quality(file_path):
     
 def send_progress_to_status_queue(video_id, progress, quality):
     """Send transcoding progress to the 'video.status' queue."""
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-    channel = connection.channel()
 
-    # Declare the 'video.status' queue (if it doesn't already exist)
-    channel.queue_declare(queue=STATUS_QUEUE_NAME, durable=True)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+    channel = connection.channel()
 
     # Message structure
     message = {
@@ -308,8 +313,12 @@ def create_master_playlist(base_path: str, qualities: list[VideoQuality], output
 
 def upload_s3_file(local_path, object_name, encoded_bucked):
     """Upload file to S3 given the local path and object name."""
-    print(f"Uploading {local_path} to {object_name} on S3...")
-    s3_client.upload_file(local_path, encoded_bucked, object_name)
+
+    try:
+        s3_client.upload_file(local_path, encoded_bucked, object_name)
+        print(f"Uploaded {object_name} to S3 bucket '{encoded_bucked}'")
+    except Exception as e:
+        print(f"Bucket {encoded_bucked} does not exist or file {object_name} could not be uploaded.")
 
 
 def upload_s3_folder(local_path, object_name, encoded_bucked):
@@ -318,7 +327,11 @@ def upload_s3_folder(local_path, object_name, encoded_bucked):
             local = os.path.join(root, file)
             relative = os.path.relpath(local, local_path)
             s3_path = os.path.join(object_name, relative).replace("\\", "/")
-            s3_client.upload_file(local, encoded_bucked, s3_path)
+            try:
+                s3_client.upload_file(local, encoded_bucked, s3_path)
+                print(f"Uploaded {s3_path} to S3 bucket '{encoded_bucked}'")
+            except Exception as e:
+                print(f"Bucket {encoded_bucked} does not exist or file {s3_path} could not be uploaded.")
 
 
 def callback(ch, method, properties, body):
@@ -334,8 +347,9 @@ def callback(ch, method, properties, body):
     upload_s3_folder("./encoded/", object_name, S3_BUCKET_ENCODED_NAME)
     #os.remove(output)
     # Acknowledge message processing completion
-    ch.basic_ack(delivery_tag=method.delivery_tag)
-    print(f"Message processed and acknowledged: {object_name}")
+    ack = ch.basic_ack(delivery_tag=method.delivery_tag)
+    if ack:
+        print(f"Message processed and acknowledged: {object_name}")
 
     # Clean up after processing
     try:
@@ -362,7 +376,7 @@ def main():
 
     # Set up subscription on the queue
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback)
-
+    
     print(f"Waiting for messages in queue: {QUEUE_NAME}. To exit press CTRL+C")
     channel.start_consuming()
 
