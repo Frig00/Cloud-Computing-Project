@@ -9,3 +9,5 @@ node_modules/
 .env.*.local
 py/videos/*
 credentials.json
+compose/data/
+.DS_Store
