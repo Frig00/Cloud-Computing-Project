@@ -44,6 +44,16 @@ services:
       mc mb myminio/bucket1;
       mc mb myminio/bucket2;
       "
+  
+  transcoder:
+    build:
+      context: ../
+      dockerfile: Dockerfile.transcoder
+
+  controller:
+    build:
+      context: ../
+      dockerfile: Dockerfile.controller
  
 
     
