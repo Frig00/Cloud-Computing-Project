@@ -12,3 +12,4 @@ credentials.json
 compose/data/
 .DS_Store
 */dist/
+docker/minio
