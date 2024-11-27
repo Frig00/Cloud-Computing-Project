@@ -7,9 +7,9 @@ RUN rm -rf /var/lib/apt/lists/*
 
 
 WORKDIR /app
-COPY ./node-fastify-webapi-sample /app
+COPY . .
 
-RUN npm install
+RUN npm ci
 RUN npm run build
 
 CMD ["node","dist/index.js"]

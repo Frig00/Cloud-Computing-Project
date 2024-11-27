@@ -1,6 +1,4 @@
-
 services:
-
   rabbitmq:
     image: rabbitmq:management
     container_name: rabbitmq
@@ -8,8 +6,8 @@ services:
       - "5672:5672" # RabbitMQ default AMQP port
       - "15672:15672" # RabbitMQ management port
     volumes:
-      - ./rabbit-setup/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - ./rabbit-setup/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./src/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./src/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     environment:
       RABBITMQ_LOAD_DEFINITIONS: "true"
       RABBITMQ_DEFINITIONS_FILE: "/etc/rabbitmq/definitions.json"
@@ -26,8 +24,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - ./data:/data
-      - ./buckets:/buckets
+      - ./src/minio/data:/data
+      - ./src/minio/buckets:/buckets
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -51,9 +49,7 @@ services:
       "
   
   transcoder:
-    build:
-      context: ../
-      dockerfile: Dockerfile.transcoder
+    build: src/transcoder
     depends_on:
       minio:
         condition: service_healthy
@@ -70,11 +66,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
 
-
   controller:
-    build:
-      context: ../
-      dockerfile: Dockerfile.controller
+    build: src/controller
     environment:
       S3_REGION: eu-west-1
       S3_ENDPOINT: http://minio:9000
@@ -83,12 +76,3 @@ services:
     depends_on:
       - minio
       - rabbitmq
- 
-
-    
-
-
-
-
-
-

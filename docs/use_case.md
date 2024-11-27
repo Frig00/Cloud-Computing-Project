@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
 
 hp(Home Page)
@@ -13,9 +14,4 @@ g-->view1[view video]
 view-->c[comment]
 view-->s[share]
 view-->l[like]
-
-
-
-
-
-
+```

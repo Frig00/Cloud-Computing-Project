@@ -1,5 +1,4 @@
-
-
+```mermaid
 flowchart TD
     v("view a video") --> s("search")
     s --> se("search engine")
@@ -15,6 +14,4 @@ flowchart TD
 
     n1@{ icon: "aws:res-database", pos: "b"}
     n2@{icon: "aws:res-database",pos:"b"}
-
-
-
+```

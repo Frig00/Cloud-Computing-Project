@@ -8,8 +8,7 @@ RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-COPY ./transcoder /app
+COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
