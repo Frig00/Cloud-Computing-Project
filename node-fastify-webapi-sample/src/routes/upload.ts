@@ -54,12 +54,13 @@ export default async function uploadRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get("/sse",
+  app.get<{ Params: TranscodeVideoRequest }>("/sse/:videoID",
     {
       schema: {
         description: 'Get transcoding percentage',
         tags: ['Upload'],
         summary: 'Get transcoding percentage',
+        params: TranscodeVideoRequestSchema,
       }
     },
     async (request, reply) => {
@@ -71,38 +72,21 @@ export default async function uploadRoutes(app: FastifyInstance) {
       "Access-Control-Allow-Origin": "*",
     });
 
-    // Function to send data to the client
-    const sendSSE = (data: SSEDemoResponse) => {
-      reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
+    const { videoID } = request.params;
+    console.log(`Starting SSE for videoID: ${videoID}`);
 
-    // Send an initial message
-    sendSSE({ message: "Connected to SSE!" });
+    UploadService.consumeMessages(videoID, (message) => {
+      const messageString = `data: ${JSON.stringify(message)}\n\n`;
 
-    let messageCount = 0; // Initialize message counter
-    const maxMessages = 3; // Close connection after 3 messages
-
-    // Send messages at intervals
-    const interval = setInterval(() => {
-      messageCount += 1;
-      sendSSE({
-        message: `Message ${messageCount} from the server!`,
-        timestamp: Date.now(),
-      });
-
-      // Check if we've sent the maximum number of messages
-      if (messageCount >= maxMessages) {
-        clearInterval(interval);
-        reply.raw.end();
-      }
-    }, 2000);
-
-    // Cleanup when the client disconnects
-    request.raw.on("close", () => {
-      clearInterval(interval);
-      reply.raw.end();
+      // Log message to terminal and stream to SSE client
+      console.log("Message sent to SSE client:", message);
+      reply.raw.write(messageString);
     });
 
-    return reply;
+    // Handle client disconnection
+    request.raw.on("close", () => {
+      console.log(`SSE connection closed for videoID: ${videoID}`);
+      reply.raw.end();
+    });
   });
 }

@@ -2,7 +2,7 @@ import prisma from "../data/prisma";
 import { v4 as uuidv4 } from "uuid";
 
 export class VideoService {
-  // Upload a video
+  // Upload a video  //---> da spostare in UPLOAD
   static async uploadVideo(title: string, user: string, videoUrl: string) {
     await prisma.videos.create({
       data: {

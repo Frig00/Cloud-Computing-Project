@@ -78,8 +78,8 @@ def download_s3_file(object_name):
     file_name = object_name.split('/')[-1]  # Extract filename from object path
     # Ensure the temporary directory exists
     temp_dir = './tmp'
-    if not os.path.exists(temp_dir):
-        os.makedirs(temp_dir)
+   # if not os.path.exists(temp_dir):
+    os.makedirs(temp_dir)
 
     # Temp directory to store downloaded file
     local_path = f'{temp_dir}/{file_name}'
@@ -97,6 +97,8 @@ def download_s3_file(object_name):
 
 def get_total_frames(file_path):
     """Get the total number of frames in a video using ffprobe."""
+   
+
     try:
         result = subprocess.run(
             ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=nb_frames", "-of", "default=noprint_wrappers=1:nokey=1", file_path],

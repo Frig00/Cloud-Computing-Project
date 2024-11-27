@@ -1,11 +1,9 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { Readable } from "stream";
-import * as fs from "fs";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { spawn } from "child_process";
 import * as amqp from "amqplib";
 import * as dotenv from "dotenv";
 import * as crypto from "crypto";
+import { FastifyInstance } from "fastify";
 
 dotenv.config();
 
@@ -22,49 +20,100 @@ const s3Client = new S3Client({
 
 // UploadService class
 export class UploadService {
-  // Generate a pre-signed URL for file uploads
+  private static rabbitMQChannel: amqp.Channel;
 
-  // gt5
-  // gt5.original.mp4
-  static async getPresignedUrl() {
-    const bucketName = "video";
-    const expiresIn = 3600; // 1 hour
-
-    const videoId = this.randomString(16)
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: videoId + ".original.mp4",
-      ContentType: "video/mp4",
-    });
-
-    // Generate the pre-signed URL
-    const url = await getSignedUrl(s3Client, command, { expiresIn });
-    return {videoId, url};
+  /**
+   * Initialize RabbitMQ for publishing and consuming.
+   */
+  static async initRabbitMQ() {
+    const connection = await amqp.connect("amqp://localhost");
+    this.rabbitMQChannel = await connection.createChannel();
+    console.log("RabbitMQ initialized.");
   }
 
-  // Generate a random string
+  /**
+   * Generate a pre-signed URL for video uploads.
+   */
+  static async getPresignedUrl() {
+    try {
+      const bucketName = "video";
+      const expiresIn = 3600; // 1 hour
+
+      const videoId = this.randomString(16); // Generate unique videoId
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: `${videoId}.original.mp4`,
+        ContentType: "video/mp4",
+      });
+
+      // Generate the pre-signed URL
+      const url = await getSignedUrl(s3Client, command, { expiresIn });
+      return { videoId, url };
+    } catch (error) {
+      console.error("Error generating pre-signed URL:", error);
+      throw new Error("Could not generate pre-signed URL");
+    }
+  }
+
+  /**
+   * Generate a random string of the specified length.
+   */
   static randomString(length: number): string {
     return crypto.randomBytes(length).toString("hex").slice(0, length);
   }
 
-  // Publish video processing messages to RabbitMQ
+  /**
+   * Publish a video processing message to RabbitMQ.
+   */
   static async transcodeVideo(videoId: string) {
     try {
-      const connection = await amqp.connect("amqp://localhost");
-      const channel = await connection.createChannel();
+      if (!this.rabbitMQChannel) {
+        await this.initRabbitMQ();
+      }
       const queueName = "video.transcode";
-      const message = {videoId: videoId};
-
-      await channel.assertQueue(queueName, { durable: true });
-      channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)), {
-        contentType: "application/json",
-      });
-      console.log(`Published video ${videoId}.`);
-
-      await channel.close();
-      await connection.close();
+      const message = { videoId };
+      await this.rabbitMQChannel.assertQueue("video.transcode", { durable: true });
+      this.rabbitMQChannel.sendToQueue(
+        queueName,
+        Buffer.from(JSON.stringify(message)),
+        { contentType: "application/json" }
+      );
+  
+      console.log(`Published video processing message for videoId: ${videoId}`);
     } catch (error) {
-      console.error("Error publishing to RabbitMQ:", error);
+      console.error("Error publishing video processing message to RabbitMQ:", error);
+      throw new Error("Could not publish video processing message");
+    }
+  }
+  
+
+  /**
+   * Consume messages from RabbitMQ and filter by videoId.
+   */
+  static async consumeMessages(videoId: string, callback: (message: any) => void) {
+    try {
+      const queueName = "video.status";
+
+      this.rabbitMQChannel.consume(
+        queueName,
+        (msg) => {
+          if (msg) {
+            const content = JSON.parse(msg.content.toString());
+
+            // Filter messages by videoId
+            if (content.videoId === videoId) {
+              console.log(`Received message for videoId: ${videoId}`, content);
+              callback(content); // Trigger callback with filtered message
+            }
+
+            this.rabbitMQChannel.ack(msg); // Acknowledge the message
+          }
+        },
+        { noAck: false }
+      );
+    } catch (error) {
+      console.error("Error consuming RabbitMQ messages:", error);
+      throw new Error("Could not consume RabbitMQ messages");
     }
   }
 }
