@@ -26,7 +26,7 @@ export class UploadService {
    * Initialize RabbitMQ for publishing and consuming.
    */
   static async initRabbitMQ() {
-    const connection = await amqp.connect("amqp://localhost");
+    const connection = await amqp.connect(process.env.RABBITMQ_AMQP ?? "amqp://localhost");
     this.rabbitMQChannel = await connection.createChannel();
     console.log("RabbitMQ initialized.");
   }
@@ -71,7 +71,11 @@ export class UploadService {
         await this.initRabbitMQ();
       }
       const queueName = "video.transcode";
-      const message = { videoId };
+      const message = { 
+        videoId,
+        bucket: "video",
+        path: `${videoId}.original.mp4`,
+       };
       await this.rabbitMQChannel.assertQueue("video.transcode", { durable: true });
       this.rabbitMQChannel.sendToQueue(
         queueName,

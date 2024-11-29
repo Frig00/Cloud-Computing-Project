@@ -67,15 +67,15 @@ MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 # Initialize the S3 client
 s3_client = boto3.client(
     's3',
-    endpoint_url=f"http://{os.getenv('MINIO_ENDPOINT')}",
+    endpoint_url=MINIO_ENDPOINT,
     aws_access_key_id=MINIO_ACCESS_KEY,
     aws_secret_access_key=MINIO_SECRET_KEY,
     config=Config(signature_version="s3v4"))
 
 
-def download_s3_file(object_name):
+def download_s3_file(bucket, object_path):
     """Download file from S3 given the object name."""
-    file_name = object_name.split('/')[-1]  # Extract filename from object path
+    file_name = object_path.split('/')[-1]  # Extract filename from object path
     # Ensure the temporary directory exists
     temp_dir = './tmp'
    # if not os.path.exists(temp_dir):
@@ -86,11 +86,12 @@ def download_s3_file(object_name):
 
     try:
         # Attempt to download the file
-        s3_client.download_file(S3_BUCKET_NAME, object_name, local_path)
-        print(f"Downloaded {object_name} to {local_path}")
+        s3_client.download_file(bucket, object_path, local_path)
+        print(f"Downloaded {object_path} to {local_path}")
         return local_path
     except Exception as e:
-        print(f"File {object_name} not found in bucket {S3_BUCKET_NAME} or bucket {S3_BUCKET_NAME} does not exist.")
+        print(f"File {object_path} not found in bucket {bucket} or bucket {bucket} does not exist.")
+        print(f"Error: {e}")
         return None
 
 
@@ -172,7 +173,7 @@ def send_progress_to_status_queue(video_id, progress, quality):
     connection.close()
 
 
-def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality):
+def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality, videoId: str):
     """Transcode the video to a specific quality."""
     print(f"Transcoding to {quality.label}...")
     segmentsPath = os.path.join(base_path, quality.label)
@@ -206,7 +207,7 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
         #print(f"Progress: {percentage:.2f}% for quality: {quality.label}")
 
         # Send progress to RabbitMQ queue 'video.status'
-        send_progress_to_status_queue(file_path.split('/')[-1], percentage, quality.label)
+        send_progress_to_status_queue(videoId, percentage, quality.label)
 
     @ffmpeg.on("completed")
     def on_completed():
@@ -217,7 +218,7 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
     except Exception as e:
         print(f"Error during transcoding to {quality.label}: {e}")
 
-def process_file(file_path, output):
+def process_file(file_path, output, videoId: str):
     """Transcode the video into all qualities equal to or lower than its actual quality."""
     basePath = os.path.dirname(output)
     os.makedirs(basePath, exist_ok=True)
@@ -241,7 +242,7 @@ def process_file(file_path, output):
 
     # Create a pool of workers (one per transcoding task)
     with Pool(processes=len(qualities_to_process)) as pool:
-        pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality) for quality in qualities_to_process])
+        pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality, videoId) for quality in qualities_to_process])
 
     # Create a master playlist for all qualities
     create_master_playlist(basePath, qualities_to_process, "master.m3u8")
@@ -339,19 +340,21 @@ def upload_s3_folder(local_path, object_name, encoded_bucked):
 def callback(ch, method, properties, body):
     """Callback function for RabbitMQ consumer."""
     message = json.loads(body)
-    object_name = message['videoId']  # The S3 object name sent in the message
-    print(f"Received message with object_name: {object_name}")
+    object_id = message['videoId']  # The S3 object name sent in the message
+    object_path = message['path']  # The S3 object location sent in the message
+    object_bucket = message['bucket'] # The S3 bucket name sent in the message
+    print(f"Received message with object_name: {object_id}")
 
     # Download the file from S3 and process it
-    file_path = download_s3_file(object_name)
-    output = f"./encoded/{object_name}"
-    process_file(file_path, output)
-    upload_s3_folder("./encoded/", object_name, S3_BUCKET_ENCODED_NAME)
+    file_path = download_s3_file(object_bucket, object_path)
+    output = f"./encoded/{object_id}"
+    process_file(file_path, output, object_id)
+    upload_s3_folder("./encoded/", object_id, S3_BUCKET_ENCODED_NAME)
     #os.remove(output)
     # Acknowledge message processing completion
     ack = ch.basic_ack(delivery_tag=method.delivery_tag)
     if ack:
-        print(f"Message processed and acknowledged: {object_name}")
+        print(f"Message processed and acknowledged: {object_id}")
 
     # Clean up after processing
     try:
