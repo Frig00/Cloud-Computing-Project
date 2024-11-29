@@ -1,76 +1,20 @@
 from __future__ import annotations
-from enum import Enum
 from ffmpeg import FFmpeg, Progress
 import pika
-import boto3
-from botocore.client import Config
 import os
 import json
-from dotenv import load_dotenv
 import subprocess
 import shutil
-from enum import Enum
 from multiprocessing import Pool
-
-
-load_dotenv()
-
-
-class VideoQuality(Enum):
-    LOW = ("360p", "640:360", "800k")
-    SD = ("480p", "854:480", "1200k")
-    HD = ("720p", "1280:720", "2500k")
-    FULL_HD = ("1080p", "1920:1080", "5000k")
-    QHD = ("1440p", "2560:1440", "8000k")  # 2K
-    UHD = ("2160p", "3840:2160", "10000k")  # 4K
-
-    def __init__(self, label: str, resolution: str, bitrate: str):
-        self.label = label
-        self.resolution = resolution
-        self.bitrate = bitrate
-
-    @classmethod
-    def from_height(cls, height: int):
-        """Determine the appropriate VideoQuality based on video height."""
-        if height >= 2160:
-            return cls.UHD
-        elif height >= 1440:
-            return cls.QHD
-        elif height >= 1080:
-            return cls.FULL_HD
-        elif height >= 720:
-            return cls.HD
-        elif height >= 480:
-            return cls.SD
-        elif height >= 360:
-            return cls.LOW
-        else:
-            return None
-
-    @classmethod
-    def qualities_below(cls, quality):
-        """Return all qualities equal to or below the given quality."""
-        qualities = list(cls)
-        return qualities[:qualities.index(quality) + 1]
-
-
-RABBITMQ_HOST = os.getenv('RABBITMQ_HOST')
-QUEUE_NAME = os.getenv('QUEUE_NAME')
-S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
-S3_BUCKET_ENCODED_NAME = os.getenv('S3_BUCKET_ENCODED_NAME')
-STATUS_QUEUE_NAME = os.getenv('STATUS_QUEUE_NAME')
-MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
-MINIO_ACCESS_KEY= os.getenv("MINIO_ACCESS_KEY")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
-
-
-# Initialize the S3 client
-s3_client = boto3.client(
-    's3',
-    endpoint_url=MINIO_ENDPOINT,
-    aws_access_key_id=MINIO_ACCESS_KEY,
-    aws_secret_access_key=MINIO_SECRET_KEY,
-    config=Config(signature_version="s3v4"))
+from video_quality import VideoQuality
+from config import (
+    RABBITMQ_HOST,
+    QUEUE_NAME,
+    S3_BUCKET_NAME,
+    S3_BUCKET_ENCODED_NAME,
+    STATUS_QUEUE_NAME,
+    s3_client
+)
 
 
 def download_s3_file(bucket, object_path):
