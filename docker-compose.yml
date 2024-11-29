@@ -68,6 +68,8 @@ services:
 
   controller:
     build: src/controller
+    ports:
+     - "3000:3000"
     environment:
       S3_REGION: eu-west-1
       S3_ENDPOINT: http://minio:9000

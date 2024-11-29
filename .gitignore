@@ -13,3 +13,4 @@ compose/data/
 .DS_Store
 */dist/
 docker/minio
+src/minio/data/
