@@ -22,8 +22,8 @@ def download_s3_file(bucket, object_path):
     file_name = object_path.split('/')[-1]  # Extract filename from object path
     # Ensure the temporary directory exists
     temp_dir = './tmp'
-   # if not os.path.exists(temp_dir):
-    os.makedirs(temp_dir)
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
 
     # Temp directory to store downloaded file
     local_path = f'{temp_dir}/{file_name}'
@@ -90,11 +90,8 @@ def get_video_quality(file_path):
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
     
-def send_progress_to_status_queue(video_id, progress, quality):
+def send_progress_to_status_queue(video_id, progress, quality, mq_channel):
     """Send transcoding progress to the 'video.status' queue."""
-
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
-    channel = connection.channel()
 
     # Message structure
     message = {
@@ -104,7 +101,7 @@ def send_progress_to_status_queue(video_id, progress, quality):
     }
 
     # Publish the progress message to the queue
-    channel.basic_publish(
+    mq_channel.basic_publish(
         exchange='',
         routing_key=STATUS_QUEUE_NAME,
         body=json.dumps(message),
@@ -114,7 +111,6 @@ def send_progress_to_status_queue(video_id, progress, quality):
     )
 
     print(f"Sent progress to status queue: {message}")
-    connection.close()
 
 
 def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality, videoId: str):
@@ -123,6 +119,11 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
     segmentsPath = os.path.join(base_path, quality.label)
     os.makedirs(segmentsPath, exist_ok=True)
     video_total_frame = get_total_frames(file_path)
+
+    # Connect to RabbitMQ
+    mq_connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+    mq_channel = mq_connection.channel()
+    print(f"Connected to RabbitMQ on {RABBITMQ_HOST} for quality: {quality.label}")
 
     if quality == actual_quality:
         create_video_thumbnail(file_path, os.path.join(base_path, "thumbnail.jpg"))
@@ -151,11 +152,13 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
         #print(f"Progress: {percentage:.2f}% for quality: {quality.label}")
 
         # Send progress to RabbitMQ queue 'video.status'
-        send_progress_to_status_queue(videoId, percentage, quality.label)
+        send_progress_to_status_queue(videoId, percentage, quality.label, mq_channel)
 
     @ffmpeg.on("completed")
     def on_completed():
-        print("completed")
+        send_progress_to_status_queue(videoId, "completed", quality.label, mq_channel)
+        mq_connection.close()
+        print(f"Connection closed for quality: {quality.label}")
 
     try:
         ffmpeg.execute()
@@ -187,6 +190,7 @@ def process_file(file_path, output, videoId: str):
     # Create a pool of workers (one per transcoding task)
     with Pool(processes=len(qualities_to_process)) as pool:
         pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality, videoId) for quality in qualities_to_process])
+
 
     # Create a master playlist for all qualities
     create_master_playlist(basePath, qualities_to_process, "master.m3u8")
@@ -312,8 +316,7 @@ def callback(ch, method, properties, body):
 def main():
     """Set up RabbitMQ connection and start consuming messages."""
     # Connect to RabbitMQ
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(RABBITMQ_HOST))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
 
     # Check if the queue exists

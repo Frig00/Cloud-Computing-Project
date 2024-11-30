@@ -26,7 +26,7 @@ export class UploadService {
    * Initialize RabbitMQ for publishing and consuming.
    */
   static async initRabbitMQ() {
-    const connection = await amqp.connect(process.env.RABBITMQ_AMQP ?? "amqp://localhost");
+    const connection = await amqp.connect(process.env.RABBITMQ_AMQP!);
     this.rabbitMQChannel = await connection.createChannel();
     console.log("RabbitMQ initialized.");
   }
@@ -36,7 +36,7 @@ export class UploadService {
    */
   static async getPresignedUrl() {
     try {
-      const bucketName = "video";
+      const bucketName = process.env.S3_BUCKET_NAME!;
       const expiresIn = 3600; // 1 hour
 
       const videoId = this.randomString(16); // Generate unique videoId
@@ -70,13 +70,13 @@ export class UploadService {
       if (!this.rabbitMQChannel) {
         await this.initRabbitMQ();
       }
-      const queueName = "video.transcode";
+      const queueName = process.env.QUEUE_NAME!;
       const message = { 
         videoId,
         bucket: "video",
         path: `${videoId}.original.mp4`,
        };
-      await this.rabbitMQChannel.assertQueue("video.transcode", { durable: true });
+      await this.rabbitMQChannel.assertQueue(queueName, { durable: true });
       this.rabbitMQChannel.sendToQueue(
         queueName,
         Buffer.from(JSON.stringify(message)),
@@ -96,7 +96,7 @@ export class UploadService {
    */
   static async consumeMessages(videoId: string, callback: (message: any) => void) {
     try {
-      const queueName = "video.status";
+      const queueName = process.env.STATUS_QUEUE_NAME!;
 
       this.rabbitMQChannel.consume(
         queueName,
