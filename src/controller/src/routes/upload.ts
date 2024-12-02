@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Static, Type } from '@sinclair/typebox';
 import { UploadService } from '../services/uploadService';
+import { JWTPayload } from '../plugins/auth';
 
 
 const UploadUrlResponseSchema = Type.Object({
@@ -17,14 +18,24 @@ const SSEDemoResponseSchema = Type.Object({
   timestamp: Type.Optional(Type.Number()),
 });
 
+/*
+
+const ErrorResponseSchema = Type.Object({
+  error: Type.String(),
+});
+
+*/
+
 type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
 type SSEDemoResponse = Static<typeof SSEDemoResponseSchema>;
+// type ErrorResponse = Static<typeof ErrorResponseSchema>;
 
 export default async function uploadRoutes(app: FastifyInstance) {
 
   app.get<{Reply: UploadUrlResponse}>("/upload-url", 
     {
+      onRequest: [app.authenticate],
       schema: {
         description: 'Get a pre-signed URL for video uploads',
         tags: ['Upload'],
@@ -32,35 +43,40 @@ export default async function uploadRoutes(app: FastifyInstance) {
         response: {
           200: UploadUrlResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
       }
     },
-    async (request, reply) => {
-       const uploadInfo = await UploadService.getPresignedUrl();
-       return uploadInfo;
-  });
+    async (request, reply) => {     
+      const uploadInfo = await UploadService.getPresignedUrl();
+      return uploadInfo;
+ });
 
   app.post<{Body: TranscodeVideoRequest}>("/transcode-video",
     {
+      onRequest: [app.authenticate],
       schema: {
         description: 'Transcode a video',
         tags: ['Upload'],
         summary: 'Transcode video',
         body: TranscodeVideoRequestSchema,
+        security: [{ bearerAuth: [] }],
       }
     },
     async (request, reply) => {
-      const videoID = request.body.videoID;
-      const result = await UploadService.transcodeVideo(videoID);
-    }
+        const videoID = request.body.videoID;
+        const result = await UploadService.transcodeVideo(videoID);
+  }
   );
 
   app.get<{ Params: TranscodeVideoRequest }>("/sse/:videoID",
     {
+      onRequest: [app.authenticate],
       schema: {
         description: 'Get transcoding percentage',
         tags: ['Upload'],
         summary: 'Get transcoding percentage',
         params: TranscodeVideoRequestSchema,
+        security: [{ bearerAuth: [] }],
       }
     },
     async (request, reply) => {
