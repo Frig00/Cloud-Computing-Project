@@ -63,20 +63,13 @@ const AllInfosVideoSchema = Type.Object({
     //aggiumgere commenti like views
 });
 
-const IdVideoSchema =  Type.Object({id: Type.String()});
-const TitleVideoSchema =  Type.Object({title: Type.String()});
+const IdVideoSchema =  Type.Object({videoId: Type.String()});
+const TitleVideoSchema =  Type.Object({q: Type.String()});
 
-type LoginRequest = Static<typeof LoginRequestSchema>;
-type LoginResponse = Static<typeof LoginResponseSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
-type SignUpRequest = Static<typeof SignUpRequestSchema>;
-type SignUpResponse = Static<typeof SignUpResponseSchema>;
-type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
-type UpdateUserResponse = Static<typeof UpdateUserResponseSchema>;
 type AllInfosVideo = Static<typeof AllInfosVideoSchema>;
 type FindVideo = Static<typeof FindVideoSchema>;
-type IdVideo = Static<typeof IdVideoSchema>;
-type TitleVideo = Static<typeof TitleVideoSchema>;
+
 
 export default async function videoRoutes(app: FastifyInstance) {
 //videoService
@@ -125,7 +118,7 @@ app.get<{Reply: AllInfosVideo | ErrorResponse}>("/:videoId", {
 //video search by string endpoint
 app.post<{Reply: FindVideo | ErrorResponse}>("/search", {
     schema: {
-        params: TitleVideoSchema,
+        querystring: TitleVideoSchema,
         response: {
             200: FindVideoSchema,
             400: ErrorResponseSchema,
@@ -135,14 +128,14 @@ app.post<{Reply: FindVideo | ErrorResponse}>("/search", {
         tags: ['Video'],
     },
 }, async (request, reply) => {
-    const { title } = request.params as { title: string };
+    const { q } = request.query as { q: string };
 
-    if (!title.trim()) {
+    if (!q.trim()) {
         reply.status(400).send({ error: "Invalid search query" });
         return;
     }
 
-    const searchWords = title.split(/\s+/); // Split input into words
+    const searchWords = q.split(/\s+/); // Split input into words
     console.log("Search words:", searchWords);
 
     try {
@@ -160,6 +153,7 @@ app.post<{Reply: FindVideo | ErrorResponse}>("/search", {
 
 app.get("/:videoId/like", {
     schema: {
+        
         params: IdVideoSchema,
         response: {
             200: Type.Object({
