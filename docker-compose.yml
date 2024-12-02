@@ -77,6 +77,8 @@ services:
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       RABBITMQ_AMQP: amqp://rabbitmq
+      QUEUE_NAME: ${QUEUE_NAME}
+      STATUS_QUEUE_NAME: ${STATUS_QUEUE_NAME}
     depends_on:
       - minio
       - rabbitmq

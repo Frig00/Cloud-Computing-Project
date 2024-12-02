@@ -24,7 +24,7 @@ export interface AuthLoginPostRequest {
      * @type {string}
      * @memberof AuthLoginPostRequest
      */
-    username: string;
+    userId: string;
     /**
      * 
      * @type {string}
@@ -37,7 +37,7 @@ export interface AuthLoginPostRequest {
  * Check if a given object implements the AuthLoginPostRequest interface.
  */
 export function instanceOfAuthLoginPostRequest(value: object): value is AuthLoginPostRequest {
-    if (!('username' in value) || value['username'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('password' in value) || value['password'] === undefined) return false;
     return true;
 }
@@ -52,7 +52,7 @@ export function AuthLoginPostRequestFromJSONTyped(json: any, ignoreDiscriminator
     }
     return {
         
-        'username': json['username'],
+        'userId': json['userId'],
         'password': json['password'],
     };
 }
@@ -68,7 +68,7 @@ export function AuthLoginPostRequestToJSONTyped(value?: AuthLoginPostRequest | n
 
     return {
         
-        'username': value['username'],
+        'userId': value['userId'],
         'password': value['password'],
     };
 }

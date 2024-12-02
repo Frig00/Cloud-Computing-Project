@@ -49,11 +49,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 
-export default function SignIn() {
-  const [emailError, setEmailError] = useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
+export default function Login() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const auth = useAuth();
@@ -71,12 +67,12 @@ export default function SignIn() {
     const data = new FormData(event.currentTarget);
 
 
-    const authApi = new AuthApi(new Configuration({ basePath: 'http://localhost:3000' }));
+    const authApi = new AuthApi();
     try {
       var res = await authApi.authLoginPost({
         authLoginPostRequest:
         {
-          username: data.get('email') as string,
+          userId: data.get('username') as string,
           password: data.get('password') as string
         }
       });
@@ -120,39 +116,24 @@ export default function SignIn() {
           }}
         >
           <FormControl>
-            <FormLabel htmlFor="email">Email</FormLabel>
+            <FormLabel htmlFor="username">Username</FormLabel>
             <TextField
-              error={emailError}
-              helperText={emailErrorMessage}
-              id="email"
-              type="email"
-              name="email"
-              placeholder="your@email.com"
-              autoComplete="email"
+              id="username"
+              type="username"
+              name="username"
+              placeholder="jeff"
+              autoComplete="username"
               autoFocus
               required
               fullWidth
               variant="outlined"
-              color={emailError ? 'error' : 'primary'}
-              sx={{ ariaLabel: 'email' }}
+              color="primary"
+              sx={{ ariaLabel: 'username' }}
             />
           </FormControl>
           <FormControl>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <FormLabel htmlFor="password">Password</FormLabel>
-              <Link
-                component="button"
-                type="button"
-                onClick={handleClickOpen}
-                variant="body2"
-                sx={{ alignSelf: 'baseline' }}
-              >
-                Forgot your password?
-              </Link>
-            </Box>
+          <FormLabel htmlFor="password">Password</FormLabel>
             <TextField
-              error={passwordError}
-              helperText={passwordErrorMessage}
               name="password"
               placeholder="••••••"
               type="password"
@@ -162,13 +143,9 @@ export default function SignIn() {
               required
               fullWidth
               variant="outlined"
-              color={passwordError ? 'error' : 'primary'}
+              color="primary"
             />
           </FormControl>
-          <FormControlLabel
-            control={<Checkbox value="remember" color="primary" />}
-            label="Remember me"
-          />
           <Button
             type="submit"
             fullWidth

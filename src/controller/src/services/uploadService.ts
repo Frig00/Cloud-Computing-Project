@@ -96,6 +96,11 @@ export class UploadService {
    */
   static async consumeMessages(videoId: string, callback: (message: any) => void) {
     try {
+
+      if (!this.rabbitMQChannel) {
+        await this.initRabbitMQ();
+      }
+
       const queueName = process.env.STATUS_QUEUE_NAME!;
 
       this.rabbitMQChannel.consume(

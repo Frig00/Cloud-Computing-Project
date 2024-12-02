@@ -1,9 +1,5 @@
 import { useState } from "react";
-
-import Button from "@mui/material/Button";
-import { Link, Outlet } from "react-router-dom";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
 import {
   alpha,
@@ -20,9 +16,12 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
+import { useAuth } from "./services/authService";
 
 function App() {
-  const [count, setCount] = useState(0);
+
+  const auth = useAuth();
+  const navigate = useNavigate();
 
   const SearchIconWrapper = styled("div")(({ theme }) => ({
     padding: theme.spacing(0, 2),
@@ -74,6 +73,13 @@ function App() {
     setAnchorEl(null);
   };
 
+
+  const logout = () => {
+    handleMenuClose();
+    auth.logout();
+    navigate("/");
+  }
+
   const menuId = "primary-search-account-menu";
   const isMenuOpen = Boolean(anchorEl);
   const renderMenu = (
@@ -92,7 +98,7 @@ function App() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+      <MenuItem onClick={logout}>Logout</MenuItem>
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
     </Menu>
   );
@@ -117,7 +123,7 @@ function App() {
               />
             </Search>
             <div className="actions">
-            <Link to="/sign-in">
+            <Link to="/login">
                 <IconButton aria-label="login" size="large" color="inherit">
                   <LogInIcon />
                 </IconButton>

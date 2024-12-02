@@ -10,7 +10,7 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import VideoThumbnail from "./components/VideoThumbnail.tsx";
 import { Box, Container } from "@mui/material";
-import SignIn from "./SignIn.tsx";
+import Login from "./Login.tsx";
 import SignUp from "./SignUp.tsx";
 import Watch from "./Watch.tsx";
 import Upload from "./Upload.tsx";
@@ -51,7 +51,7 @@ createRoot(document.getElementById("root")!).render(
           <CssBaseline />
           <BrowserRouter basename="/cloudwatch-web">
             <Routes>
-              <Route path="/sign-in" element={<SignIn />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/sign-up" element={<SignUp />} />
               <Route path="/bench" element={<Bench />} />
               <Route path="/" element={<App />} errorElement={<ErrorPage />}>

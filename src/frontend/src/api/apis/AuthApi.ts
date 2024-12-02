@@ -18,8 +18,9 @@ import type {
   AuthLoginPost200Response,
   AuthLoginPost500Response,
   AuthLoginPostRequest,
+  AuthSignupPost200Response,
+  AuthSignupPost500Response,
   AuthSignupPostRequest,
-  AuthUserUserIdGet200Response,
   Get200Response,
 } from '../models/index';
 import {
@@ -29,10 +30,12 @@ import {
     AuthLoginPost500ResponseToJSON,
     AuthLoginPostRequestFromJSON,
     AuthLoginPostRequestToJSON,
+    AuthSignupPost200ResponseFromJSON,
+    AuthSignupPost200ResponseToJSON,
+    AuthSignupPost500ResponseFromJSON,
+    AuthSignupPost500ResponseToJSON,
     AuthSignupPostRequestFromJSON,
     AuthSignupPostRequestToJSON,
-    AuthUserUserIdGet200ResponseFromJSON,
-    AuthUserUserIdGet200ResponseToJSON,
     Get200ResponseFromJSON,
     Get200ResponseToJSON,
 } from '../models/index';
@@ -128,7 +131,7 @@ export class AuthApi extends runtime.BaseAPI {
      * User sign up
      * Sign up endpoint
      */
-    async authSignupPostRaw(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthUserUserIdGet200Response>> {
+    async authSignupPostRaw(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthSignupPost200Response>> {
         if (requestParameters['authSignupPostRequest'] == null) {
             throw new runtime.RequiredError(
                 'authSignupPostRequest',
@@ -150,14 +153,14 @@ export class AuthApi extends runtime.BaseAPI {
             body: AuthSignupPostRequestToJSON(requestParameters['authSignupPostRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => AuthUserUserIdGet200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuthSignupPost200ResponseFromJSON(jsonValue));
     }
 
     /**
      * User sign up
      * Sign up endpoint
      */
-    async authSignupPost(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthUserUserIdGet200Response> {
+    async authSignupPost(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthSignupPost200Response> {
         const response = await this.authSignupPostRaw(requestParameters, initOverrides);
         return await response.value();
     }

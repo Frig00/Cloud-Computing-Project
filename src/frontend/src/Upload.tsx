@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import { Container, Stack, styled, useTheme } from "@mui/system";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { UploadApi } from "./api";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 const DropZone = styled(Paper)(({ theme }) => ({
   border: `2px dashed ${theme.palette.primary.main}`,
@@ -36,10 +38,12 @@ export default function Component() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const theme = useTheme();
 
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadDeterminate, setUploadDeterminate] = useState(true);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +77,70 @@ export default function Component() {
   const handleCancel = () => {
     setFile(null);
   };
+
+
+  const onUpload = async () => {
+    if (!file) return;
+    setUploadDeterminate(false);
+    const uploadApi = new UploadApi();
+    var { url, videoId } = await uploadApi.uploadUploadUrlGet();
+    
+    url = url.replace("minio:9000", "localhost:9005"); //TEMPORARY, just for local testing
+
+    
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+        redirect: "follow",
+      }).then((response) => console.log(response));
+
+
+      const upload = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", url);
+        xhr.setRequestHeader("Content-Type", file.type);
+  
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setUploadDeterminate(true);
+            setUploadProgress(percentComplete);
+          }
+        };
+  
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            resolve(true);
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        };
+  
+        xhr.onerror = () => {
+          reject(new Error("XHR request failed"));
+        };
+  
+        xhr.send(file);
+      });
+
+      await upload;
+      
+
+      await uploadApi.uploadTranscodeVideoPost({uploadTranscodeVideoPostRequest: {videoID: videoId}});
+
+      fetchEventSource(`http://localhost:3000/upload/sse/${videoId}`, {
+        onmessage(ev) {
+            console.log(ev.data);
+        }
+    });
+
+
+  }
+
 
   return (
     <Container maxWidth="md">
@@ -120,9 +188,10 @@ export default function Component() {
                     <Button
                       variant="contained"
                       color="primary"
-                      disabled={file != null}
+                      onClick={onUpload}
+                      disabled={file == null}
                     >
-                      Publish
+                      Upload
                     </Button>
                     <Button
                       variant="contained"
@@ -138,7 +207,7 @@ export default function Component() {
                       Upload Progress
                     </Typography>
                     <LinearProgress
-                      variant="determinate"
+                      variant={uploadDeterminate ? "determinate" : "indeterminate"}
                       value={uploadProgress}
                     />
                   </Box>

@@ -15,18 +15,33 @@
 
 import * as runtime from '../runtime';
 import type {
-  VideoTranscodeVideoPostRequest,
-  VideoUploadUrlGet200Response,
+  AuthLoginPost500Response,
+  UserUpdatePut200Response,
+  VideoAllVideosGet200ResponseInner,
 } from '../models/index';
 import {
-    VideoTranscodeVideoPostRequestFromJSON,
-    VideoTranscodeVideoPostRequestToJSON,
-    VideoUploadUrlGet200ResponseFromJSON,
-    VideoUploadUrlGet200ResponseToJSON,
+    AuthLoginPost500ResponseFromJSON,
+    AuthLoginPost500ResponseToJSON,
+    UserUpdatePut200ResponseFromJSON,
+    UserUpdatePut200ResponseToJSON,
+    VideoAllVideosGet200ResponseInnerFromJSON,
+    VideoAllVideosGet200ResponseInnerToJSON,
 } from '../models/index';
 
-export interface VideoTranscodeVideoPostOperationRequest {
-    videoTranscodeVideoPostRequest: VideoTranscodeVideoPostRequest;
+export interface VideoSearchPostRequest {
+    q: string;
+}
+
+export interface VideoVideoIdCommitGetRequest {
+    videoId: string;
+}
+
+export interface VideoVideoIdGetRequest {
+    videoId: string;
+}
+
+export interface VideoVideoIdLikeGetRequest {
+    videoId: string;
 }
 
 /**
@@ -35,41 +50,71 @@ export interface VideoTranscodeVideoPostOperationRequest {
 export class VideoApi extends runtime.BaseAPI {
 
     /**
-     * Get transcoding percentage
-     * Get transcoding percentage
      */
-    async videoSseGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async videoAllVideosGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/video/sse`,
+            path: `/video/all videos`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(VideoAllVideosGet200ResponseInnerFromJSON));
     }
 
     /**
-     * Get transcoding percentage
-     * Get transcoding percentage
      */
-    async videoSseGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.videoSseGetRaw(initOverrides);
+    async videoAllVideosGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
+        const response = await this.videoAllVideosGetRaw(initOverrides);
+        return await response.value();
     }
 
     /**
-     * Transcode a video
-     * Transcode video
      */
-    async videoTranscodeVideoPostRaw(requestParameters: VideoTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['videoTranscodeVideoPostRequest'] == null) {
+    async videoSearchPostRaw(requestParameters: VideoSearchPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
+        if (requestParameters['q'] == null) {
             throw new runtime.RequiredError(
-                'videoTranscodeVideoPostRequest',
-                'Required parameter "videoTranscodeVideoPostRequest" was null or undefined when calling videoTranscodeVideoPost().'
+                'q',
+                'Required parameter "q" was null or undefined when calling videoSearchPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/video/search`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(VideoAllVideosGet200ResponseInnerFromJSON));
+    }
+
+    /**
+     */
+    async videoSearchPost(requestParameters: VideoSearchPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
+        const response = await this.videoSearchPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async videoVideoIdCommitGetRaw(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserUpdatePut200Response>> {
+        if (requestParameters['videoId'] == null) {
+            throw new runtime.RequiredError(
+                'videoId',
+                'Required parameter "videoId" was null or undefined when calling videoVideoIdCommitGet().'
             );
         }
 
@@ -77,52 +122,82 @@ export class VideoApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        headerParameters['Content-Type'] = 'application/json';
-
         const response = await this.request({
-            path: `/video/transcode-video`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: VideoTranscodeVideoPostRequestToJSON(requestParameters['videoTranscodeVideoPostRequest']),
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Transcode a video
-     * Transcode video
-     */
-    async videoTranscodeVideoPost(requestParameters: VideoTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.videoTranscodeVideoPostRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Get a pre-signed URL for video uploads
-     * Get pre-signed URL
-     */
-    async videoUploadUrlGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoUploadUrlGet200Response>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/video/upload-url`,
+            path: `/video/{videoId}/commit`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => VideoUploadUrlGet200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserUpdatePut200ResponseFromJSON(jsonValue));
     }
 
     /**
-     * Get a pre-signed URL for video uploads
-     * Get pre-signed URL
      */
-    async videoUploadUrlGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoUploadUrlGet200Response> {
-        const response = await this.videoUploadUrlGetRaw(initOverrides);
+    async videoVideoIdCommitGet(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserUpdatePut200Response> {
+        const response = await this.videoVideoIdCommitGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async videoVideoIdGetRaw(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoAllVideosGet200ResponseInner>> {
+        if (requestParameters['videoId'] == null) {
+            throw new runtime.RequiredError(
+                'videoId',
+                'Required parameter "videoId" was null or undefined when calling videoVideoIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/video/{videoId}`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => VideoAllVideosGet200ResponseInnerFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async videoVideoIdGet(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoAllVideosGet200ResponseInner> {
+        const response = await this.videoVideoIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async videoVideoIdLikeGetRaw(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserUpdatePut200Response>> {
+        if (requestParameters['videoId'] == null) {
+            throw new runtime.RequiredError(
+                'videoId',
+                'Required parameter "videoId" was null or undefined when calling videoVideoIdLikeGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/video/{videoId}/like`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserUpdatePut200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async videoVideoIdLikeGet(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserUpdatePut200Response> {
+        const response = await this.videoVideoIdLikeGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
