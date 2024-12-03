@@ -1,49 +1,9 @@
 import { FastifyInstance } from "fastify";
-
 import { Static, Type } from "@sinclair/typebox";
-import { UserService } from "../services/userService";
-import { UploadService } from "../services/uploadService";
 import { VideoService } from "../services/videoService";
-import { JWTPayload } from "../plugins/auth";
-
-const LoginRequestSchema = Type.Object({
-  userId: Type.String(),
-  password: Type.String(),
-});
-
-const LoginResponseSchema = Type.Object({
-  token: Type.String(),
-});
 
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
-});
-
-const SignUpRequestSchema = Type.Object({
-  userId: Type.String(),
-  password: Type.String(),
-  name: Type.String(),
-});
-
-const SignUpResponseSchema = Type.Object({
-  userId: Type.String(),
-  name: Type.String()
-});
-
-const SuccessUpdateUserSchema = Type.Object({
-  success: Type.Boolean(),
-});
-
-
-const UpdateUserBodySchema = Type.Object({
-  name: Type.Optional(Type.String()),
-  password: Type.Optional(Type.String()),
-});
-
-const UpdateUserResponseSchema = Type.Object({
-  userId: Type.String(),
-  name: Type.String(),
-  password: Type.String(),
 });
 
 const FindVideoSchema =Type.Array(Type.Object({
@@ -75,11 +35,11 @@ export default async function videoRoutes(app: FastifyInstance) {
 //videoService
 app.get<{Reply: FindVideo | ErrorResponse}>("/all-videos", {
     schema: {
+        tags: ['Video'],
         response: {
             200: FindVideoSchema,
             500: ErrorResponseSchema,
         },
-        tags: ['Video'],
     },
 }, async (_, reply) => {
     try {
@@ -156,9 +116,7 @@ app.get("/:videoId/like", {
         
         params: IdVideoSchema,
         response: {
-            200: Type.Object({
-                success: Type.Boolean(),
-            }),
+            200: {},
             500: ErrorResponseSchema,
         },
         tags: ['Video'],
@@ -178,9 +136,7 @@ app.get("/:videoId/commit", {
     schema: {
         params: IdVideoSchema,
         response: {
-            200: Type.Object({
-                success: Type.Boolean(),
-            }),
+            200: {},
             500: ErrorResponseSchema,
         },
         tags: ['Video'],

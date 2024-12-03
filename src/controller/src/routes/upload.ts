@@ -19,14 +19,8 @@ const TranscodeVideoResponseSchema =  Type.Object({
   success: Type.String(),
 })
 
-const SSEDemoResponseSchema = Type.Object({
-  message: Type.String(),
-  timestamp: Type.Optional(Type.Number()),
-});
-
 type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
-type SSEDemoResponse = Static<typeof SSEDemoResponseSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type TranscodeVideoResponse = Static<typeof TranscodeVideoResponseSchema>;
 
@@ -44,8 +38,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-       const uploadInfo = await UploadService.getPresignedUrl();
-       return uploadInfo;
+       return await UploadService.getPresignedUrl();
   });
 
   app.post<{ Body: TranscodeVideoRequest; Reply: TranscodeVideoResponse | ErrorResponse }>(

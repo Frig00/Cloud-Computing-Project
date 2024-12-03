@@ -23,6 +23,8 @@ const UpdateUserBodySchema = Type.Object({
   password: Type.Optional(Type.String()),
 });
 
+
+type SuccessUpdateUser = Static<typeof SuccessUpdateUserSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type SignUpResponse = Static<typeof SignUpResponseSchema>;
 type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
@@ -30,8 +32,7 @@ type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
 export default async function userRoutes(app: FastifyInstance) {
 
   //update user profile endpoint
-  app.put<{ Body: UpdateUserBody; Reply: { message: string } | Static<typeof ErrorResponseSchema>;}>(
-    "/update",
+  app.put<{ Body: UpdateUserBody; Reply: ErrorResponse}>("/",
     {
       onRequest: [app.authenticate],
       schema: {
@@ -40,7 +41,7 @@ export default async function userRoutes(app: FastifyInstance) {
         summary: "Update user profile endpoint",
         body: UpdateUserBodySchema,
         response: {
-          200: SuccessUpdateUserSchema,
+          200: {},
           401: ErrorResponseSchema,
           404: ErrorResponseSchema,
           500: ErrorResponseSchema,
@@ -55,30 +56,22 @@ export default async function userRoutes(app: FastifyInstance) {
 
       try {
         const updatedUser = await UserService.updateUserProfile(userId, request.body, app);
-        reply.status(200).send({ message: "Profile updated" });
+        reply.status(200).send();
         //return { message: "Profile updated" };
-      } catch (error) {
-        console.error("Error updating user profile:", error);
-        if (error instanceof Error && error.message === "User not found") {
-          reply.status(404).send({ error: error.message });
-        } else if (error instanceof Error && error.message === "Unauthorized") {
-          reply.status(401).send({ error: error.message });
-        } else {
-          reply.status(500).send({ error: "Error updating user profile!!" });
-        }
+      } catch (err) {
+        reply.status(400).send({error: err instanceof Error ? err.message : 'Unknown error'});
       }
     }
   );
   
   //get user ID endpoint
-  app.get<{Reply: SignUpResponse | ErrorResponse }>(
-    "/get-ID",
+  app.get<{Reply: SignUpResponse | ErrorResponse }>("/",
     {
       onRequest: [app.authenticate],
       schema: {
-        description: "Get user by ID",
+        description: "Get currrent user",
         tags: ["User"],
-        summary: "Get user by ID endpoint",
+        summary: "Get current user",
         response: {
           200: SignUpResponseSchema,
           401: ErrorResponseSchema,
@@ -104,14 +97,13 @@ export default async function userRoutes(app: FastifyInstance) {
   );
 
   //delete user endpoint
-  app.delete<{Reply: { success: boolean } | ErrorResponse }>(
-    "/delete",
+  app.delete<{Reply: ErrorResponse }>("/",
     {
       onRequest: [app.authenticate],
       schema: {
-        description: "Delete user by ID",
+        description: "Delete current user",
         tags: ["User"],
-        summary: "Delete user endpoint",
+        summary: "Delete current user",
         response: {
           200: Type.Object({
             success: Type.Boolean(),
@@ -128,7 +120,7 @@ export default async function userRoutes(app: FastifyInstance) {
       const userId = jwt.id;
       try {
         await UserService.deleteUser(userId);
-        return { success: true };
+        reply.status(200).send();
       } catch (error) {
         console.error("Error deleting user:", error);
         if (error instanceof Error && error.message === "User not found") {

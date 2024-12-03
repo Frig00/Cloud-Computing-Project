@@ -34,9 +34,7 @@ export class VideoService {
 
   // Search for videos by title
   static async searchVideos(words: string[]) {
-    if (words.length === 0) {
-      throw new Error("Empty search words"); // Guard against empty input
-    }
+    if (words.length === 0) throw new Error("Empty search words"); // Guard against empty input
   
     const searchConditions = words.map((word) => ({
       title: {
