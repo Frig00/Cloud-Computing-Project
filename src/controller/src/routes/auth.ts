@@ -45,7 +45,8 @@ export default async function authRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { userId, password } = request.body;
       try {
-        return await UserService.login(userId, password, app);
+        const token = await UserService.login(userId, password, app);
+        return { token };
       } catch (error) {
           reply.status(500).send({ error: "Error logging in (username or password wrong)" });
         }
