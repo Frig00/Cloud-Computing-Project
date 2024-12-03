@@ -21,11 +21,11 @@ services:
     image: minio/minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
     ports:
-      - "9001:9001"
       - "9000:9000"
+      - "9001:9001"
     volumes:
       - ./src/minio/data:/data
       - ./src/minio/buckets:/buckets
@@ -41,7 +41,7 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c "
-      until (mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}); do
+      until (mc alias set myminio http://minio:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY}); do
         sleep 3;
       done;
       mc mb myminio/video;
@@ -55,28 +55,27 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
     environment:
-      RABBITMQ_HOST: rabbitmq
-      QUEUE_NAME : video.transcode
-      S3_BUCKET_NAME: video
-      S3_BUCKET_ENCODED_NAME: video-encoded
-      STATUS_QUEUE_NAME: video.status
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      TRANSCODE_QUEUE_NAME : ${TRANSCODE_QUEUE_NAME}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_BUCKET_ENCODED_NAME: ${S3_BUCKET_ENCODED_NAME}
+      STATUS_QUEUE_NAME: ${STATUS_QUEUE_NAME}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      
   controller:
     build: src/controller
     ports:
      - "3000:3000"
     environment:
-      S3_REGION: eu-west-1
-      S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_REGION: ${S3_REGION}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      RABBITMQ_AMQP: amqp://rabbitmq
+      RABBITMQ_AMQP: ${RABBITMQ_AMQP}
       QUEUE_NAME: ${QUEUE_NAME}
       STATUS_QUEUE_NAME: ${STATUS_QUEUE_NAME}
     depends_on:

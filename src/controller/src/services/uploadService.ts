@@ -70,7 +70,7 @@ export class UploadService {
       if (!this.rabbitMQChannel) {
         await this.initRabbitMQ();
       }
-      const queueName = process.env.QUEUE_NAME!;
+      const queueName = process.env.TRANSCODE_QUEUE_NAME!;
       const message = { 
         videoId,
         bucket: "video",

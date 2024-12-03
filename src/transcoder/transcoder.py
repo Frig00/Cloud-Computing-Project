@@ -9,7 +9,7 @@ from multiprocessing import Pool, Manager
 from video_quality import VideoQuality
 from config import (
     RABBITMQ_HOST,
-    QUEUE_NAME,
+    TRANSCODE_QUEUE_NAME,
     S3_BUCKET_NAME,
     S3_BUCKET_ENCODED_NAME,
     STATUS_QUEUE_NAME,
@@ -340,20 +340,22 @@ def callback(ch, method, properties, body):
 def main():
     """Set up RabbitMQ connection and start consuming messages."""
     # Connect to RabbitMQ
+
+    print(f"Connecting to RabbitMQ on {RABBITMQ_HOST}...")
     connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
 
     # Check if the queue exists
     try:
-        channel.queue_declare(queue=QUEUE_NAME, passive=True)
+        channel.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
     except pika.exceptions.ChannelClosedByBroker:
-        print(f"Queue '{QUEUE_NAME}' does not exist.")
+        print(f"Queue '{TRANSCODE_QUEUE_NAME}' does not exist.")
         return
 
     # Set up subscription on the queue
-    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback)
+    channel.basic_consume(queue=TRANSCODE_QUEUE_NAME, on_message_callback=callback)
     
-    print(f"Waiting for messages in queue: {QUEUE_NAME}. To exit press CTRL+C")
+    print(f"Waiting for messages in queue: {TRANSCODE_QUEUE_NAME}. To exit press CTRL+C")
     channel.start_consuming()
 
 

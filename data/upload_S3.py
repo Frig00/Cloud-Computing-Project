@@ -11,9 +11,9 @@ from enum import Enum
 load_dotenv()
 
 # Configure your MinIO connection details
-minio_endpoint = "localhost:9000"  # Replace with your MinIO server endpoint
-access_key = os.getenv("MINIO_ACCESS_KEY")                  # Replace with your MinIO access key
-secret_key = os.getenv("MINIO_SECRET_KEY")                  # Replace with your MinIO secret key
+S3_ENDPOINT = "localhost:9000"  # Replace with your MinIO server endpoint
+access_key = os.getenv("S3_ACCESS_KEY")                  # Replace with your MinIO access key
+secret_key = os.getenv("S3_SECRET_KEY")                  # Replace with your MinIO secret key
 
 print("Access key: " + access_key)
 print("Secret key: " + secret_key + "\n\n")
@@ -21,7 +21,7 @@ print("Secret key: " + secret_key + "\n\n")
 # Initialize the S3 client
 s3_client = boto3.client(
     's3',
-    endpoint_url=f"http://{minio_endpoint}",
+    endpoint_url=f"http://{S3_ENDPOINT}",
     aws_access_key_id=access_key,
     aws_secret_access_key=secret_key,
     config=Config(signature_version="s3v4")
