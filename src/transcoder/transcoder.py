@@ -39,24 +39,44 @@ def download_s3_file(bucket, object_path):
         return None
 
 
-
 def get_total_frames(file_path):
     """Get the total number of frames in a video using ffprobe."""
-   
+    
+    def get_frames_by_duration_and_fps():
+        """Calculate frames using video duration and frame rate."""
+        duration_result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=duration", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        duration = float(duration_result.stdout.decode('utf-8').strip())
+        
+        fps_result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=avg_frame_rate", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        fps_str = fps_result.stdout.decode('utf-8').strip()
+        fps_parts = fps_str.split('/')
+        fps = float(fps_parts[0]) / float(fps_parts[1]) if len(fps_parts) == 2 else float(fps_str)
+        
+        return int(duration * fps)
 
     try:
         result = subprocess.run(
-            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=nb_frames", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries", "stream=nb_read_packets", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         frames = result.stdout.decode('utf-8').strip()
-        if frames:
+        if frames and frames != 'N/A':
             return int(frames)
         else:
-            raise ValueError("Could not retrieve the total number of frames.")
+            return get_frames_by_duration_and_fps()
     except Exception as e:
         print(f"Error getting total frames: {e}")
-        return 0
+        try:
+            return get_frames_by_duration_and_fps()
+        except Exception as e:
+            print(f"Error calculating frames from duration and fps: {e}")
+            return 0
 
 def get_video_quality(file_path):
     # Get the resolution-based quality of a video using ffprobe and map to VideoQuality.
@@ -89,28 +109,6 @@ def get_video_quality(file_path):
     except Exception as e:
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
-    
-def send_progress_to_status_queue(video_id, progress, quality, mq_channel):
-    """Send transcoding progress to the 'video.status' queue."""
-
-    # Message structure
-    message = {
-        "videoId": video_id,
-        "quality": quality,
-        "progress": progress
-    }
-
-    # Publish the progress message to the queue
-    mq_channel.basic_publish(
-        exchange='',
-        routing_key=STATUS_QUEUE_NAME,
-        body=json.dumps(message),
-        properties=pika.BasicProperties(
-            delivery_mode=2,  # Make the message persistent
-        )
-    )
-
-    print(f"Sent progress to status queue: {message}")
 
 def send_combined_progress(video_id, progress_dict, mq_channel):
     """Send combined transcoding progress for all qualities."""
@@ -344,6 +342,7 @@ def main():
     print(f"Connecting to RabbitMQ on {RABBITMQ_HOST}...")
     connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
+    print(f"Connected to RabbitMQ on {RABBITMQ_HOST}")
 
     # Check if the queue exists
     try:
