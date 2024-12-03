@@ -5,7 +5,7 @@ import os
 import json
 import subprocess
 import shutil
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 from video_quality import VideoQuality
 from config import (
     RABBITMQ_HOST,
@@ -112,8 +112,24 @@ def send_progress_to_status_queue(video_id, progress, quality, mq_channel):
 
     print(f"Sent progress to status queue: {message}")
 
+def send_combined_progress(video_id, progress_dict, mq_channel):
+    """Send combined transcoding progress for all qualities."""
+    message = {
+        "videoId": video_id,
+        "progress": progress_dict.copy()  # Create a copy of the dict to avoid any threading issues
+    }
 
-def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality, videoId: str):
+    mq_channel.basic_publish(
+        exchange='',
+        routing_key=STATUS_QUEUE_NAME,
+        body=json.dumps(message),
+        properties=pika.BasicProperties(
+            delivery_mode=2,
+        )
+    )
+    print(f"Sent combined progress: {message}")
+
+def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality, videoId: str, shared_progress):
     """Transcode the video to a specific quality."""
     print(f"Transcoding to {quality.label}...")
     segmentsPath = os.path.join(base_path, quality.label)
@@ -127,6 +143,9 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
 
     if quality == actual_quality:
         create_video_thumbnail(file_path, os.path.join(base_path, "thumbnail.jpg"))
+
+    # Initialize progress for this quality
+    shared_progress[quality.label] = 0
 
     # Configure FFmpeg command for transcoding
     ffmpeg = (
@@ -149,14 +168,15 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
     @ffmpeg.on("progress")
     def on_progress(progress: Progress):
         percentage = int((float(progress.frame) / video_total_frame) * 100)
-        #print(f"Progress: {percentage:.2f}% for quality: {quality.label}")
-
-        # Send progress to RabbitMQ queue 'video.status'
-        send_progress_to_status_queue(videoId, percentage, quality.label, mq_channel)
+        # Update progress in shared dictionary
+        shared_progress[quality.label] = percentage
+        # Send combined progress
+        send_combined_progress(videoId, shared_progress, mq_channel)
 
     @ffmpeg.on("completed")
     def on_completed():
-        send_progress_to_status_queue(videoId, "completed", quality.label, mq_channel)
+        shared_progress[quality.label] = 100
+        send_combined_progress(videoId, shared_progress, mq_channel)
         mq_connection.close()
         print(f"Connection closed for quality: {quality.label}")
 
@@ -187,9 +207,13 @@ def process_file(file_path, output, videoId: str):
     # Transcode to all qualities below or equal to the actual quality in parallel
     qualities_to_process = VideoQuality.qualities_below(actual_quality)
 
-    # Create a pool of workers (one per transcoding task)
-    with Pool(processes=len(qualities_to_process)) as pool:
-        pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality, videoId) for quality in qualities_to_process])
+    # Create a manager for shared progress dictionary
+    with Manager() as manager:
+        shared_progress = manager.dict()
+        
+        # Create a pool of workers (one per transcoding task)
+        with Pool(processes=len(qualities_to_process)) as pool:
+            pool.starmap(transcode_to_quality, [(file_path, basePath, quality, actual_quality, videoId, shared_progress) for quality in qualities_to_process])
 
 
     # Create a master playlist for all qualities
