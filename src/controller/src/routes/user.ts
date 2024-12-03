@@ -72,7 +72,7 @@ export default async function userRoutes(app: FastifyInstance) {
   
   //get user ID endpoint
   app.get<{Reply: SignUpResponse | ErrorResponse }>(
-    "/get ID",
+    "/get-ID",
     {
       onRequest: [app.authenticate],
       schema: {

@@ -73,7 +73,7 @@ type FindVideo = Static<typeof FindVideoSchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
 //videoService
-app.get<{Reply: FindVideo | ErrorResponse}>("/all videos", {
+app.get<{Reply: FindVideo | ErrorResponse}>("/all-videos", {
     schema: {
         response: {
             200: FindVideoSchema,
