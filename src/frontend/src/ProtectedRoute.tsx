@@ -11,5 +11,5 @@ export const ProtectedRoute = () => {
 
     return isAuthenticated ? 
         <Outlet /> : 
-        <Navigate to="/sign-in" state={{ from: location }} replace />;
+        <Navigate to="/login" state={{ from: location }} replace />;
 };
