@@ -10,7 +10,7 @@ export class VideoService {
         userId: user,
         title,
         uploadDate: new Date().getUTCSeconds(),
-        videoRef: videoUrl,
+        status: videoUrl,
       },
     });
   }

@@ -52,7 +52,7 @@ model videos {
   userId     String
   title      String
   uploadDate Int
-  videoRef   String
+  status     String
   comments   comments[]
   likes      likes[]
   users      users      @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)

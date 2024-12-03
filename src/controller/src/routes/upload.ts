@@ -2,6 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { Static, Type } from '@sinclair/typebox';
 import { UploadService } from '../services/uploadService';
 
+const ErrorResponseSchema = Type.Object({
+  error: Type.String(),
+});
 
 const UploadUrlResponseSchema = Type.Object({
   url: Type.String(),
@@ -12,6 +15,10 @@ const TranscodeVideoRequestSchema = Type.Object({
   videoID: Type.String(),
 });
 
+const TranscodeVideoResponseSchema =  Type.Object({
+  success: Type.String(),
+})
+
 const SSEDemoResponseSchema = Type.Object({
   message: Type.String(),
   timestamp: Type.Optional(Type.Number()),
@@ -20,6 +27,8 @@ const SSEDemoResponseSchema = Type.Object({
 type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
 type SSEDemoResponse = Static<typeof SSEDemoResponseSchema>;
+type ErrorResponse = Static<typeof ErrorResponseSchema>;
+type TranscodeVideoResponse = Static<typeof TranscodeVideoResponseSchema>;
 
 export default async function uploadRoutes(app: FastifyInstance) {
 
@@ -39,21 +48,33 @@ export default async function uploadRoutes(app: FastifyInstance) {
        return uploadInfo;
   });
 
-  app.post<{Body: TranscodeVideoRequest}>("/transcode-video",
+  app.post<{ Body: TranscodeVideoRequest; Reply: TranscodeVideoResponse | ErrorResponse }>(
+    "/transcode-video",
     {
       schema: {
         description: 'Transcode a video',
         tags: ['Upload'],
         summary: 'Transcode video',
         body: TranscodeVideoRequestSchema,
-      }
+        response: {
+          200: TranscodeVideoResponseSchema,
+          400: ErrorResponseSchema, 
+        },
+      },
     },
     async (request, reply) => {
       const videoID = request.body.videoID;
-      const result = await UploadService.transcodeVideo(videoID);
+  
+      try {
+        await UploadService.transcodeVideo(videoID);
+        reply.send({ success: 'Transcoding started' });
+      } catch (err) {
+        reply.status(400).send({error: err instanceof Error ? err.message : 'Unknown error'});
+      }
+  
     }
   );
-
+  
   app.get<{ Params: TranscodeVideoRequest }>("/sse/:videoID",
     {
       schema: {
@@ -64,29 +85,31 @@ export default async function uploadRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-    // Set the headers to keep the connection open and indicate SSE
-    reply.raw.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "Access-Control-Allow-Origin": "*",
+      const { videoID } = request.params;
+
+      reply.raw.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+  
+      console.log(`Starting SSE for videoID: ${videoID}`);
+  
+      UploadService.consumeMessages(videoID, (message) => {
+        const messageString = `data: ${JSON.stringify(message)}\n\n`;
+  
+        // Log message to terminal and stream to SSE client
+        console.log("Message sent to SSE client:", message);
+        reply.raw.write(messageString);
+      });
+  
+      // Handle client disconnection
+      request.raw.on("close", () => {
+        console.log(`SSE connection closed for videoID: ${videoID}`);
+        reply.raw.end();
+      });
     });
-
-    const { videoID } = request.params;
-    console.log(`Starting SSE for videoID: ${videoID}`);
-
-    UploadService.consumeMessages(videoID, (message) => {
-      const messageString = `data: ${JSON.stringify(message)}\n\n`;
-
-      // Log message to terminal and stream to SSE client
-      console.log("Message sent to SSE client:", message);
-      reply.raw.write(messageString);
-    });
-
-    // Handle client disconnection
-    request.raw.on("close", () => {
-      console.log(`SSE connection closed for videoID: ${videoID}`);
-      reply.raw.end();
-    });
-  });
+  
+  
 }

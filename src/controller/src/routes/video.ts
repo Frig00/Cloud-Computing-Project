@@ -51,7 +51,7 @@ const FindVideoSchema =Type.Array(Type.Object({
     userId: Type.String(),
     title: Type.String(),
     uploadDate: Type.Number(),
-    videoRef: Type.String()
+    status: Type.String()
 }));
 
 const AllInfosVideoSchema = Type.Object({
@@ -59,7 +59,7 @@ const AllInfosVideoSchema = Type.Object({
     userId: Type.String(),
     title: Type.String(),
     uploadDate: Type.Number(),
-    videoRef: Type.String(),
+    status: Type.String(),
     //aggiumgere commenti like views
 });
 

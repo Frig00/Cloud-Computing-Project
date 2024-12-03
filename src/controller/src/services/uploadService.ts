@@ -4,6 +4,7 @@ import * as amqp from "amqplib";
 import * as dotenv from "dotenv";
 import * as crypto from "crypto";
 import { FastifyInstance } from "fastify";
+import prisma from "../data/prisma";
 
 dotenv.config();
 
@@ -66,10 +67,15 @@ export class UploadService {
    * Publish a video processing message to RabbitMQ.
    */
   static async transcodeVideo(videoId: string) {
-    try {
-      if (!this.rabbitMQChannel) {
-        await this.initRabbitMQ();
-      }
+    if (!this.rabbitMQChannel) {
+      await this.initRabbitMQ();
+    }
+    
+    const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
+    if (alreadyTranscoded) throw new Error("Video already transcoded") 
+      
+      
+      try {
       const queueName = process.env.TRANSCODE_QUEUE_NAME!;
       const message = { 
         videoId,
@@ -101,6 +107,16 @@ export class UploadService {
         await this.initRabbitMQ();
       }
 
+      const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
+      if (alreadyTranscoded) {
+        const completionMessage = {
+          message: 'Video already transcoded',
+          timestamp: Date.now(),
+        };
+        callback(completionMessage); // Trigger callback with completion message
+        return;
+      }
+
       const queueName = process.env.STATUS_QUEUE_NAME!;
 
       this.rabbitMQChannel.consume(
@@ -124,5 +140,12 @@ export class UploadService {
       console.error("Error consuming RabbitMQ messages:", error);
       throw new Error("Could not consume RabbitMQ messages");
     }
+  }
+
+  static async isVideoTranscoded(videoID: string): Promise<boolean> {
+    const video = await prisma.videos.findUnique({
+      where: { id: videoID },
+    });
+    return !!video; 
   }
 }
