@@ -69,6 +69,8 @@ services:
     build: src/controller
     ports:
      - "3000:3000"
+    volumes:
+      - ./src/controller/prisma/dev.db:/app/prisma/dev.db:ro
     environment:
       S3_REGION: ${S3_REGION}
       S3_ENDPOINT: ${S3_ENDPOINT}

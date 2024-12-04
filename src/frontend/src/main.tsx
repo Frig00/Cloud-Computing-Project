@@ -20,26 +20,26 @@ import { AuthProvider } from "./services/authService.tsx";
 import { ProtectedRoute } from "./ProtectedRoute.tsx";
 import Bench from "./Bench.tsx";
 import { Configuration, DefaultConfig } from "./api/runtime.ts";
-
+import HomePage from "./HomePage.tsx";
+import '@fontsource/geist-sans/100.css';
+import '@fontsource/geist-sans/200.css';
+import '@fontsource/geist-sans/300.css';
+import '@fontsource/geist-sans/400.css';
+import '@fontsource/geist-sans/500.css';
+import '@fontsource/geist-sans/600.css';
+import '@fontsource/geist-sans/700.css';
+import '@fontsource/geist-sans/800.css';
+import '@fontsource/geist-sans/900.css';
 
 DefaultConfig.config = new Configuration({basePath: "http://localhost:3000"});
 
 const theme = createTheme({
   typography: {
-    fontFamily: "Inter, Arial, sans-serif",
+    fontFamily: "'Geist Sans', sans-serif",
   },
 });
 
-const HomePage = () => (
-  <Container maxWidth="xl">
-    <div className="flex gap-2 flex-wrap m-2">
-      <VideoThumbnail src="" alt="" variant="small" />
-      <VideoThumbnail src="" alt="" variant="small" />
-      <VideoThumbnail src="" alt="" variant="small" />
-      <VideoThumbnail src="" alt="" variant="small" />
-    </div>
-  </Container>
-);
+
 
 const queryClient = new QueryClient();
 

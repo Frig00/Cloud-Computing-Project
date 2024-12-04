@@ -33,6 +33,13 @@ const DropZone = styled(Paper)(({ theme }) => ({
   },
 }));
 
+interface VideoProgress {
+  videoId: string;
+  progress: {
+    [key: string]: number
+  };
+}
+
 export default function Component() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +51,8 @@ export default function Component() {
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadDeterminate, setUploadDeterminate] = useState(true);
+
+  const [transcodeProgress, setTranscodeProgress] = useState<VideoProgress | null>(null);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -134,7 +143,7 @@ export default function Component() {
 
       fetchEventSource(`http://localhost:3000/upload/sse/${videoId}`, {
         onmessage(ev) {
-            console.log(ev.data);
+            setTranscodeProgress(JSON.parse(ev.data));
         }
     });
 
@@ -212,15 +221,20 @@ export default function Component() {
                     />
                   </Box>
 
-                  <Box sx={{ mt: 2 }}>
+                  {transcodeProgress ? Object.entries(transcodeProgress.progress).map(([resolution, progress]) => (
+                    <Box sx={{ mt: 2 }} key={resolution}>
                     <Typography variant="body2" gutterBottom>
-                      Processing Progress
+                      Processing {resolution}
                     </Typography>
                     <LinearProgress
                       variant="determinate"
-                      value={processingProgress}
+                      value={progress}
                     />
                   </Box>
+                  )) : null}
+                  
+
+
                 </Box>
               </>
             )

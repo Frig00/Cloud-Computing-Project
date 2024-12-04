@@ -21,10 +21,10 @@ export default function Search() {
   return (
     <Container maxWidth="xl">
       <div className="flex gap-2 flex-wrap m-2">
-        <VideoThumbnail src="" alt="" variant="horizontal" />
-        <VideoThumbnail src="" alt="" variant="horizontal" />
-        <VideoThumbnail src="" alt="" variant="horizontal" />
-        <VideoThumbnail src="" alt="" variant="horizontal" />
+        {/* <VideoThumbnail src="" variant="horizontal" />
+        <VideoThumbnail src="" variant="horizontal" />
+        <VideoThumbnail src="" variant="horizontal" />
+        <VideoThumbnail src="" variant="horizontal" /> */}
       </div>
     </Container>
   );

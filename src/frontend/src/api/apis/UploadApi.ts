@@ -15,10 +15,16 @@
 
 import * as runtime from '../runtime';
 import type {
+  AuthLoginPost500Response,
+  UploadTranscodeVideoPost200Response,
   UploadTranscodeVideoPostRequest,
   UploadUploadUrlGet200Response,
 } from '../models/index';
 import {
+    AuthLoginPost500ResponseFromJSON,
+    AuthLoginPost500ResponseToJSON,
+    UploadTranscodeVideoPost200ResponseFromJSON,
+    UploadTranscodeVideoPost200ResponseToJSON,
     UploadTranscodeVideoPostRequestFromJSON,
     UploadTranscodeVideoPostRequestToJSON,
     UploadUploadUrlGet200ResponseFromJSON,
@@ -76,7 +82,7 @@ export class UploadApi extends runtime.BaseAPI {
      * Transcode a video
      * Transcode video
      */
-    async uploadTranscodeVideoPostRaw(requestParameters: UploadTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async uploadTranscodeVideoPostRaw(requestParameters: UploadTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UploadTranscodeVideoPost200Response>> {
         if (requestParameters['uploadTranscodeVideoPostRequest'] == null) {
             throw new runtime.RequiredError(
                 'uploadTranscodeVideoPostRequest',
@@ -98,15 +104,16 @@ export class UploadApi extends runtime.BaseAPI {
             body: UploadTranscodeVideoPostRequestToJSON(requestParameters['uploadTranscodeVideoPostRequest']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => UploadTranscodeVideoPost200ResponseFromJSON(jsonValue));
     }
 
     /**
      * Transcode a video
      * Transcode video
      */
-    async uploadTranscodeVideoPost(requestParameters: UploadTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.uploadTranscodeVideoPostRaw(requestParameters, initOverrides);
+    async uploadTranscodeVideoPost(requestParameters: UploadTranscodeVideoPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UploadTranscodeVideoPost200Response> {
+        const response = await this.uploadTranscodeVideoPostRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

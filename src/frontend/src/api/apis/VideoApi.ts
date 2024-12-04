@@ -16,14 +16,11 @@
 import * as runtime from '../runtime';
 import type {
   AuthLoginPost500Response,
-  UserUpdatePut200Response,
   VideoAllVideosGet200ResponseInner,
 } from '../models/index';
 import {
     AuthLoginPost500ResponseFromJSON,
     AuthLoginPost500ResponseToJSON,
-    UserUpdatePut200ResponseFromJSON,
-    UserUpdatePut200ResponseToJSON,
     VideoAllVideosGet200ResponseInnerFromJSON,
     VideoAllVideosGet200ResponseInnerToJSON,
 } from '../models/index';
@@ -57,7 +54,7 @@ export class VideoApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/video/all videos`,
+            path: `/video/all-videos`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -110,7 +107,7 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      */
-    async videoVideoIdCommitGetRaw(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserUpdatePut200Response>> {
+    async videoVideoIdCommitGetRaw(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['videoId'] == null) {
             throw new runtime.RequiredError(
                 'videoId',
@@ -129,12 +126,16 @@ export class VideoApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => UserUpdatePut200ResponseFromJSON(jsonValue));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      */
-    async videoVideoIdCommitGet(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserUpdatePut200Response> {
+    async videoVideoIdCommitGet(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.videoVideoIdCommitGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -172,7 +173,7 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      */
-    async videoVideoIdLikeGetRaw(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserUpdatePut200Response>> {
+    async videoVideoIdLikeGetRaw(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['videoId'] == null) {
             throw new runtime.RequiredError(
                 'videoId',
@@ -191,12 +192,16 @@ export class VideoApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => UserUpdatePut200ResponseFromJSON(jsonValue));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      */
-    async videoVideoIdLikeGet(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserUpdatePut200Response> {
+    async videoVideoIdLikeGet(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.videoVideoIdLikeGetRaw(requestParameters, initOverrides);
         return await response.value();
     }

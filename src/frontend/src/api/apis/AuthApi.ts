@@ -18,8 +18,6 @@ import type {
   AuthLoginPost200Response,
   AuthLoginPost500Response,
   AuthLoginPostRequest,
-  AuthSignupPost200Response,
-  AuthSignupPost500Response,
   AuthSignupPostRequest,
   Get200Response,
 } from '../models/index';
@@ -30,10 +28,6 @@ import {
     AuthLoginPost500ResponseToJSON,
     AuthLoginPostRequestFromJSON,
     AuthLoginPostRequestToJSON,
-    AuthSignupPost200ResponseFromJSON,
-    AuthSignupPost200ResponseToJSON,
-    AuthSignupPost500ResponseFromJSON,
-    AuthSignupPost500ResponseToJSON,
     AuthSignupPostRequestFromJSON,
     AuthSignupPostRequestToJSON,
     Get200ResponseFromJSON,
@@ -131,7 +125,7 @@ export class AuthApi extends runtime.BaseAPI {
      * User sign up
      * Sign up endpoint
      */
-    async authSignupPostRaw(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthSignupPost200Response>> {
+    async authSignupPostRaw(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['authSignupPostRequest'] == null) {
             throw new runtime.RequiredError(
                 'authSignupPostRequest',
@@ -153,14 +147,18 @@ export class AuthApi extends runtime.BaseAPI {
             body: AuthSignupPostRequestToJSON(requestParameters['authSignupPostRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => AuthSignupPost200ResponseFromJSON(jsonValue));
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
     }
 
     /**
      * User sign up
      * Sign up endpoint
      */
-    async authSignupPost(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthSignupPost200Response> {
+    async authSignupPost(requestParameters: AuthSignupPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.authSignupPostRaw(requestParameters, initOverrides);
         return await response.value();
     }

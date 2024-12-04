@@ -156,7 +156,7 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
             b=quality.bitrate,
             acodec="aac",
             ab="128k",
-            vf="scale=" + quality.resolution,
+            vf=f"scale={quality.width}:{quality.height}",
             hls_time=6,
             hls_playlist_type="vod",
             hls_segment_filename=os.path.join(segmentsPath, "s_%03d.ts")
@@ -273,10 +273,10 @@ def create_master_playlist(base_path: str, qualities: list[VideoQuality], output
             for quality in qualities:
                 playlist_path = os.path.join(quality.label, "playlist.m3u8")
                 bandwidth = int(quality.bitrate[:-1]) * 1000  # Convert bitrate to an integer in bits
-                resolution = quality.resolution
+                resolution = f"{quality.width}x{quality.height}" 
 
                 # M3U8 entry for each quality
-                f.write(f"#EXT-X-STREAM-INF:BANDWIDTH={bandwidth},RESOLUTION={resolution}\n")
+                f.write(f"#EXT-X-STREAM-INF:BANDWIDTH={bandwidth},RESOLUTION={resolution},NAME=\"{quality.label}\"\n")
                 f.write(f"{playlist_path}\n")
 
         print(f"Master playlist created at {master_playlist_path}")
