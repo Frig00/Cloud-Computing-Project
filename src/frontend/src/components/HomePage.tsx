@@ -1,8 +1,8 @@
 import { Container } from "@mui/material";
-import VideoThumbnail from "./components/VideoThumbnail";
+import VideoThumbnail from "./VideoThumbnail";
 import { useQuery } from "@tanstack/react-query";
-import { VideoApi } from "./api";
-import { S3_BASE_PATH, thumbnailSrc } from "./lib/consts";
+import { VideoApi } from "../api";
+import { S3_BASE_PATH, thumbnailSrc } from "../lib/consts";
 
 export default function HomePage() {
     const videoApi = new VideoApi();

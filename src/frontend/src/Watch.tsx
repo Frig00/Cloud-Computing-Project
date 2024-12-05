@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { VideoApi } from "./api";
 import { useQuery } from "@tanstack/react-query";
-import { parseVTT, sampleVTT } from "./Bench";
+import { parseVTT, sampleVTT } from "./components/Bench/Bench";
 import clsx from "clsx";
 
 import AWSTranscribe from "./assets/aws_transcribe.svg";

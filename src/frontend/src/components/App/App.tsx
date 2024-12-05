@@ -16,7 +16,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
-import { useAuth } from "./services/authService";
+import { useAuth } from "../../services/authService";
 
 function App() {
 

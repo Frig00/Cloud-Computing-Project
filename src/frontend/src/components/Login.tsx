@@ -1,8 +1,8 @@
 import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Link, Stack, styled, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import MuiCard from '@mui/material/Card';
-import { AuthApi, Configuration } from "./api";
-import { useAuth } from "./services/authService";
+import { AuthApi, Configuration } from "../api";
+import { useAuth } from "../services/authService";
 import { useNavigate, useLocation } from "react-router";
 
 
