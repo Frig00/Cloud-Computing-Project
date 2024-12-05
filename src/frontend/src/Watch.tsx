@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { VideoApi } from "./api";
 import { useQuery } from "@tanstack/react-query";
+import { parseVTT, sampleVTT } from "./Bench";
+import clsx from "clsx";
+
+import AWSTranscribe from "./assets/aws_transcribe.svg";
 
 type Quality = {
   height: number;
@@ -20,19 +24,21 @@ export default function Watch() {
   const videoId = searchParams.get("v")!;
   const hlsRef = useRef<HLS | null>(null);
 
-  
+
   const videoApi = new VideoApi();
-  
+
   const { isPending, error, data } = useQuery({
     queryKey: ['videoVideoIdGet', videoId],
     queryFn: () => videoApi.videoVideoIdGet({ videoId }),
   })
-  
 
-  
+
+
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
-  
+  const [cues, setCues] = useState<Array<{ start: number, end: number, text: string, formattedStart: string }> | null>(null);
+  const [activeCue, setActiveCue] = useState<number | null>(null);
+
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null,
   );
@@ -47,7 +53,7 @@ export default function Watch() {
   const src = `http://localhost:9000/video-encoded/${videoId}/master.m3u8`
 
 
-  
+
   const initPlayer = useCallback(() => {
     if (!videoElement) return;
 
@@ -56,9 +62,9 @@ export default function Watch() {
       hlsRef.current = new HLS({
         debug: false,
       });
-  
+
       console.log("HLS supported");
-  
+
       hlsRef.current.loadSource(src);
       hlsRef.current.attachMedia(videoElement);
       hlsRef.current.on(HLS.Events.MANIFEST_PARSED, (event, data) => {
@@ -99,7 +105,7 @@ export default function Watch() {
 
   useEffect(() => {
     initPlayer();
-  
+
     return () => {
       if (hlsRef.current) {
         hlsRef.current.destroy();
@@ -109,14 +115,51 @@ export default function Watch() {
 
 
 
+  useEffect(() => {
+    setCues(parseVTT(sampleVTT))
+  }, []);
+
+  useEffect(() => {
+    if (!activeCue) return;
+    const container = document.querySelector(".subtitle-container") as HTMLElement;
+    const containerRect = container.getBoundingClientRect();
+    const cueElement = document.querySelector(`.subtitle-cue[data-index="${activeCue}"]`);
+    const elementRect = cueElement!.getBoundingClientRect();
+
+    const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
+
+    container.scrollTo({
+      top: offsetTop,
+      behavior: "smooth", // or "auto"
+    });
+  }, [activeCue]);
+
 
   const formatBitrate = (bitrate: number) => {
     return `${(bitrate / 1000000).toFixed(2)} Mbps`;
   };
 
-  
+  const onTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    // get the first cue that starts after the current time
+    const currentTime = videoElement?.currentTime;
+    if (!currentTime || !cues) return;
+    const nextCue = cues?.find(cue => cue.start > currentTime);
+    if (nextCue) {
+      const index = cues.indexOf(nextCue) - 1;
+      setActiveCue(index);
+    }
+  };
+
+  const handleCueClick = (index: number) => {
+    setActiveCue(index)
+    if (videoElement) {
+      videoElement.currentTime = cues![index].start;
+    }
+  }
+
+
   if (isPending) return 'Loading...'
-  
+
   if (error) return 'An error has occurred: ' + error.message
 
   return (
@@ -126,7 +169,8 @@ export default function Watch() {
           className="mt-4"
           ref={refCallback}
           controls
-          style={{marginBottom: "0.5rem"}}
+          style={{ marginBottom: "0.5rem" }}
+          onTimeUpdate={onTimeUpdate}
         />
         <Typography variant="h1" className="mt-4" fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
         <Typography variant="body1" className="mt-2">
@@ -170,7 +214,7 @@ export default function Watch() {
                     <td><Link href="#" onClick={() => { if (hlsRef.current) hlsRef.current.currentLevel = quality.index; }}>
                       {quality.name}
                     </Link>
-                      </td>
+                    </td>
                     <td>{quality.width}x{quality.height}</td>
                     <td>{formatBitrate(quality.bitrate)}</td>
                   </tr>
@@ -179,6 +223,27 @@ export default function Watch() {
             </table>
           </div>
         )}
+
+        <div className="subtitle-panel" style={{ border: '1px solid black' }}>
+
+          <div className="subtitle-container">
+            {cues ? cues.map((cue, index) => (
+              <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
+                <div className="cue-time">
+                  {cue.formattedStart}
+                </div>
+                <div>
+                  {cue.text}
+                </div>
+              </div>
+            )) : null}
+          </div>
+          <div className="subtitle-pb">
+
+            <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
+            <span>Powered by<br /><b>AWS Transcribe</b></span>
+          </div>
+        </div>
 
       </Stack>
     </Container>

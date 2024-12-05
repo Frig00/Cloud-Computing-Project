@@ -1,0 +1,42 @@
+.subtitle-cue:hover, .subtitle-cue.active {
+    background-color: aliceblue;
+}
+
+.subtitle-container {
+    overflow-y: scroll;
+}
+
+.subtitle-cue {
+    padding: 8px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+
+.subtitle-cue .cue-time {
+    color: #555;
+    font-size: small;
+    background-color: #def1ff;
+    color: #065fd4;
+    display: inline-block;
+    padding: 2px 6px;
+    line-height: 1;
+    border-radius: 8px;
+}
+
+.subtitle-panel {
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    resize: horizontal;
+}
+
+.subtitle-pb {
+    margin: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1;
+}
