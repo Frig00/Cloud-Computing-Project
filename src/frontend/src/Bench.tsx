@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Bench.css";
+import Confetti from "react-confetti-boom";
 
 
 
@@ -380,39 +381,25 @@ currentCue = {
 
   return cues.map(cue => ({ ...cue, text: cue.text.trim() }));
 }
+const largeProps = {
+  force: 0.8,
+  duration: 3000,
+  particleCount: 300,
+  colors: ['#ff577f', '#ff884b', '#ffd384', '#fff9b0'],
+};
 
 export default function Bench() {
-    
 
-    const [cues, setCues] = useState<Array<{ start: number, end: number, text: string }> | null>(null);
-
-    useEffect(() => {
-
-        setCues(parseVTT(sampleVTT))
-    }, []);
-
-    const onCueClick = (event: React.MouseEvent<HTMLDivElement>, index: number) => {
-       
-       // Scroll to the cue
-        const cueElement = document.querySelector(`.subtitle-cue[data-index="${index}"]`);
-        if (cueElement) {
-            cueElement.scrollIntoView({ behavior: 'smooth' });
-        }
-
-    };
+  const [confetti, setConfetti] = useState(false);
 
     return (
-        <div style={{ height: '300px', overflowY: 'scroll' }}>
-            {cues ? cues.map((cue, index) => (
-                <div key={index} style={{ marginBottom: '8px' }} className='subtitle-cue' data-index={index} onClick={(e) => onCueClick(e, index)}>
-                    <div style={{ color: '#555', fontSize: 'small' }}>
-                        {cue.start} → {cue.end}
-                    </div>
-                    <div>
-                        {cue.text}
-                    </div>
-                </div>
-            )) : null}
-        </div>
+    <>
+    <button onClick={() => setConfetti(!confetti)}>CONFETTI!!!</button>
+      {confetti && 
+      <>
+      <Confetti mode='boom' particleCount={250} effectInterval={3000} colors={['#ff577f', '#ff884b', '#ffd384', '#fff9b0']} launchSpeed={1.8} spreadDeg={60}/>
+      </>
+      }
+    </>
     );
 }

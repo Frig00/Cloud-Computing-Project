@@ -8,8 +8,6 @@ import ErrorPage from "./ErrorPage.tsx";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import VideoThumbnail from "./components/VideoThumbnail.tsx";
-import { Box, Container } from "@mui/material";
 import Login from "./Login.tsx";
 import SignUp from "./SignUp.tsx";
 import Watch from "./Watch.tsx";
@@ -30,8 +28,9 @@ import '@fontsource/geist-sans/600.css';
 import '@fontsource/geist-sans/700.css';
 import '@fontsource/geist-sans/800.css';
 import '@fontsource/geist-sans/900.css';
+import { API_BASE_PATH } from "./lib/consts.ts";
 
-DefaultConfig.config = new Configuration({basePath: "http://localhost:3000"});
+DefaultConfig.config = new Configuration({basePath: API_BASE_PATH});
 
 const theme = createTheme({
   typography: {

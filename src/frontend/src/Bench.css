@@ -29,8 +29,6 @@
     height: 300px;
     display: flex;
     flex-direction: column;
-    overflow: auto;
-    resize: horizontal;
 }
 
 .subtitle-pb {
@@ -39,4 +37,10 @@
     align-items: center;
     gap: 4px;
     line-height: 1;
+}
+
+.quality-grid, .quality-grid td, .quality-grid th {
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+    text-align: start;
 }

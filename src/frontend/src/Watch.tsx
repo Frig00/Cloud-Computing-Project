@@ -1,4 +1,4 @@
-import { Container, Link, Stack, Typography } from "@mui/material";
+import { Container, Grid2 as Grid, Link, Stack, Typography } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -8,6 +8,7 @@ import { parseVTT, sampleVTT } from "./Bench";
 import clsx from "clsx";
 
 import AWSTranscribe from "./assets/aws_transcribe.svg";
+import { API_BASE_PATH, masterPlaylistSrc } from "./lib/consts";
 
 type Quality = {
   height: number;
@@ -50,9 +51,7 @@ export default function Watch() {
     }
   };
 
-  const src = `http://localhost:9000/video-encoded/${videoId}/master.m3u8`
-
-
+  const src = masterPlaylistSrc(videoId);
 
   const initPlayer = useCallback(() => {
     if (!videoElement) return;
@@ -163,89 +162,85 @@ export default function Watch() {
   if (error) return 'An error has occurred: ' + error.message
 
   return (
-    <Container maxWidth="xl">
-      <Stack>
-        <video
-          className="mt-4"
-          ref={refCallback}
-          controls
-          style={{ marginBottom: "0.5rem" }}
-          onTimeUpdate={onTimeUpdate}
-        />
-        <Typography variant="h1" className="mt-4" fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
-        <Typography variant="body1" className="mt-2">
-          {data.title}
-        </Typography>
+    <Container maxWidth="xl" className="mt-4">
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Stack>
 
-        {/* Display current quality */}
-        {currentQuality && (
-          <div style={{ marginTop: '10px' }}>
-            <h3>Current Quality:</h3>
-            <p>
-              Resolution: {currentQuality.width}x{currentQuality.height}<br />
-              Bitrate: {formatBitrate(currentQuality.bitrate)}
-            </p>
+            <video
+              ref={refCallback}
+              controls
+              onTimeUpdate={onTimeUpdate}
+            />
+            <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
+            <Typography variant="body1" className="mt-2">
+              {data.userId}
+            </Typography>
+
+          </Stack>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <div className="subtitle-panel" style={{ border: '1px solid black' }}>
+
+            <div className="subtitle-container">
+              {cues ? cues.map((cue, index) => (
+                <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
+                  <div className="cue-time">
+                    {cue.formattedStart}
+                  </div>
+                  <div>
+                    {cue.text}
+                  </div>
+                </div>
+              )) : null}
+            </div>
+            <div className="subtitle-pb">
+
+              <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
+              <span>Powered by<br /><b>AWS Transcribe</b></span>
+            </div>
           </div>
-        )}
+        </Grid>
+        <Stack width={"100%"}>
 
-        {/* Display available qualities */}
-        {qualities.length > 0 && (
-          <div style={{ marginTop: '10px' }}>
-            <h3>Available Qualities:</h3>
-            <table style={{ width: '100%', maxWidth: '800px' }}>
-              <thead>
-                <tr>
-                  <th>Quality</th>
-                  <th>Resolution</th>
-                  <th>Bitrate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {qualities.map((quality) => (
-                  <tr
-                    key={quality.index}
-                    style={{
-                      backgroundColor:
-                        currentQuality?.index === quality.index
-                          ? '#e0e0e0'
-                          : 'transparent'
-                    }}
-                  >
-                    <td><Link href="#" onClick={() => { if (hlsRef.current) hlsRef.current.currentLevel = quality.index; }}>
-                      {quality.name}
-                    </Link>
-                    </td>
-                    <td>{quality.width}x{quality.height}</td>
-                    <td>{formatBitrate(quality.bitrate)}</td>
+          {/* Display available qualities */}
+          {qualities.length > 0 && (
+              <table style={{ width: '100%' }} className="quality-grid">
+                <thead>
+                  <tr>
+                    <th>Quality</th>
+                    <th>Resolution</th>
+                    <th>Bitrate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {qualities.map((quality) => (
+                    <tr
+                      key={quality.index}
+                      style={{
+                        backgroundColor:
+                          currentQuality?.index === quality.index
+                            ? '#e0e0e0'
+                            : 'transparent'
+                      }}
+                    >
+                      <td><Link href="#" onClick={() => { if (hlsRef.current) hlsRef.current.currentLevel = quality.index; }}>
+                        {quality.name}
+                      </Link>
+                      </td>
+                      <td>{quality.width}x{quality.height}</td>
+                      <td>{formatBitrate(quality.bitrate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+          )}
 
-        <div className="subtitle-panel" style={{ border: '1px solid black' }}>
 
-          <div className="subtitle-container">
-            {cues ? cues.map((cue, index) => (
-              <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
-                <div className="cue-time">
-                  {cue.formattedStart}
-                </div>
-                <div>
-                  {cue.text}
-                </div>
-              </div>
-            )) : null}
-          </div>
-          <div className="subtitle-pb">
 
-            <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
-            <span>Powered by<br /><b>AWS Transcribe</b></span>
-          </div>
-        </div>
-
-      </Stack>
+        </Stack>
+      </Grid>
     </Container>
   );
 }

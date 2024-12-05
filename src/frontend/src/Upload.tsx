@@ -20,6 +20,9 @@ import { Container, Stack, styled, useTheme } from "@mui/system";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { UploadApi } from "./api";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import usePreventDefaultDrop from "./components/usePreventDefaultDrop";
+import Confetti from "react-confetti-boom";
+import { API_BASE_PATH, uploadSseEndpointUrl } from "./lib/consts";
 
 const DropZone = styled(Paper)(({ theme }) => ({
   border: `2px dashed ${theme.palette.primary.main}`,
@@ -44,7 +47,7 @@ export default function Component() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const theme = useTheme();
-
+  usePreventDefaultDrop();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -74,10 +77,27 @@ export default function Component() {
     setFile(droppedFiles[0]);
   };
 
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }
+
   const handleFileInput = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     setFile(selectedFiles[0]);
   };
+
+  useEffect(() => {
+    if (!file) return;
+    setTitle(file.name.substring(0, file.name.lastIndexOf('.')));
+  }, [file]);
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
@@ -141,7 +161,7 @@ export default function Component() {
 
       await uploadApi.uploadTranscodeVideoPost({uploadTranscodeVideoPostRequest: {videoID: videoId}});
 
-      fetchEventSource(`http://localhost:3000/upload/sse/${videoId}`, {
+      fetchEventSource(uploadSseEndpointUrl(videoId), {
         onmessage(ev) {
             setTranscodeProgress(JSON.parse(ev.data));
         }
@@ -165,6 +185,7 @@ export default function Component() {
           {file
             ? (
               <>
+               <Confetti mode='boom' particleCount={250} effectInterval={3000} colors={['#ff577f', '#ff884b', '#ffd384', '#fff9b0']} launchSpeed={1.8} spreadDeg={60}/>
                 <Typography variant="h4" gutterBottom>
                   Upload Video
                 </Typography>
@@ -240,15 +261,28 @@ export default function Component() {
             )
             : (
               <DropZone
-                onDrop={handleDrop}
-                onClick={openFileDialog}
+                
+                sx={{backgroundColor: isDragging ? 'rgb(59 130 246 / 0.5)' : "inherit", position: 'relative'}}
               >
+                <div style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              zIndex: 1000000,
+            }} 
+            onDrop={handleDrop}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onClick={openFileDialog}>
+
+                </div>
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileInput}
                   style={{ display: "none" }}
-                  multiple
                 />
                 <CloudUploadIcon
                   sx={{ fontSize: 48, color: "textSecondary", mb: 2 }}
@@ -263,3 +297,4 @@ export default function Component() {
     </Container>
   );
 }
+
