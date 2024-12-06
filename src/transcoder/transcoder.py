@@ -1,4 +1,5 @@
 from __future__ import annotations
+import enum
 from ffmpeg import FFmpeg, Progress
 import pika
 import os
@@ -6,20 +7,29 @@ import json
 import subprocess
 import shutil
 from multiprocessing import Pool, Manager
+
+import pika.exceptions
 from video_quality import VideoQuality
 from config import (
     RABBITMQ_HOST,
     TRANSCODE_QUEUE_NAME,
     S3_BUCKET_NAME,
-    S3_BUCKET_ENCODED_NAME,
     STATUS_QUEUE_NAME,
-    s3_client
+    s3_client,
+    RABBITMQ_CHANNEL
 )
+
+class ProgressStatus(enum.Enum):
+    TRANSCODING = "TRANSCODING"
+    UPLOADING = "UPLOADING"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
 
 
 def download_s3_file(bucket, object_path):
     """Download file from S3 given the object name."""
     file_name = object_path.split('/')[-1]  # Extract filename from object path
+
     # Ensure the temporary directory exists
     temp_dir = './tmp'
     if not os.path.exists(temp_dir):
@@ -110,14 +120,16 @@ def get_video_quality(file_path):
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
 
-def send_combined_progress(video_id, progress_dict, mq_channel):
+def send_combined_progress(status, video_id=None, progress_dict=None, error=None):
     """Send combined transcoding progress for all qualities."""
     message = {
-        "videoId": video_id,
-        "progress": progress_dict.copy()  # Create a copy of the dict to avoid any threading issues
+        "videoId": video_id if video_id else None,
+        "progress": progress_dict.copy() if progress_dict else None,  # Create a copy of the dict to avoid any threading issues
+        "status": status,
+        "error": error
     }
 
-    mq_channel.basic_publish(
+    RABBITMQ_CHANNEL.basic_publish(
         exchange='',
         routing_key=STATUS_QUEUE_NAME,
         body=json.dumps(message),
@@ -125,7 +137,7 @@ def send_combined_progress(video_id, progress_dict, mq_channel):
             delivery_mode=2,
         )
     )
-    print(f"Sent combined progress: {message}")
+    #print(f"Sent combined progress: {message}")
 
 def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_quality: VideoQuality, videoId: str, shared_progress):
     """Transcode the video to a specific quality."""
@@ -135,8 +147,6 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
     video_total_frame = get_total_frames(file_path)
 
     # Connect to RabbitMQ
-    mq_connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-    mq_channel = mq_connection.channel()
     print(f"Connected to RabbitMQ on {RABBITMQ_HOST} for quality: {quality.label}")
 
     if quality == actual_quality:
@@ -169,18 +179,19 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
         # Update progress in shared dictionary
         shared_progress[quality.label] = percentage
         # Send combined progress
-        send_combined_progress(videoId, shared_progress, mq_channel)
+        send_combined_progress(videoId, shared_progress, ProgressStatus.TRANSCODING.name)
 
     @ffmpeg.on("completed")
     def on_completed():
         shared_progress[quality.label] = 100
-        send_combined_progress(videoId, shared_progress, mq_channel)
-        mq_connection.close()
+        send_combined_progress(videoId, shared_progress)
+        RABBITMQ_CHANNEL.close()
         print(f"Connection closed for quality: {quality.label}")
 
     try:
         ffmpeg.execute()
     except Exception as e:
+        send_combined_progress(videoId, shared_progress, ProgressStatus.ERROR.value, error=str(e))
         print(f"Error during transcoding to {quality.label}: {e}")
 
 def process_file(file_path, output, videoId: str):
@@ -319,7 +330,7 @@ def callback(ch, method, properties, body):
     file_path = download_s3_file(object_bucket, object_path)
     output = f"./encoded/{object_id}"
     process_file(file_path, output, object_id)
-    upload_s3_folder("./encoded/", object_id, S3_BUCKET_ENCODED_NAME)
+    upload_s3_folder("./encoded/", object_id, S3_BUCKET_NAME)
     #os.remove(output)
     # Acknowledge message processing completion
     ack = ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -337,25 +348,20 @@ def callback(ch, method, properties, body):
 
 def main():
     """Set up RabbitMQ connection and start consuming messages."""
-    # Connect to RabbitMQ
 
     print(f"Connecting to RabbitMQ on {RABBITMQ_HOST}...")
-    connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-    channel = connection.channel()
-    print(f"Connected to RabbitMQ on {RABBITMQ_HOST}")
 
-    # Check if the queue exists
     try:
-        channel.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
-    except pika.exceptions.ChannelClosedByBroker:
+        RABBITMQ_CHANNEL.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
+    except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Queue '{TRANSCODE_QUEUE_NAME}' does not exist.")
-        return
+        return 0
 
-    # Set up subscription on the queue
-    channel.basic_consume(queue=TRANSCODE_QUEUE_NAME, on_message_callback=callback)
+    RABBITMQ_CHANNEL.basic_consume(queue=TRANSCODE_QUEUE_NAME, on_message_callback=callback)
     
     print(f"Waiting for messages in queue: {TRANSCODE_QUEUE_NAME}. To exit press CTRL+C")
-    channel.start_consuming()
+    RABBITMQ_CHANNEL.start_consuming()
 
 
 if __name__ == '__main__':
