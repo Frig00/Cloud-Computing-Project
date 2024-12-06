@@ -10,13 +10,12 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Login from "./components/Login.tsx";
 import SignUp from "./components/SignUp.tsx";
-import Watch from "./Watch.tsx";
+import Watch from "./components/Watch/Watch.tsx";
 import Upload from "./components/Upload/Upload.tsx";
 import Search from "./components/Search.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./services/authService.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
-import Bench from "./components/Bench/Bench.tsx";
 import { Configuration, DefaultConfig } from "./api/runtime.ts";
 import HomePage from "./components/HomePage.tsx";
 import '@fontsource/geist-sans/100.css';
@@ -52,7 +51,6 @@ createRoot(document.getElementById("root")!).render(
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/sign-up" element={<SignUp />} />
-              <Route path="/bench" element={<Bench />} />
               <Route path="/" element={<App />} errorElement={<ErrorPage />}>
                 <Route element={<ProtectedRoute />}>
                   <Route index element={<HomePage />} />

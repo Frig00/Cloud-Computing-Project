@@ -1,14 +1,16 @@
-import { Container, Grid2 as Grid, Link, Stack, Typography } from "@mui/material";
+import { Button, ButtonGroup, Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { VideoApi } from "./api";
+import { VideoApi } from "../../api";
 import { useQuery } from "@tanstack/react-query";
-import { parseVTT, sampleVTT } from "./components/Bench/Bench";
+import { parseVTT, sampleVTT } from "../Bench/Bench";
 import clsx from "clsx";
 
-import AWSTranscribe from "./assets/aws_transcribe.svg";
-import { API_BASE_PATH, masterPlaylistSrc } from "./lib/consts";
+import AWSTranscribe from "../../assets/aws_transcribe.svg";
+import { API_BASE_PATH, masterPlaylistSrc } from "../../lib/consts";
+import { Subscriptions, SubscriptionsOutlined, SubscriptOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
+import CommentSection from "./CommentSection";
 
 type Quality = {
   height: number;
@@ -49,6 +51,15 @@ export default function Watch() {
     if (element) {
       setVideoElement(element);
     }
+  };
+
+  const [formats, setFormats] = useState<string[]>(() => []);
+
+  const handleFormat = (
+    event: React.MouseEvent<HTMLElement>,
+    newFormats: string[],
+  ) => {
+    setFormats(newFormats);
   };
 
   const src = masterPlaylistSrc(videoId);
@@ -172,40 +183,75 @@ export default function Watch() {
               controls
               onTimeUpdate={onTimeUpdate}
             />
-            <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
-            <Typography variant="body1" className="mt-2">
-              {data.userId}
-            </Typography>
+
+            <Stack direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
+              <Stack>
+                <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
+                <Typography variant="body1" className="mt-2">
+                  {data.userId}
+                </Typography>
+
+              </Stack>
+              <ToggleButtonGroup
+                color="primary"
+                aria-label="Basic button group"
+                value={formats}
+                onChange={handleFormat}>
+                <ToggleButton value="subscribe" sx={{ gap: '0.5rem' }}>
+                  {formats.includes('subscribe') ? <Subscriptions /> : <SubscriptionsOutlined />}
+                  <span>{formats.includes('subscribe') ? 'Subscribed' : 'Subscribe'}</span>
+                </ToggleButton>
+                <ToggleButton value="like" sx={{ gap: '0.5rem' }}>
+                  {formats.includes('like') ? <ThumbUp /> : <ThumbUpOutlined />}
+                  <span>Like (78)</span>
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+            <Card variant="outlined" sx={{ padding: "0.5rem" }}>
+              <Stack>
+                <Typography
+                  component="span"
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  {"2 days ago — 357 views"}
+                </Typography>
+                <span>Description</span>
+              </Stack>
+            </Card>
 
           </Stack>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <div className="subtitle-panel" style={{ border: '1px solid black' }}>
+        <Grid size={{ xs: 12, lg: 4 }} container spacing={2} direction={'column'}>
+          <Grid size={{ xs: 12, lg: 12 }} >
+            <div className="subtitle-panel" style={{ border: '1px solid black' }}>
 
-            <div className="subtitle-container">
-              {cues ? cues.map((cue, index) => (
-                <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
-                  <div className="cue-time">
-                    {cue.formattedStart}
+              <div className="subtitle-container">
+                {cues ? cues.map((cue, index) => (
+                  <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
+                    <div className="cue-time">
+                      {cue.formattedStart}
+                    </div>
+                    <div>
+                      {cue.text}
+                    </div>
                   </div>
-                  <div>
-                    {cue.text}
-                  </div>
-                </div>
-              )) : null}
-            </div>
-            <div className="subtitle-pb">
+                )) : null}
+              </div>
+              <div className="subtitle-pb">
 
-              <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
-              <span>Powered by<br /><b>AWS Transcribe</b></span>
+                <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
+                <span>Powered by<br /><b>AWS Transcribe</b></span>
+              </div>
             </div>
-          </div>
-        </Grid>
-        <Stack width={"100%"}>
+          </Grid>
 
-          {/* Display available qualities */}
-          {qualities.length > 0 && (
+
+          <Grid size={{ xs: 12, lg: 12 }}>
+
+            {/* Display available qualities */}
+            {qualities.length > 0 && (
               <table style={{ width: '100%' }} className="quality-grid">
                 <thead>
                   <tr>
@@ -235,11 +281,16 @@ export default function Watch() {
                   ))}
                 </tbody>
               </table>
-          )}
+            )}
 
 
 
-        </Stack>
+          </Grid>
+
+        </Grid>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <CommentSection />
+        </Grid>
       </Grid>
     </Container>
   );
