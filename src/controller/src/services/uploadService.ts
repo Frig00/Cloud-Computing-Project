@@ -43,7 +43,7 @@ export class UploadService {
       const videoId = this.randomString(16); // Generate unique videoId
       const command = new PutObjectCommand({
         Bucket: bucketName,
-        Key: `${videoId}.original.mp4`,
+        Key: `${videoId}/${videoId}.original.mp4`,
         ContentType: "video/mp4",
       });
 

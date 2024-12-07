@@ -24,5 +24,5 @@ s3_client = boto3.client(
     config=Config(signature_version="s3v4")
 )
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-RABBITMQ_CHANNEL = connection.channel()
+RABBITMQ_CONNECTION = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+RABBITMQ_CHANNEL = RABBITMQ_CONNECTION.channel()

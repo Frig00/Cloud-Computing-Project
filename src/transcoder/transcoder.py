@@ -16,7 +16,8 @@ from config import (
     S3_BUCKET_NAME,
     STATUS_QUEUE_NAME,
     s3_client,
-    RABBITMQ_CHANNEL
+    RABBITMQ_CHANNEL,
+    RABBITMQ_CONNECTION
 )
 
 class ProgressStatus(enum.Enum):
@@ -44,6 +45,7 @@ def download_s3_file(bucket, object_path):
         print(f"Downloaded {object_path} to {local_path}")
         return local_path
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"File {object_path} not found in bucket {bucket} or bucket {bucket} does not exist.")
         print(f"Error: {e}")
         return None
@@ -85,6 +87,7 @@ def get_total_frames(file_path):
         try:
             return get_frames_by_duration_and_fps()
         except Exception as e:
+            send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
             print(f"Error calculating frames from duration and fps: {e}")
             return 0
 
@@ -117,11 +120,17 @@ def get_video_quality(file_path):
         return quality if quality else "Unknown quality"
 
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
 
 def send_combined_progress(status, video_id=None, progress_dict=None, error=None):
     """Send combined transcoding progress for all qualities."""
+
+    global RABBITMQ_CHANNEL
+    if not RABBITMQ_CHANNEL.is_open:
+        RABBITMQ_CHANNEL = RABBITMQ_CONNECTION.channel()
+
     message = {
         "videoId": video_id if video_id else None,
         "progress": progress_dict.copy() if progress_dict else None,  # Create a copy of the dict to avoid any threading issues
@@ -179,19 +188,17 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
         # Update progress in shared dictionary
         shared_progress[quality.label] = percentage
         # Send combined progress
-        send_combined_progress(videoId, shared_progress, ProgressStatus.TRANSCODING.name)
+        send_combined_progress(ProgressStatus.TRANSCODING.name, videoId, shared_progress)
 
     @ffmpeg.on("completed")
     def on_completed():
         shared_progress[quality.label] = 100
-        send_combined_progress(videoId, shared_progress)
-        RABBITMQ_CHANNEL.close()
-        print(f"Connection closed for quality: {quality.label}")
+        send_combined_progress(ProgressStatus.TRANSCODING.name, videoId, shared_progress)
 
     try:
         ffmpeg.execute()
     except Exception as e:
-        send_combined_progress(videoId, shared_progress, ProgressStatus.ERROR.value, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Error during transcoding to {quality.label}: {e}")
 
 def process_file(file_path, output, videoId: str):
@@ -228,6 +235,8 @@ def process_file(file_path, output, videoId: str):
     # Create a master playlist for all qualities
     create_master_playlist(basePath, qualities_to_process, "master.m3u8")
 
+    send_combined_progress(ProgressStatus.COMPLETED.name, videoId)
+
 
 def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00:00:01"):
     """
@@ -259,9 +268,11 @@ def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00
         print(f"Thumbnail created at {thumbnail_path}")
         return True
     except subprocess.CalledProcessError as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Error: ffmpeg command failed. {e}")
         return False
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Unexpected error: {e}")
         return False
 
@@ -292,6 +303,7 @@ def create_master_playlist(base_path: str, qualities: list[VideoQuality], output
 
         print(f"Master playlist created at {master_playlist_path}")
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Error creating master playlist: {e}")
 
 
@@ -302,6 +314,7 @@ def upload_s3_file(local_path, object_name, encoded_bucked):
         s3_client.upload_file(local_path, encoded_bucked, object_name)
         print(f"Uploaded {object_name} to S3 bucket '{encoded_bucked}'")
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Bucket {encoded_bucked} does not exist or file {object_name} could not be uploaded.")
 
 
@@ -315,6 +328,7 @@ def upload_s3_folder(local_path, object_name, encoded_bucked):
                 s3_client.upload_file(local, encoded_bucked, s3_path)
                 print(f"Uploaded {s3_path} to S3 bucket '{encoded_bucked}'")
             except Exception as e:
+                send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
                 print(f"Bucket {encoded_bucked} does not exist or file {s3_path} could not be uploaded.")
 
 
@@ -343,6 +357,7 @@ def callback(ch, method, properties, body):
         shutil.rmtree("./encoded")
         print("Cleaned up temporary files and folders.")
     except Exception as e:
+        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Error deleting file: {e}")
 
 
@@ -353,6 +368,7 @@ def main():
 
     try:
         RABBITMQ_CHANNEL.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
+        RABBITMQ_CHANNEL.queue_declare(queue=STATUS_QUEUE_NAME, passive=True)
     except Exception as e:
         send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
         print(f"Queue '{TRANSCODE_QUEUE_NAME}' does not exist.")
