@@ -80,7 +80,7 @@ export class UploadService {
       const message = { 
         videoId,
         bucket: "video",
-        path: `${videoId}.original.mp4`,
+        path: `${videoId}/${videoId}.original.mp4`,
        };
       await this.rabbitMQChannel.assertQueue(queueName, { durable: true });
       this.rabbitMQChannel.sendToQueue(
