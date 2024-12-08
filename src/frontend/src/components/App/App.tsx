@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
 import {
@@ -18,50 +18,63 @@ import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
 import { useAuth } from "../../services/authService";
 
+const SearchIconWrapper = styled("div")(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  height: "100%",
+  position: "absolute",
+  pointerEvents: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+}));
+
+const Search = styled("div")(({ theme }) => ({
+  position: "relative",
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: alpha(theme.palette.common.white, 0.15),
+  "&:hover": {
+    backgroundColor: alpha(theme.palette.common.white, 0.25),
+  },
+  marginRight: theme.spacing(2),
+  marginLeft: theme.spacing(2),
+  width: "100%",
+  [theme.breakpoints.up("sm")]: {
+    marginLeft: theme.spacing(3),
+    width: "auto",
+  },
+}));
+
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
+  color: "inherit",
+  "& .MuiInputBase-input": {
+    padding: theme.spacing(1, 1, 1, 0),
+    // vertical padding + font size from searchIcon
+    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    transition: theme.transitions.create("width"),
+    width: "100%",
+    [theme.breakpoints.up("md")]: {
+      width: "40ch",
+    },
+  },
+}));
+
+
 function App() {
 
   const auth = useAuth();
   const navigate = useNavigate();
 
-  const SearchIconWrapper = styled("div")(({ theme }) => ({
-    padding: theme.spacing(0, 2),
-    height: "100%",
-    position: "absolute",
-    pointerEvents: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }));
+ 
 
-  const Search = styled("div")(({ theme }) => ({
-    position: "relative",
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha(theme.palette.common.white, 0.15),
-    "&:hover": {
-      backgroundColor: alpha(theme.palette.common.white, 0.25),
-    },
-    marginRight: theme.spacing(2),
-    marginLeft: theme.spacing(2),
-    width: "100%",
-    [theme.breakpoints.up("sm")]: {
-      marginLeft: theme.spacing(3),
-      width: "auto",
-    },
-  }));
+  const [searchedTitle, setSearchedTitle] = useState("");
 
-  const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: "inherit",
-    "& .MuiInputBase-input": {
-      padding: theme.spacing(1, 1, 1, 0),
-      // vertical padding + font size from searchIcon
-      paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-      transition: theme.transitions.create("width"),
-      width: "100%",
-      [theme.breakpoints.up("md")]: {
-        width: "40ch",
-      },
-    },
-  }));
+  const handleSearchChange = (event: React.KeyboardEvent<HTMLInputElement> & React.ChangeEvent<HTMLInputElement>) => {
+    setSearchedTitle(event.target.value);
+    if (event.key === "Enter") {
+      setSearchedTitle("");
+      navigate("/search?q=" + searchedTitle );
+    }
+  };
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -72,7 +85,6 @@ function App() {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-
 
   const logout = () => {
     handleMenuClose();
@@ -110,7 +122,7 @@ function App() {
           <Toolbar sx={{ justifyContent: "space-between" }}>
             <Link to="/">
               <Typography variant="h6" component="div">
-                CloudWatch
+                Sunomi
               </Typography>
             </Link>
             <Search>
@@ -120,6 +132,9 @@ function App() {
               <StyledInputBase
                 placeholder="Search…"
                 inputProps={{ "aria-label": "search" }}
+                value={searchedTitle}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchChange}
               />
             </Search>
             <div className="actions">
@@ -128,7 +143,7 @@ function App() {
                   <LogInIcon />
                 </IconButton>
               </Link>
-            <Link to="/search">
+            <Link to={"/search? q=" + searchedTitle}  >
                 <IconButton aria-label="search" size="large" color="inherit">
                   <SearchIcon />
                 </IconButton>

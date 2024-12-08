@@ -2,6 +2,7 @@
 import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Link, Stack, styled, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import MuiCard from '@mui/material/Card';
+import { AuthApi } from "@/api";
 
 
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -92,18 +93,38 @@ export default function SignIn() {
     return isValid;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (nameError || emailError || passwordError) {
       event.preventDefault();
       return;
     }
     const data = new FormData(event.currentTarget);
+
+    const authApi = new AuthApi();
+    try {
+      var res = await authApi.authSignupPost({
+        authSignupPostRequest :
+         {
+          userId:data.get('mail') as string,
+          password: data.get('password') as string,
+          name: data.get('name') as string
+        }
+
+      });
+
+    }
+    catch {
+
+    }
+
+    /*
     console.log({
       name: data.get('name'),
-      lastName: data.get('lastName'),
       email: data.get('email'),
       password: data.get('password'),
     });
+    */
   };
 
 

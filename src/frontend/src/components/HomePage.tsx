@@ -20,7 +20,7 @@ export default function HomePage() {
 
     return (<Container maxWidth="xl">
         <div className="flex gap-2 flex-wrap m-2">
-            {data.map(video => <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} variant="small" />)}
+            {data.map(video => <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="small" />)}
             
         </div>
     </Container>);
