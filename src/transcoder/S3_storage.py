@@ -22,7 +22,7 @@ def download_s3_file(bucket, object_path):
         print(f"Downloaded {object_path} to {local_path}")
         return local_path
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error: {e}")
         return None
     
@@ -37,5 +37,5 @@ def upload_s3_folder(local_path, object_name, encoded_bucked):
                 s3_client.upload_file(local, encoded_bucked, s3_path)
                 print(f"Uploaded {s3_path} to S3 bucket '{encoded_bucked}'")
             except Exception as e:
-                send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+                send_combined_progress(ProgressStatus.ERROR, error=str(e))
                 print(f"Bucket {encoded_bucked} does not exist or file {s3_path} could not be uploaded.")

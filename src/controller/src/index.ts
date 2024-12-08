@@ -6,15 +6,20 @@ import swaggerPlugin from "./plugins/swagger";
 import authPlugin from "./plugins/auth";
 import registerRoutes from "./routes";
 import corsPlugin from "./plugins/cors";
+import websocket from '@fastify/websocket'
 
-dotenv.config();
+const env = dotenv.config({ path: "..\\..\\.env" });
+console.log(env);
 const fastify: FastifyInstance = Fastify({ logger: true });
+
 const startServer = async () => {
   try {
     // Register plugins
     await swaggerPlugin(fastify);
     await authPlugin(fastify);
     await corsPlugin(fastify);
+    await fastify.register(websocket);
+    
 
     // Register routes
     registerRoutes(fastify);

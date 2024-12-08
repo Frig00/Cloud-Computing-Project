@@ -4,14 +4,17 @@ import { Stack } from "@mui/system";
 import Confetti from "react-confetti-boom";
 import { UploadApi } from "../../api";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { uploadSseEndpointUrl } from "../../lib/consts";
+import { uploadSseEndpointUrl, uploadSseEndpointUrlSse } from "../../lib/consts";
 
 export interface VideoProgress {
     videoId: string;
     progress: {
         [key: string]: number
-    };
+    } | null;
+    status: 'TRANSCODING' | 'UPLOADING' | 'COMPLETED' | 'ERROR';
+    error: string | null;
 }
+
 
 interface UploadFormProps {
     file: File;
@@ -59,7 +62,20 @@ class UploadService {
     }
 
     static async getTranscodeProgress(videoId: string, onProgress: (progress: VideoProgress) => void) {
-        fetchEventSource(uploadSseEndpointUrl(videoId), {
+        const ws = new WebSocket(uploadSseEndpointUrl(videoId));
+        ws.onmessage = (event) => {
+            console.log('Message from server:', event.data);
+            onProgress(JSON.parse(event.data));
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+    }
+
+    static async getTranscodeProgressSse(videoId: string, onProgress: (progress: VideoProgress) => void) {
+        fetchEventSource(uploadSseEndpointUrlSse(videoId), {
+            openWhenHidden: true,
             onmessage(ev) {
                 onProgress(JSON.parse(ev.data));
             }
@@ -81,22 +97,19 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
     const onUpload = async () => {
         setUploadDeterminate(false);
 
-
         const { videoId } = await UploadService.uploadVideo(file, (progress) => {
             setUploadProgress(progress);
             setUploadDeterminate(true);
         });
 
 
-        UploadService.getTranscodeProgress(videoId, (progress) => {
+        UploadService.getTranscodeProgressSse(videoId, (progress) => {
             setTranscodeProgress(progress);
         });
-
     };
 
     return (
         <>
-            <Confetti mode='boom' particleCount={250} effectInterval={3000} colors={['#ff577f', '#ff884b', '#ffd384', '#fff9b0']} launchSpeed={1.8} spreadDeg={60} />
             <Typography variant="h4" gutterBottom>
                 Upload Video
             </Typography>
@@ -139,7 +152,7 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
                     />
                 </Box>
 
-                {transcodeProgress ? Object.entries(transcodeProgress.progress).map(([resolution, progress]) => (
+                {transcodeProgress && transcodeProgress.status === 'TRANSCODING' && transcodeProgress.progress != null && Object.entries(transcodeProgress.progress).map(([resolution, progress]) => (
                     <Box sx={{ mt: 2 }} key={resolution}>
                         <Typography variant="body2" gutterBottom>
                             Processing {resolution}
@@ -149,7 +162,16 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
                             value={progress}
                         />
                     </Box>
-                )) : null}
+                ))}
+
+                {transcodeProgress && transcodeProgress.status === 'COMPLETED' &&
+                    <>
+                        <Confetti mode='boom' particleCount={250} effectInterval={3000} colors={['#ff577f', '#ff884b', '#ffd384', '#fff9b0']} launchSpeed={1.8} spreadDeg={60} />
+                        <Typography variant="h5" gutterBottom>
+                            Video Processing Completed
+                        </Typography>
+                    </>
+                }
             </Box>
         </>
     );

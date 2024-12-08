@@ -24,5 +24,8 @@ s3_client = boto3.client(
     config=Config(signature_version="s3v4")
 )
 
+if not isinstance(RABBITMQ_HOST, str):
+        raise ValueError("RABBITMQ_HOST must be a string")
+
 RABBITMQ_CONNECTION = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
 RABBITMQ_CHANNEL = RABBITMQ_CONNECTION.channel()

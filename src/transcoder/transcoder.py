@@ -50,7 +50,7 @@ def process_file(file_path, output, videoId: str):
     # Create a master playlist for all qualities
     create_master_playlist(basePath, qualities_to_process, "master.m3u8")
 
-    send_combined_progress(ProgressStatus.COMPLETED.name, videoId)
+    send_combined_progress(ProgressStatus.COMPLETED, videoId)
 
 
 
@@ -79,7 +79,7 @@ def callback(ch, method, properties, body):
         shutil.rmtree("./encoded")
         print("Cleaned up temporary files and folders.")
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error deleting file: {e}")
 
 
@@ -92,7 +92,7 @@ def main():
         RABBITMQ_CHANNEL.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
         RABBITMQ_CHANNEL.queue_declare(queue=STATUS_QUEUE_NAME, passive=True)
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Queue '{TRANSCODE_QUEUE_NAME}' does not exist.")
         return 0
 

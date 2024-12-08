@@ -34,7 +34,7 @@ def get_video_quality(file_path):
         return quality if quality else "Unknown quality"
 
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error determining video quality: {e}")
         return "Unknown quality"
 
@@ -44,9 +44,6 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
     segmentsPath = os.path.join(base_path, quality.label)
     os.makedirs(segmentsPath, exist_ok=True)
     video_total_frame = get_total_frames(file_path)
-
-    # Connect to RabbitMQ
-    print(f"Connected to RabbitMQ on {RABBITMQ_HOST} for quality: {quality.label}")
 
     if quality == actual_quality:
         create_video_thumbnail(file_path, os.path.join(base_path, "thumbnail.jpg"))
@@ -78,17 +75,17 @@ def transcode_to_quality(file_path, base_path, quality: VideoQuality, actual_qua
         # Update progress in shared dictionary
         shared_progress[quality.label] = percentage
         # Send combined progress
-        send_combined_progress(ProgressStatus.TRANSCODING.name, videoId, shared_progress)
+        send_combined_progress(ProgressStatus.TRANSCODING, videoId, shared_progress)
 
     @ffmpeg.on("completed")
     def on_completed():
         shared_progress[quality.label] = 100
-        send_combined_progress(ProgressStatus.TRANSCODING.name, videoId, shared_progress)
+        send_combined_progress(ProgressStatus.TRANSCODING, videoId, shared_progress)
 
     try:
         ffmpeg.execute()
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error during transcoding to {quality.label}: {e}")
 
 def get_total_frames(file_path):
@@ -127,7 +124,7 @@ def get_total_frames(file_path):
         try:
             return get_frames_by_duration_and_fps()
         except Exception as e:
-            send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+            send_combined_progress(ProgressStatus.ERROR, error=str(e))
             print(f"Error calculating frames from duration and fps: {e}")
             return 0
 
@@ -161,11 +158,11 @@ def create_video_thumbnail(video_path: str, thumbnail_path: str, time: str = "00
         print(f"Thumbnail created at {thumbnail_path}")
         return True
     except subprocess.CalledProcessError as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error: ffmpeg command failed. {e}")
         return False
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Unexpected error: {e}")
         return False
 
@@ -196,5 +193,5 @@ def create_master_playlist(base_path: str, qualities: list[VideoQuality], output
 
         print(f"Master playlist created at {master_playlist_path}")
     except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR.name, error=str(e))
+        send_combined_progress(ProgressStatus.ERROR, error=str(e))
         print(f"Error creating master playlist: {e}")
