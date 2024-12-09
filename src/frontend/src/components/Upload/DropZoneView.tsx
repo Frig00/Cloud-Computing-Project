@@ -1,8 +1,8 @@
-import React, { ChangeEvent, DragEvent, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
 import { Paper, Typography } from "@mui/material";
 import { styled } from "@mui/system";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import usePreventDefaultDrop from '@/lib/usePreventDefaultDrop';
+import usePreventDefaultDrop from "@/lib/usePreventDefaultDrop";
 
 const DropZone = styled(Paper)(({ theme }) => ({
   border: `2px dashed ${theme.palette.primary.main}`,
@@ -30,7 +30,7 @@ export default function DropZoneView({ onFileSelected }: DropZoneViewProps) {
     e.stopPropagation();
     if (e.currentTarget != e.target) return;
     setIsDragging(false);
-    
+
     const droppedFiles = Array.from(e.dataTransfer.files);
     onFileSelected(droppedFiles[0]);
   };
@@ -39,13 +39,13 @@ export default function DropZoneView({ onFileSelected }: DropZoneViewProps) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-  }
+  };
 
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-  }
+  };
 
   const handleFileInput = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -59,20 +59,26 @@ export default function DropZoneView({ onFileSelected }: DropZoneViewProps) {
   };
 
   return (
-    <DropZone sx={{ backgroundColor: isDragging ? 'rgb(59 130 246 / 0.5)' : "inherit", position: 'relative' }}>
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 1000000,
+    <DropZone
+      sx={{
+        backgroundColor: isDragging ? "rgb(59 130 246 / 0.5)" : "inherit",
+        position: "relative",
       }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          zIndex: 1000000,
+        }}
         onDrop={handleDrop}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
-        onClick={openFileDialog}>
-      </div>
+        onClick={openFileDialog}
+      ></div>
       <input
         type="file"
         ref={fileInputRef}

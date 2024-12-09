@@ -9,6 +9,6 @@
     "outDir": "./dist",                // Output folder for compiled files
     "rootDir": "./src"                 // Root directory of our TypeScript files
   },
-  "include": ["src/**/*.ts"],          // Include all TypeScript files in src/
+  "include": ["src/**/*.ts", "eslint.config.mjs"],          // Include all TypeScript files in src/
   "exclude": ["node_modules"]          // Exclude node_modules from compilation
 }

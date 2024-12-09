@@ -47,9 +47,11 @@ export default async function authRoutes(app: FastifyInstance) {
       try {
         const token = await UserService.login(userId, password, app);
         return { token };
-      } catch (error) {
-          reply.status(500).send({ error: "Error logging in (username or password wrong)" });
-        }
+      } catch {
+        reply
+          .status(500)
+          .send({ error: "Error logging in (username or password wrong)" });
+      }
     },
   );
 
@@ -64,7 +66,7 @@ export default async function authRoutes(app: FastifyInstance) {
         body: SignUpRequestSchema,
         response: {
           200: {},
-          500: ErrorResponseSchema
+          500: ErrorResponseSchema,
         },
       },
     },
@@ -73,7 +75,7 @@ export default async function authRoutes(app: FastifyInstance) {
       try {
         await UserService.signUp(name, userId, password, app);
         reply.status(200).send();
-      } catch (error) {
+      } catch {
         reply.status(500).send({ error: "Error creating user!" });
       }
     },
@@ -97,7 +99,7 @@ export default async function authRoutes(app: FastifyInstance) {
         security: [{ bearerAuth: [] }],
       },
     },
-    async (request, reply) => {
+    async (request) => {
       // The user is authenticated at this point
       const user = request.user; // Contains the decoded JWT payload
       return { message: `Hello ${JSON.stringify(user)}!` };

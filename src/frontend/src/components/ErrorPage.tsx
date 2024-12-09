@@ -9,8 +9,8 @@ export default function ErrorPage() {
       <span className="font-bold text-4xl">Oops!</span>
       <p>Sorry, an unexpected error has occurred.</p>
       <p>
-        {/* @ts-ignore */}
-      <i>{error.statusText || error.message}</i>
+        {/* @ts-expect-error */}
+        <i>{error.statusText || error.message}</i>
       </p>
     </div>
   );

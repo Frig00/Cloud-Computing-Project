@@ -35,14 +35,14 @@ export class VideoService {
   // Search for videos by title
   static async searchVideos(words: string[]) {
     if (words.length === 0) throw new Error("Empty search words"); // Guard against empty input
-  
+
     const searchConditions = words.map((word) => ({
       title: {
         contains: word,
       },
     }));
     console.log("Search conditions:", searchConditions);
-  
+
     try {
       return await prisma.videos.findMany({
         where: {
@@ -54,7 +54,6 @@ export class VideoService {
       throw new Error("Database query failed");
     }
   }
-  
 
   // Like a video
   static async likeVideo(videoId: string, userId: string) {

@@ -1,15 +1,29 @@
-import { Button, ButtonGroup, Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import {
+  Card,
+  Container,
+  Grid2 as Grid,
+  Link,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { VideoApi } from "../../api";
 import { useQuery } from "@tanstack/react-query";
 import { parseVTT, sampleVTT } from "../Bench/Bench";
 import clsx from "clsx";
 
 import AWSTranscribe from "../../assets/aws_transcribe.svg";
-import { API_BASE_PATH, masterPlaylistSrc } from "../../lib/consts";
-import { Subscriptions, SubscriptionsOutlined, SubscriptOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
+import { masterPlaylistSrc } from "../../lib/consts";
+import {
+  Subscriptions,
+  SubscriptionsOutlined,
+  ThumbUp,
+  ThumbUpOutlined,
+} from "@mui/icons-material";
 import CommentSection from "./CommentSection";
 
 type Quality = {
@@ -20,26 +34,26 @@ type Quality = {
   index: number;
 };
 
-
 export default function Watch() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const videoId = searchParams.get("v")!;
   const hlsRef = useRef<HLS | null>(null);
-
 
   const videoApi = new VideoApi();
 
   const { isPending, error, data } = useQuery({
-    queryKey: ['videoVideoIdGet', videoId],
+    queryKey: ["videoVideoIdGet", videoId],
     queryFn: () => videoApi.videoVideoIdGet({ videoId }),
-  })
-
-
+  });
 
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
-  const [cues, setCues] = useState<Array<{ start: number, end: number, text: string, formattedStart: string }> | null>(null);
+  const [cues, setCues] = useState<Array<{
+    start: number;
+    end: number;
+    text: string;
+    formattedStart: string;
+  }> | null>(null);
   const [activeCue, setActiveCue] = useState<number | null>(null);
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
@@ -78,7 +92,8 @@ export default function Watch() {
       hlsRef.current.loadSource(src);
       hlsRef.current.attachMedia(videoElement);
       hlsRef.current.on(HLS.Events.MANIFEST_PARSED, (event, data) => {
-        videoElement.play()
+        videoElement
+          .play()
           .catch((error) => console.log("Error playing video:", error));
 
         const availableQualities = data.levels.map((level, index) => ({
@@ -86,7 +101,7 @@ export default function Watch() {
           width: level.width,
           bitrate: level.bitrate,
           name: `${level.height}p`,
-          index: index
+          index: index,
         }));
         setQualities(availableQualities);
         console.log(availableQualities);
@@ -99,18 +114,17 @@ export default function Watch() {
           width: newQuality.width,
           bitrate: newQuality.bitrate,
           name: `${newQuality.height}p`,
-          index: data.level
+          index: data.level,
         });
       });
-
     } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
       videoElement.src = src;
       videoElement.addEventListener("loadedmetadata", () => {
-        videoElement.play()
+        videoElement
+          .play()
           .catch((error) => console.log("Error playing video:", error));
       });
     }
-
   }, [videoElement, src]);
 
   useEffect(() => {
@@ -123,17 +137,19 @@ export default function Watch() {
     };
   }, [initPlayer]);
 
-
-
   useEffect(() => {
-    setCues(parseVTT(sampleVTT))
+    setCues(parseVTT(sampleVTT));
   }, []);
 
   useEffect(() => {
     if (!activeCue) return;
-    const container = document.querySelector(".subtitle-container") as HTMLElement;
+    const container = document.querySelector(
+      ".subtitle-container",
+    ) as HTMLElement;
     const containerRect = container.getBoundingClientRect();
-    const cueElement = document.querySelector(`.subtitle-cue[data-index="${activeCue}"]`);
+    const cueElement = document.querySelector(
+      `.subtitle-cue[data-index="${activeCue}"]`,
+    );
     const elementRect = cueElement!.getBoundingClientRect();
 
     const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
@@ -144,16 +160,15 @@ export default function Watch() {
     });
   }, [activeCue]);
 
-
   const formatBitrate = (bitrate: number) => {
     return `${(bitrate / 1000000).toFixed(2)} Mbps`;
   };
 
-  const onTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+  const onTimeUpdate = () => {
     // get the first cue that starts after the current time
     const currentTime = videoElement?.currentTime;
     if (!currentTime || !cues) return;
-    const nextCue = cues?.find(cue => cue.start > currentTime);
+    const nextCue = cues?.find((cue) => cue.start > currentTime);
     if (nextCue) {
       const index = cues.indexOf(nextCue) - 1;
       setActiveCue(index);
@@ -161,48 +176,59 @@ export default function Watch() {
   };
 
   const handleCueClick = (index: number) => {
-    setActiveCue(index)
+    setActiveCue(index);
     if (videoElement) {
       videoElement.currentTime = cues![index].start;
     }
-  }
+  };
 
+  if (isPending) return "Loading...";
 
-  if (isPending) return 'Loading...'
-
-  if (error) return 'An error has occurred: ' + error.message
+  if (error) return "An error has occurred: " + error.message;
 
   return (
     <Container maxWidth="xl" className="mt-4">
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack>
+            <video ref={refCallback} controls onTimeUpdate={onTimeUpdate} />
 
-            <video
-              ref={refCallback}
-              controls
-              onTimeUpdate={onTimeUpdate}
-            />
-
-            <Stack direction={'row'} justifyContent={'space-between'} alignItems={'center'}>
+            <Stack
+              direction={"row"}
+              justifyContent={"space-between"}
+              alignItems={"center"}
+            >
               <Stack>
-                <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>{data.title}</Typography>
+                <Typography
+                  variant="h1"
+                  marginTop={"0.5rem"}
+                  fontWeight={700}
+                  fontSize={"1.5rem"}
+                >
+                  {data.title}
+                </Typography>
                 <Typography variant="body1" className="mt-2">
                   {data.userId}
                 </Typography>
-
               </Stack>
               <ToggleButtonGroup
                 color="primary"
                 aria-label="Basic button group"
                 value={formats}
-                onChange={handleFormat}>
-                <ToggleButton value="subscribe" sx={{ gap: '0.5rem' }}>
-                  {formats.includes('subscribe') ? <Subscriptions /> : <SubscriptionsOutlined />}
-                  <span>{formats.includes('subscribe') ? 'Subscribed' : 'Subscribe'}</span>
+                onChange={handleFormat}
+              >
+                <ToggleButton value="subscribe" sx={{ gap: "0.5rem" }}>
+                  {formats.includes("subscribe") ? (
+                    <Subscriptions />
+                  ) : (
+                    <SubscriptionsOutlined />
+                  )}
+                  <span>
+                    {formats.includes("subscribe") ? "Subscribed" : "Subscribe"}
+                  </span>
                 </ToggleButton>
-                <ToggleButton value="like" sx={{ gap: '0.5rem' }}>
-                  {formats.includes('like') ? <ThumbUp /> : <ThumbUpOutlined />}
+                <ToggleButton value="like" sx={{ gap: "0.5rem" }}>
+                  {formats.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
                   <span>Like (78)</span>
                 </ToggleButton>
               </ToggleButtonGroup>
@@ -219,40 +245,58 @@ export default function Watch() {
                 <span>Description</span>
               </Stack>
             </Card>
-
           </Stack>
         </Grid>
 
-        <Grid size={{ xs: 12, lg: 4 }} container spacing={2} direction={'column'}>
-          <Grid size={{ xs: 12, lg: 12 }} >
-            <div className="subtitle-panel" style={{ border: '1px solid black' }}>
-
+        <Grid
+          size={{ xs: 12, lg: 4 }}
+          container
+          spacing={2}
+          direction={"column"}
+        >
+          <Grid size={{ xs: 12, lg: 12 }}>
+            <div
+              className="subtitle-panel"
+              style={{ border: "1px solid black" }}
+            >
               <div className="subtitle-container">
-                {cues ? cues.map((cue, index) => (
-                  <div key={index} style={{ marginBottom: '8px' }} className={clsx('subtitle-cue', activeCue == index ? 'active' : null)} data-index={index} onClick={() => handleCueClick(index)}>
-                    <div className="cue-time">
-                      {cue.formattedStart}
-                    </div>
-                    <div>
-                      {cue.text}
-                    </div>
-                  </div>
-                )) : null}
+                {cues
+                  ? cues.map((cue, index) => (
+                      <div
+                        key={index}
+                        style={{ marginBottom: "8px" }}
+                        className={clsx(
+                          "subtitle-cue",
+                          activeCue == index ? "active" : null,
+                        )}
+                        data-index={index}
+                        onClick={() => handleCueClick(index)}
+                      >
+                        <div className="cue-time">{cue.formattedStart}</div>
+                        <div>{cue.text}</div>
+                      </div>
+                    ))
+                  : null}
               </div>
               <div className="subtitle-pb">
-
-                <img src={AWSTranscribe} alt="AWS Transcribe" style={{ width: '48px', borderRadius: "4px" }} />
-                <span>Powered by<br /><b>AWS Transcribe</b></span>
+                <img
+                  src={AWSTranscribe}
+                  alt="AWS Transcribe"
+                  style={{ width: "48px", borderRadius: "4px" }}
+                />
+                <span>
+                  Powered by
+                  <br />
+                  <b>AWS Transcribe</b>
+                </span>
               </div>
             </div>
           </Grid>
 
-
           <Grid size={{ xs: 12, lg: 12 }}>
-
             {/* Display available qualities */}
             {qualities.length > 0 && (
-              <table style={{ width: '100%' }} className="quality-grid">
+              <table style={{ width: "100%" }} className="quality-grid">
                 <thead>
                   <tr>
                     <th>Quality</th>
@@ -267,26 +311,31 @@ export default function Watch() {
                       style={{
                         backgroundColor:
                           currentQuality?.index === quality.index
-                            ? '#e0e0e0'
-                            : 'transparent'
+                            ? "#e0e0e0"
+                            : "transparent",
                       }}
                     >
-                      <td><Link href="#" onClick={() => { if (hlsRef.current) hlsRef.current.currentLevel = quality.index; }}>
-                        {quality.name}
-                      </Link>
+                      <td>
+                        <Link
+                          href="#"
+                          onClick={() => {
+                            if (hlsRef.current)
+                              hlsRef.current.currentLevel = quality.index;
+                          }}
+                        >
+                          {quality.name}
+                        </Link>
                       </td>
-                      <td>{quality.width}x{quality.height}</td>
+                      <td>
+                        {quality.width}x{quality.height}
+                      </td>
                       <td>{formatBitrate(quality.bitrate)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-
-
-
           </Grid>
-
         </Grid>
         <Grid size={{ xs: 12, lg: 8 }}>
           <CommentSection />

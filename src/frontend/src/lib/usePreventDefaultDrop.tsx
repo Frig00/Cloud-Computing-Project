@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export default function usePreventDefaultDragDrop() {
   useEffect(() => {
@@ -7,14 +7,14 @@ export default function usePreventDefaultDragDrop() {
     };
 
     // Prevent default drag behaviors
-    window.addEventListener('dragenter', preventDefault);
-    window.addEventListener('dragover', preventDefault);
-    window.addEventListener('drop', preventDefault);
+    window.addEventListener("dragenter", preventDefault);
+    window.addEventListener("dragover", preventDefault);
+    window.addEventListener("drop", preventDefault);
 
     return () => {
-      window.removeEventListener('dragenter', preventDefault);
-      window.removeEventListener('dragover', preventDefault);
-      window.removeEventListener('drop', preventDefault);
+      window.removeEventListener("dragenter", preventDefault);
+      window.removeEventListener("dragover", preventDefault);
+      window.removeEventListener("drop", preventDefault);
     };
   }, []);
-};
+}

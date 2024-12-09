@@ -10,29 +10,22 @@ const ErrorResponseSchema = Type.Object({
 
 const SignUpResponseSchema = Type.Object({
   userId: Type.String(),
-  name: Type.String()
+  name: Type.String(),
 });
-
-const SuccessUpdateUserSchema = Type.Object({
-  success: Type.Boolean(),
-});
-
 
 const UpdateUserBodySchema = Type.Object({
   name: Type.Optional(Type.String()),
   password: Type.Optional(Type.String()),
 });
 
-
-type SuccessUpdateUser = Static<typeof SuccessUpdateUserSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type SignUpResponse = Static<typeof SignUpResponseSchema>;
 type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
 
 export default async function userRoutes(app: FastifyInstance) {
-
   //update user profile endpoint
-  app.put<{ Body: UpdateUserBody; Reply: ErrorResponse}>("/",
+  app.put<{ Body: UpdateUserBody; Reply: ErrorResponse }>(
+    "/",
     {
       onRequest: [app.authenticate],
       schema: {
@@ -50,22 +43,24 @@ export default async function userRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      
       const jwt = await request.jwtVerify<JWTPayload>();
       const userId = jwt.id;
 
       try {
-        const updatedUser = await UserService.updateUserProfile(userId, request.body, app);
+        await UserService.updateUserProfile(userId, request.body, app);
         reply.status(200).send();
         //return { message: "Profile updated" };
       } catch (err) {
-        reply.status(400).send({error: err instanceof Error ? err.message : 'Unknown error'});
+        reply.status(400).send({
+          error: err instanceof Error ? err.message : "Unknown error",
+        });
       }
-    }
+    },
   );
-  
+
   //get user ID endpoint
-  app.get<{Reply: SignUpResponse | ErrorResponse }>("/",
+  app.get<{ Reply: SignUpResponse | ErrorResponse }>(
+    "/",
     {
       onRequest: [app.authenticate],
       schema: {
@@ -90,14 +85,15 @@ export default async function userRoutes(app: FastifyInstance) {
         } else {
           return { userId: user.userId, name: user.name };
         }
-      } catch (error) {
+      } catch {
         reply.status(500).send({ error: "Error retrieving user" });
       }
-    }
+    },
   );
 
   //delete user endpoint
-  app.delete<{Reply: ErrorResponse }>("/",
+  app.delete<{ Reply: ErrorResponse }>(
+    "/",
     {
       onRequest: [app.authenticate],
       schema: {
@@ -131,8 +127,6 @@ export default async function userRoutes(app: FastifyInstance) {
           reply.status(500).send({ error: "Error deleting user" });
         }
       }
-    }
+    },
   );
-
-
 }

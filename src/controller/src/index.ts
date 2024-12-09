@@ -6,7 +6,7 @@ import swaggerPlugin from "./plugins/swagger";
 import authPlugin from "./plugins/auth";
 import registerRoutes from "./routes";
 import corsPlugin from "./plugins/cors";
-import websocket from '@fastify/websocket'
+import websocket from "@fastify/websocket";
 
 const env = dotenv.config({ path: "..\\..\\.env" });
 console.log(env);
@@ -19,13 +19,14 @@ const startServer = async () => {
     await authPlugin(fastify);
     await corsPlugin(fastify);
     await fastify.register(websocket);
-    
 
     // Register routes
     registerRoutes(fastify);
 
-  
-    await fastify.listen({ port: Number(process.env.PORT) || 3000 , host: "0.0.0.0"});
+    await fastify.listen({
+      port: Number(process.env.PORT) || 3000,
+      host: "0.0.0.0",
+    });
     console.log(
       `Server running at http://localhost:${process.env.PORT || 3000}`,
     );

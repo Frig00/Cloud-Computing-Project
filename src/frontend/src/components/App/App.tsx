@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
 import {
@@ -58,21 +58,20 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-
 function App() {
-
   const auth = useAuth();
   const navigate = useNavigate();
 
- 
-
   const [searchedTitle, setSearchedTitle] = useState("");
 
-  const handleSearchChange = (event: React.KeyboardEvent<HTMLInputElement> & React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (
+    event: React.KeyboardEvent<HTMLInputElement> &
+      React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setSearchedTitle(event.target.value);
     if (event.key === "Enter") {
       setSearchedTitle("");
-      navigate("/search?q=" + searchedTitle );
+      navigate("/search?q=" + searchedTitle);
     }
   };
 
@@ -90,7 +89,7 @@ function App() {
     handleMenuClose();
     auth.logout();
     navigate("/");
-  }
+  };
 
   const menuId = "primary-search-account-menu";
   const isMenuOpen = Boolean(anchorEl);
@@ -138,12 +137,12 @@ function App() {
               />
             </Search>
             <div className="actions">
-            <Link to="/login">
+              <Link to="/login">
                 <IconButton aria-label="login" size="large" color="inherit">
                   <LogInIcon />
                 </IconButton>
               </Link>
-            <Link to={"/search? q=" + searchedTitle}  >
+              <Link to={"/search? q=" + searchedTitle}>
                 <IconButton aria-label="search" size="large" color="inherit">
                   <SearchIcon />
                 </IconButton>

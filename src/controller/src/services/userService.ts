@@ -1,6 +1,6 @@
-import { FastifyInstance } from 'fastify';
-import prisma from '../data/prisma';
-import bcrypt from 'bcrypt';
+import { FastifyInstance } from "fastify";
+import prisma from "../data/prisma";
+import bcrypt from "bcrypt";
 
 export class UserService {
   static async getAllUsers() {
@@ -13,21 +13,30 @@ export class UserService {
         userId,
         name,
         password,
-       },
+      },
     });
   }
 
-  static async login(userId: string, password: string, fastify: FastifyInstance) {
+  static async login(
+    userId: string,
+    password: string,
+    fastify: FastifyInstance,
+  ) {
     const user = await prisma.users.findUnique({ where: { userId } });
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error("User not found");
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) throw new Error('Invalid password');
-    
-    return fastify.jwt.sign({ id: user.userId });//
+    if (!validPassword) throw new Error("Invalid password");
+
+    return fastify.jwt.sign({ id: user.userId }); //
   }
 
-  static async signUp(name: string, username: string, password: string, fastify: FastifyInstance){
+  static async signUp(
+    name: string,
+    username: string,
+    password: string,
+    fastify: FastifyInstance,
+  ) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.users.create({
       data: {
@@ -46,22 +55,23 @@ export class UserService {
     });
   }
 
-
-  static async updateUserProfile(userId: string, data: { name?: string; password?: string }, fastify: FastifyInstance) {
-
+  static async updateUserProfile(
+    userId: string,
+    data: { name?: string; password?: string },
+    fastify: FastifyInstance,
+  ) {
     const user = await prisma.users.findUnique({ where: { userId } });
-    if (!user) throw new Error('User not found');
-    
+    if (!user) throw new Error("User not found");
 
     const token = fastify.jwt.sign({ id: user.userId }); //
-    const decoded = fastify.jwt.verify<{ id: string }>(token);//
+    const decoded = fastify.jwt.verify<{ id: string }>(token); //
 
-    if (decoded.id !== userId) throw new Error('Unauthorized');
-    
+    if (decoded.id !== userId) throw new Error("Unauthorized");
 
     const updateData: { name?: string; password?: string } = {};
     if (data.name) updateData.name = data.name;
-    if (data.password) updateData.password = await bcrypt.hash(data.password, 10);
+    if (data.password)
+      updateData.password = await bcrypt.hash(data.password, 10);
 
     return prisma.users.update({
       where: { userId },
