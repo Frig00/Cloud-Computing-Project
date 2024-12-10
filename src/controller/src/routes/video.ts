@@ -1,6 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import { VideoService } from "../services/videoService";
+import { JWTPayload } from "../plugins/auth";
+import { json } from "stream/consumers";
 
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
@@ -22,15 +24,35 @@ const AllInfosVideoSchema = Type.Object({
   title: Type.String(),
   uploadDate: Type.Number(),
   status: Type.String(),
-  //aggiumgere commenti like views
+  totalLikes: Type.Number(),
+  userHasLiked: Type.Boolean(),
+  totalViews: Type.Number(),
+  comments: Type.Array(
+    Type.Object({
+      author: Type.String(),
+      text: Type.String(),
+    }),
+  ),
 });
 
-const IdVideoSchema = Type.Object({ videoId: Type.String() });
+const VideoCommentSchema = Type.Object({
+  comment: Type.String(),
+})
+
+
+const IdVideoSchema = Type.Object({ 
+  videoId: Type.String()
+});
+
+const IsLikingSchema = Type.Object({ isLiking: Type.Boolean() });
 const TitleVideoSchema = Type.Object({ q: Type.String() });
 
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
+type IsLiking = Static<typeof IsLikingSchema>;
+type IdVideo = Static<typeof IdVideoSchema>;
 type AllInfosVideo = Static<typeof AllInfosVideoSchema>;
 type FindVideo = Static<typeof FindVideoSchema>;
+type VideoComment = Static<typeof VideoCommentSchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
   //videoService
@@ -59,6 +81,7 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.get<{ Reply: AllInfosVideo | ErrorResponse }>(
     "/:videoId",
     {
+      onRequest: [app.authenticate],
       schema: {
         params: IdVideoSchema,
         response: {
@@ -67,19 +90,34 @@ export default async function videoRoutes(app: FastifyInstance) {
           500: ErrorResponseSchema,
         },
         tags: ["Video"],
+        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
       const { videoId } = request.params as { videoId: string };
       try {
-        const video = await VideoService.getVideoById(videoId);
+        const jwt = await request.jwtVerify<JWTPayload>();
+        const userId = jwt.id;
+        await VideoService.incrementViewCount(videoId, userId);
+        const video = await VideoService.getVideoById(videoId, userId);
         if (!video) {
           reply.status(404).send({ error: "Video not found" });
         } else {
-          reply.send(video);
+          // Send the enriched video details
+          reply.send({
+            id: video.id,
+            userId: video.userId,
+            title: video.title,
+            uploadDate: video.uploadDate,
+            status: video.status,
+            totalLikes: video.totalLikes,
+            userHasLiked: video.userHasLiked,
+            totalViews: video.totalViews,
+            comments: video.comments,
+          });
         }
       } catch (error) {
-        reply.status(500).send({ error: "Internal server error" });
+        reply.status(500).send({ error: "Internal server error " + JSON.stringify(error) });
       }
     },
   );
@@ -88,6 +126,7 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.post<{ Reply: FindVideo | ErrorResponse }>(
     "/search",
     {
+      onRequest: [app.authenticate],
       schema: {
         querystring: TitleVideoSchema,
         response: {
@@ -97,6 +136,7 @@ export default async function videoRoutes(app: FastifyInstance) {
           500: ErrorResponseSchema,
         },
         tags: ["Video"],
+        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
@@ -126,51 +166,58 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get(
+  app.get<{Params: IdVideo; Query: IsLiking }>(
     "/:videoId/like",
     {
+      onRequest: [app.authenticate],
       schema: {
+        querystring: IsLikingSchema,
         params: IdVideoSchema,
         response: {
           200: {},
           500: ErrorResponseSchema,
         },
         tags: ["Video"],
+        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
-      const { videoId } = request.params as { videoId: string };
-      const { userId } = request.body as { userId: string };
+      const { videoId } = request.params;
+      const { isLiking } = request.query as IsLiking;
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const userId = jwt.id;
       try {
-        await VideoService.likeVideo(videoId, userId);
-        reply.send({ success: true });
+        await VideoService.likeVideo(videoId, userId, isLiking);
+        reply.status(200).send();
       } catch (error) {
         reply.status(500).send({ error: "Internal server error" });
       }
     },
   );
 
-  app.get(
-    "/:videoId/commit",
+  app.post<{ Body: VideoComment; Reply: ErrorResponse; Params: IdVideo }>(
+    "/:videoId/comment",
     {
+      onRequest: [app.authenticate],
       schema: {
+        body: VideoCommentSchema,
         params: IdVideoSchema,
         response: {
           200: {},
           500: ErrorResponseSchema,
         },
         tags: ["Video"],
+        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
-      const { videoId } = request.params as { videoId: string };
-      const { userId, content } = request.body as {
-        userId: string;
-        content: string;
-      };
+      const { videoId } = request.params
+      const { comment } = request.body
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const userId = jwt.id;
       try {
-        const comment = await VideoService.addComment(videoId, userId, content);
-        reply.send(comment);
+        await VideoService.addComment(videoId, userId, comment);
+        reply.status(200);
       } catch (error) {
         reply.status(500).send({ error: "Internal server error" });
       }
