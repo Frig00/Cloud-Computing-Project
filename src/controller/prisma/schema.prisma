@@ -48,15 +48,16 @@ model users {
 }
 
 model videos {
-  id         String     @id
-  userId     String
-  title      String
-  uploadDate Int
-  status     String
-  comments   comments[]
-  likes      likes[]
-  users      users      @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  views      views[]
+  id          String     @id
+  userId      String
+  title       String
+  uploadDate  Int
+  status      String
+  description String
+  comments    comments[]
+  likes       likes[]
+  users       users      @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  views       views[]
 }
 
 model views {

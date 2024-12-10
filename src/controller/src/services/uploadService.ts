@@ -17,7 +17,7 @@ export class UploadService {
   /**
    * Generate a pre-signed URL for video uploads.
    */
-  static async getPresignedUrl() {
+  static async getPresignedUrl(userId: string, videoTitle: string, description: string) {
     const s3Client = new S3Client({
       region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
@@ -27,6 +27,8 @@ export class UploadService {
         secretAccessKey: process.env.S3_SECRET_KEY!,
       },
     });
+
+    console.log("s3 client: ", s3Client);
 
     const bucketName = process.env.S3_BUCKET_NAME!;
     const expiresIn = 3600; // 1 hour
@@ -40,11 +42,16 @@ export class UploadService {
 
       // Generate the pre-signed URL
       const url = await getSignedUrl(s3Client, command, { expiresIn });
+
+      // Add video to database
+      await this.uploadVideo(videoId, videoTitle, userId, description, "PROCESSING");
+
       return { videoId, url };
     } catch (error) {
       console.error("Error generating pre-signed URL:", error);
       throw new Error("Could not generate pre-signed URL " + bucketName);
     }
+
   }
 
   /**
@@ -121,6 +128,19 @@ export class UploadService {
                 callback(content); // Trigger callback with filtered message
               }
 
+              if (content.status === "COMPLETED" ) {
+                prisma.videos.findUnique({
+                  where: { id: videoId },
+                }).then((video) => {
+                  if (video) {
+                    prisma.videos.update({
+                      where: { id: videoId },
+                      data: { status: "PUBLIC" },
+                    });
+                  }
+                });
+              }
+
               channel.ack(msg); // Acknowledge the message
               if (
                 content.status === "COMPLETED" ||
@@ -145,5 +165,18 @@ export class UploadService {
       where: { id: videoID },
     });
     return !!video;
+  }
+
+  static async uploadVideo(videoID: string, title: string, user: string, description: string, videoStatus: string) {
+    await prisma.videos.create({
+      data: {
+        id: videoID,
+        userId: user,
+        title,
+        description,
+        uploadDate: new Date().getUTCSeconds(),
+        status: videoStatus,
+      },
+    });
   }
 }

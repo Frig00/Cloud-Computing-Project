@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import { UploadService } from "../services/uploadService";
+import { JWTPayload } from "../plugins/auth";
 
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
@@ -9,6 +10,11 @@ const ErrorResponseSchema = Type.Object({
 const UploadUrlResponseSchema = Type.Object({
   url: Type.String(),
   videoId: Type.String(),
+});
+
+const UploadUrlRequestSchema = Type.Object({
+  title: Type.String(),
+  description: Type.String(),
 });
 
 const TranscodeVideoRequestSchema = Type.Object({
@@ -23,9 +29,12 @@ type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type TranscodeVideoResponse = Static<typeof TranscodeVideoResponseSchema>;
+type UploadUrlRequest = Static<typeof UploadUrlRequestSchema>;
 
 export default async function uploadRoutes(app: FastifyInstance) {
-  app.get<{ Reply: UploadUrlResponse }>(
+  app.post<{ 
+    Body: UploadUrlRequest;
+    Reply: UploadUrlResponse }>(
     "/upload-url",
     {
       onRequest: [app.authenticate],
@@ -33,14 +42,20 @@ export default async function uploadRoutes(app: FastifyInstance) {
         description: "Get a pre-signed URL for video uploads",
         tags: ["Upload"],
         summary: "Get pre-signed URL",
+        body: UploadUrlRequestSchema,
         response: {
           200: UploadUrlResponseSchema,
+          401: ErrorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
       },
     },
-    async () => {
-      return await UploadService.getPresignedUrl();
+    async (request) => {
+      const {title, description} = request.body;
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const userId = jwt.id;
+
+      return await UploadService.getPresignedUrl(userId, title, description);
     },
   );
 
