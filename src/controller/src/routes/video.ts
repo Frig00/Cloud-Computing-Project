@@ -59,12 +59,14 @@ export default async function videoRoutes(app: FastifyInstance) {
   app.get<{ Reply: FindVideo | ErrorResponse }>(
     "/all-videos",
     {
+      onRequest: [app.authenticate],
       schema: {
         tags: ["Video"],
         response: {
           200: FindVideoSchema,
           500: ErrorResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
       },
     },
     async (_, reply) => {
@@ -83,13 +85,14 @@ export default async function videoRoutes(app: FastifyInstance) {
     {
       onRequest: [app.authenticate],
       schema: {
+        tags: ["Video"],
         params: IdVideoSchema,
         response: {
           200: AllInfosVideoSchema,
           404: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
-        tags: ["Video"],
+        
         security: [{ bearerAuth: [] }],
       },
     },
@@ -128,6 +131,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     {
       onRequest: [app.authenticate],
       schema: {
+        tags: ["Video"],
         querystring: TitleVideoSchema,
         response: {
           200: FindVideoSchema,
@@ -135,7 +139,6 @@ export default async function videoRoutes(app: FastifyInstance) {
           404: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
-        tags: ["Video"],
         security: [{ bearerAuth: [] }],
       },
     },
@@ -171,13 +174,13 @@ export default async function videoRoutes(app: FastifyInstance) {
     {
       onRequest: [app.authenticate],
       schema: {
+        tags: ["Video"],
         querystring: IsLikingSchema,
         params: IdVideoSchema,
         response: {
           200: {},
           500: ErrorResponseSchema,
         },
-        tags: ["Video"],
         security: [{ bearerAuth: [] }],
       },
     },
@@ -200,13 +203,13 @@ export default async function videoRoutes(app: FastifyInstance) {
     {
       onRequest: [app.authenticate],
       schema: {
+        tags: ["Video"],
         body: VideoCommentSchema,
         params: IdVideoSchema,
         response: {
           200: {},
           500: ErrorResponseSchema,
         },
-        tags: ["Video"],
         security: [{ bearerAuth: [] }],
       },
     },

@@ -134,36 +134,8 @@ static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
     });
   }
 
-  // Get all likes for a video
-  static async getTotalLikes(videoId: string) {
-    return await prisma.likes.count({
-      where: { videoId },
-    });
-  }
-
-  // check if a user has liked a video
-  static async hasUserLiked(videoId: string, userId: string) {
-    const like = await prisma.likes.findUnique({
-      where: {
-        videoId_userId: { videoId, userId },
-      },
-    });
   
-    return !!like;
-  }
-
-  // get all comments for a video
-  static async getComments(videoId: string) {
-    return await prisma.comments.findMany({
-      where: { videoId },
-      select: {
-        userId: true,
-        content: true,
-      },
-    });
-  }
-  
-
+  // Increment the view count for a video
   static async incrementViewCount(videoId: string, userId: string) {
 
       return await prisma.views.upsert({

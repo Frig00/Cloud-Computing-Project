@@ -28,6 +28,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
   app.get<{ Reply: UploadUrlResponse }>(
     "/upload-url",
     {
+      onRequest: [app.authenticate],
       schema: {
         description: "Get a pre-signed URL for video uploads",
         tags: ["Upload"],
@@ -35,6 +36,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
         response: {
           200: UploadUrlResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
       },
     },
     async () => {
@@ -48,6 +50,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
   }>(
     "/transcode-video",
     {
+      onRequest: [app.authenticate],
       schema: {
         description: "Transcode a video",
         tags: ["Upload"],
@@ -57,6 +60,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
           200: TranscodeVideoResponseSchema,
           400: ErrorResponseSchema,
         },
+        security: [{ bearerAuth: [] }],
       },
     },
     async (request, reply) => {
@@ -76,12 +80,15 @@ export default async function uploadRoutes(app: FastifyInstance) {
   app.get<{ Params: TranscodeVideoRequest }>(
     "/sse/:videoID",
     {
+      onRequest: [app.authenticate],
       schema: {
         description: "Get transcoding percentage",
         tags: ["Upload"],
         summary: "Get transcoding percentage",
         params: TranscodeVideoRequestSchema,
+        security: [{ bearerAuth: [] }],
       },
+      
     },
     async (request, reply) => {
       const { videoID } = request.params;
@@ -119,11 +126,13 @@ export default async function uploadRoutes(app: FastifyInstance) {
     "/ws/:videoID",
     {
       websocket: true,
+      onRequest: [app.authenticate],
       schema: {
         description: "Get transcoding percentage",
         tags: ["Upload"],
         summary: "Get transcoding percentage",
         params: TranscodeVideoRequestSchema,
+        security: [{ bearerAuth: [] }],
       },
     },
     async (connection, request) => {
