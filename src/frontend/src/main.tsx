@@ -29,7 +29,9 @@ import "@fontsource/geist-sans/800.css";
 import "@fontsource/geist-sans/900.css";
 import { API_BASE_PATH } from "./lib/consts.ts";
 
-DefaultConfig.config = new Configuration({ basePath: API_BASE_PATH });
+DefaultConfig.config = new Configuration({
+  basePath: API_BASE_PATH,
+});
 
 const theme = createTheme({
   typography: {
@@ -40,9 +42,9 @@ const theme = createTheme({
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
+  <StrictMode>
     <AuthProvider>
-      <StrictMode>
+      <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <BrowserRouter basename="/cloudwatch-web">
@@ -60,7 +62,7 @@ createRoot(document.getElementById("root")!).render(
             </Routes>
           </BrowserRouter>
         </ThemeProvider>
-      </StrictMode>
+      </QueryClientProvider>,
     </AuthProvider>
-  </QueryClientProvider>,
+  </StrictMode>,
 );

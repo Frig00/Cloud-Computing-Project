@@ -373,5 +373,8 @@ export function parseVTT(text: string) {
     }
   }
 
-  return cues.map((cue) => ({ ...cue, text: cue.text.trim() }));
+  return cues.map((cue) => ({
+    ...cue,
+    text: cue.text.trim(),
+  }));
 }

@@ -12,22 +12,19 @@ export default async function authPlugin(fastify: FastifyInstance) {
     secret: "your_jwt_secret_here", //TODO: Read from env
   });
 
-  fastify.decorate(
-    "authenticate",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const jwt = await request.jwtVerify<JWTPayload>();
-        const user = await prisma.users.findUnique({
-          where: { userId: jwt.id },
-        });
-        if (!user) {
-          return reply.status(401).send({ message: "Unauthorized" });
-        }
-      } catch (err) {
-        reply.send(err);
+  fastify.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const user = await prisma.users.findUnique({
+        where: { userId: jwt.id },
+      });
+      if (!user) {
+        return reply.status(401).send({ message: "Unauthorized" });
       }
-    },
-  );
+    } catch (err) {
+      reply.send(err);
+    }
+  });
 }
 
 declare module "fastify" {

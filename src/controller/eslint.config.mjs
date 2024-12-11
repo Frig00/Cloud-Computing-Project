@@ -38,6 +38,12 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "no-async-promise-executor": "warn",
       ...prettierConfig.rules,
+      "prettier/prettier": [
+        "warn",
+        {
+          printWidth: Infinity, // Set to 0 for unlimited line length
+        },
+      ],
     },
   },
 ];

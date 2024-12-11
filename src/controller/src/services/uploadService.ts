@@ -18,11 +18,7 @@ export class UploadService {
   /**
    * Generate a pre-signed URL for video uploads.
    */
-  static async getPresignedUrl(
-    userId: string,
-    videoTitle: string,
-    description: string,
-  ) {
+  static async getPresignedUrl(userId: string, videoTitle: string, description: string) {
     const s3Client = new S3Client({
       region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
@@ -49,13 +45,7 @@ export class UploadService {
       const url = await getSignedUrl(s3Client, command, { expiresIn });
 
       // Add video to database
-      await this.uploadVideo(
-        videoId,
-        videoTitle,
-        userId,
-        description,
-        "PROCESSING",
-      );
+      await this.uploadVideo(videoId, videoTitle, userId, description, "PROCESSING");
 
       return { videoId, url };
     } catch (error) {
@@ -94,10 +84,7 @@ export class UploadService {
       channel.close();
       console.log(`Published video processing message for videoId: ${videoId}`);
     } catch (error) {
-      console.error(
-        "Error publishing video processing message to RabbitMQ:",
-        error,
-      );
+      console.error("Error publishing video processing message to RabbitMQ:", error);
       throw new Error("Could not publish video processing message");
     }
   }
@@ -106,16 +93,12 @@ export class UploadService {
    * Consume messages from RabbitMQ and filter by videoId.
    */
 
-  static consumeMessages(
-    videoId: string,
-    callback: (message: unknown) => void,
-  ) {
+  static consumeMessages(videoId: string, callback: (message: unknown) => void) {
     return new Promise(async (resolve) => {
       try {
         const channel = await this.initRabbitMQ();
 
-        const alreadyTranscoded =
-          await UploadService.isVideoTranscoded(videoId);
+        const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
         if (alreadyTranscoded) {
           const completionMessage = {
             message: "Video already transcoded",
@@ -143,10 +126,7 @@ export class UploadService {
               }
 
               channel.ack(msg); // Acknowledge the message
-              if (
-                content.status === "COMPLETED" ||
-                content.status === "ERROR"
-              ) {
+              if (content.status === "COMPLETED" || content.status === "ERROR") {
                 channel.close();
                 resolve("Done");
               }
@@ -168,13 +148,7 @@ export class UploadService {
     return !!video;
   }
 
-  static async uploadVideo(
-    videoID: string,
-    title: string,
-    user: string,
-    description: string,
-    videoStatus: videos_status,
-  ) {
+  static async uploadVideo(videoID: string, title: string, user: string, description: string, videoStatus: videos_status) {
     await prisma.videos.create({
       data: {
         id: videoID,
@@ -188,9 +162,11 @@ export class UploadService {
   }
 
   static async updateVideoStatus(videoID: string, status: videos_status) {
-    await prisma.videos.update({
-      where: { id: videoID },
-      data: { status },
-    });
+    try {
+      await prisma.videos.update({
+        where: { id: videoID },
+        data: { status },
+      });
+    } catch {}
   }
 }

@@ -17,20 +17,27 @@ import * as runtime from '../runtime';
 import type {
   AuthLoginPost500Response,
   VideoAllVideosGet200ResponseInner,
+  VideoVideoIdCommentPostRequest,
+  VideoVideoIdGet200Response,
 } from '../models/index';
 import {
     AuthLoginPost500ResponseFromJSON,
     AuthLoginPost500ResponseToJSON,
     VideoAllVideosGet200ResponseInnerFromJSON,
     VideoAllVideosGet200ResponseInnerToJSON,
+    VideoVideoIdCommentPostRequestFromJSON,
+    VideoVideoIdCommentPostRequestToJSON,
+    VideoVideoIdGet200ResponseFromJSON,
+    VideoVideoIdGet200ResponseToJSON,
 } from '../models/index';
 
 export interface VideoSearchPostRequest {
     q: string;
 }
 
-export interface VideoVideoIdCommitGetRequest {
+export interface VideoVideoIdCommentPostOperationRequest {
     videoId: string;
+    videoVideoIdCommentPostRequest: VideoVideoIdCommentPostRequest;
 }
 
 export interface VideoVideoIdGetRequest {
@@ -38,6 +45,7 @@ export interface VideoVideoIdGetRequest {
 }
 
 export interface VideoVideoIdLikeGetRequest {
+    isLiking: boolean;
     videoId: string;
 }
 
@@ -53,6 +61,14 @@ export class VideoApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/video/all-videos`,
             method: 'GET',
@@ -88,6 +104,14 @@ export class VideoApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/video/search`,
             method: 'POST',
@@ -107,11 +131,18 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      */
-    async videoVideoIdCommitGetRaw(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+    async videoVideoIdCommentPostRaw(requestParameters: VideoVideoIdCommentPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['videoId'] == null) {
             throw new runtime.RequiredError(
                 'videoId',
-                'Required parameter "videoId" was null or undefined when calling videoVideoIdCommitGet().'
+                'Required parameter "videoId" was null or undefined when calling videoVideoIdCommentPost().'
+            );
+        }
+
+        if (requestParameters['videoVideoIdCommentPostRequest'] == null) {
+            throw new runtime.RequiredError(
+                'videoVideoIdCommentPostRequest',
+                'Required parameter "videoVideoIdCommentPostRequest" was null or undefined when calling videoVideoIdCommentPost().'
             );
         }
 
@@ -119,11 +150,22 @@ export class VideoApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
-            path: `/video/{videoId}/commit`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
-            method: 'GET',
+            path: `/video/{videoId}/comment`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
+            method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: VideoVideoIdCommentPostRequestToJSON(requestParameters['videoVideoIdCommentPostRequest']),
         }, initOverrides);
 
         if (this.isJsonMime(response.headers.get('content-type'))) {
@@ -135,14 +177,14 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      */
-    async videoVideoIdCommitGet(requestParameters: VideoVideoIdCommitGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.videoVideoIdCommitGetRaw(requestParameters, initOverrides);
+    async videoVideoIdCommentPost(requestParameters: VideoVideoIdCommentPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.videoVideoIdCommentPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
      */
-    async videoVideoIdGetRaw(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoAllVideosGet200ResponseInner>> {
+    async videoVideoIdGetRaw(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdGet200Response>> {
         if (requestParameters['videoId'] == null) {
             throw new runtime.RequiredError(
                 'videoId',
@@ -154,6 +196,14 @@ export class VideoApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/video/{videoId}`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
             method: 'GET',
@@ -161,12 +211,12 @@ export class VideoApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => VideoAllVideosGet200ResponseInnerFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => VideoVideoIdGet200ResponseFromJSON(jsonValue));
     }
 
     /**
      */
-    async videoVideoIdGet(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoAllVideosGet200ResponseInner> {
+    async videoVideoIdGet(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdGet200Response> {
         const response = await this.videoVideoIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -174,6 +224,13 @@ export class VideoApi extends runtime.BaseAPI {
     /**
      */
     async videoVideoIdLikeGetRaw(requestParameters: VideoVideoIdLikeGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['isLiking'] == null) {
+            throw new runtime.RequiredError(
+                'isLiking',
+                'Required parameter "isLiking" was null or undefined when calling videoVideoIdLikeGet().'
+            );
+        }
+
         if (requestParameters['videoId'] == null) {
             throw new runtime.RequiredError(
                 'videoId',
@@ -183,8 +240,20 @@ export class VideoApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['isLiking'] != null) {
+            queryParameters['isLiking'] = requestParameters['isLiking'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/video/{videoId}/like`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
             method: 'GET',

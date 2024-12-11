@@ -6,7 +6,6 @@ import { thumbnailSrc } from "../lib/consts";
 
 export default function HomePage() {
   const videoApi = new VideoApi();
-
   const { isPending, error, data } = useQuery({
     queryKey: ["videoAllVideosGet"],
     queryFn: () => videoApi.videoAllVideosGet(),
@@ -20,14 +19,7 @@ export default function HomePage() {
     <Container maxWidth="xl">
       <div className="flex gap-2 flex-wrap m-2">
         {data.map((video) => (
-          <VideoThumbnail
-            id={video.id}
-            src={thumbnailSrc(video.id)}
-            title={video.title}
-            user={video.userId}
-            key={video.id}
-            variant="small"
-          />
+          <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="small" />
         ))}
       </div>
     </Container>

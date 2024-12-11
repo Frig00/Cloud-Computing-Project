@@ -9,8 +9,12 @@ import prettierPlugin from "eslint-plugin-prettier";
 export default [
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
-    plugins: { prettier: prettierPlugin },
-    languageOptions: { globals: globals.browser },
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    languageOptions: {
+      globals: globals.browser,
+    },
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
@@ -28,7 +32,12 @@ export default [
       "@typescript-eslint/no-unused-vars": "warn",
 
       // Prettier
-      "prettier/prettier": "warn",
+      "prettier/prettier": [
+        "warn",
+        {
+          printWidth: Infinity, // Set to 0 for unlimited line length
+        },
+      ],
     },
   },
 ];

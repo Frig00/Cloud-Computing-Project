@@ -18,7 +18,8 @@ import type {
   AuthLoginPost500Response,
   UploadTranscodeVideoPost200Response,
   UploadTranscodeVideoPostRequest,
-  UploadUploadUrlGet200Response,
+  UploadUploadUrlPost200Response,
+  UploadUploadUrlPostRequest,
 } from '../models/index';
 import {
     AuthLoginPost500ResponseFromJSON,
@@ -27,8 +28,10 @@ import {
     UploadTranscodeVideoPost200ResponseToJSON,
     UploadTranscodeVideoPostRequestFromJSON,
     UploadTranscodeVideoPostRequestToJSON,
-    UploadUploadUrlGet200ResponseFromJSON,
-    UploadUploadUrlGet200ResponseToJSON,
+    UploadUploadUrlPost200ResponseFromJSON,
+    UploadUploadUrlPost200ResponseToJSON,
+    UploadUploadUrlPostRequestFromJSON,
+    UploadUploadUrlPostRequestToJSON,
 } from '../models/index';
 
 export interface UploadSseVideoIDGetRequest {
@@ -37,6 +40,14 @@ export interface UploadSseVideoIDGetRequest {
 
 export interface UploadTranscodeVideoPostOperationRequest {
     uploadTranscodeVideoPostRequest: UploadTranscodeVideoPostRequest;
+}
+
+export interface UploadUploadUrlPostOperationRequest {
+    uploadUploadUrlPostRequest: UploadUploadUrlPostRequest;
+}
+
+export interface UploadWsVideoIDGetRequest {
+    videoID: string;
 }
 
 /**
@@ -60,6 +71,14 @@ export class UploadApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/upload/sse/{videoID}`.replace(`{${"videoID"}}`, encodeURIComponent(String(requestParameters['videoID']))),
             method: 'GET',
@@ -96,6 +115,14 @@ export class UploadApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/upload/transcode-video`,
             method: 'POST',
@@ -120,28 +147,88 @@ export class UploadApi extends runtime.BaseAPI {
      * Get a pre-signed URL for video uploads
      * Get pre-signed URL
      */
-    async uploadUploadUrlGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UploadUploadUrlGet200Response>> {
+    async uploadUploadUrlPostRaw(requestParameters: UploadUploadUrlPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UploadUploadUrlPost200Response>> {
+        if (requestParameters['uploadUploadUrlPostRequest'] == null) {
+            throw new runtime.RequiredError(
+                'uploadUploadUrlPostRequest',
+                'Required parameter "uploadUploadUrlPostRequest" was null or undefined when calling uploadUploadUrlPost().'
+            );
+        }
+
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/upload/upload-url`,
-            method: 'GET',
+            method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: UploadUploadUrlPostRequestToJSON(requestParameters['uploadUploadUrlPostRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => UploadUploadUrlGet200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => UploadUploadUrlPost200ResponseFromJSON(jsonValue));
     }
 
     /**
      * Get a pre-signed URL for video uploads
      * Get pre-signed URL
      */
-    async uploadUploadUrlGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UploadUploadUrlGet200Response> {
-        const response = await this.uploadUploadUrlGetRaw(initOverrides);
+    async uploadUploadUrlPost(requestParameters: UploadUploadUrlPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UploadUploadUrlPost200Response> {
+        const response = await this.uploadUploadUrlPostRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Get transcoding percentage
+     * Get transcoding percentage
+     */
+    async uploadWsVideoIDGetRaw(requestParameters: UploadWsVideoIDGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['videoID'] == null) {
+            throw new runtime.RequiredError(
+                'videoID',
+                'Required parameter "videoID" was null or undefined when calling uploadWsVideoIDGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/upload/ws/{videoID}`.replace(`{${"videoID"}}`, encodeURIComponent(String(requestParameters['videoID']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Get transcoding percentage
+     * Get transcoding percentage
+     */
+    async uploadWsVideoIDGet(requestParameters: UploadWsVideoIDGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.uploadWsVideoIDGetRaw(requestParameters, initOverrides);
     }
 
 }

@@ -1,13 +1,4 @@
-import {
-  Card,
-  Container,
-  Grid2 as Grid,
-  Link,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -18,13 +9,9 @@ import clsx from "clsx";
 
 import AWSTranscribe from "../../assets/aws_transcribe.svg";
 import { masterPlaylistSrc } from "../../lib/consts";
-import {
-  Subscriptions,
-  SubscriptionsOutlined,
-  ThumbUp,
-  ThumbUpOutlined,
-} from "@mui/icons-material";
+import { Subscriptions, SubscriptionsOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
 import CommentSection from "./CommentSection";
+import { formatDistanceToNow } from "date-fns";
 
 type Quality = {
   height: number;
@@ -43,7 +30,10 @@ export default function Watch() {
 
   const { isPending, error, data } = useQuery({
     queryKey: ["videoVideoIdGet", videoId],
-    queryFn: () => videoApi.videoVideoIdGet({ videoId }),
+    queryFn: () =>
+      videoApi.videoVideoIdGet({
+        videoId,
+      }),
   });
 
   const [qualities, setQualities] = useState<Quality[]>([]);
@@ -56,9 +46,7 @@ export default function Watch() {
   }> | null>(null);
   const [activeCue, setActiveCue] = useState<number | null>(null);
 
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
-    null,
-  );
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
   // Ref callback
   const refCallback = (element: HTMLVideoElement) => {
@@ -69,10 +57,7 @@ export default function Watch() {
 
   const [formats, setFormats] = useState<string[]>(() => []);
 
-  const handleFormat = (
-    event: React.MouseEvent<HTMLElement>,
-    newFormats: string[],
-  ) => {
+  const handleFormat = (event: React.MouseEvent<HTMLElement>, newFormats: string[]) => {
     setFormats(newFormats);
   };
 
@@ -92,9 +77,7 @@ export default function Watch() {
       hlsRef.current.loadSource(src);
       hlsRef.current.attachMedia(videoElement);
       hlsRef.current.on(HLS.Events.MANIFEST_PARSED, (event, data) => {
-        videoElement
-          .play()
-          .catch((error) => console.log("Error playing video:", error));
+        videoElement.play().catch((error) => console.log("Error playing video:", error));
 
         const availableQualities = data.levels.map((level, index) => ({
           height: level.height,
@@ -120,9 +103,7 @@ export default function Watch() {
     } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
       videoElement.src = src;
       videoElement.addEventListener("loadedmetadata", () => {
-        videoElement
-          .play()
-          .catch((error) => console.log("Error playing video:", error));
+        videoElement.play().catch((error) => console.log("Error playing video:", error));
       });
     }
   }, [videoElement, src]);
@@ -143,13 +124,9 @@ export default function Watch() {
 
   useEffect(() => {
     if (!activeCue) return;
-    const container = document.querySelector(
-      ".subtitle-container",
-    ) as HTMLElement;
+    const container = document.querySelector(".subtitle-container") as HTMLElement;
     const containerRect = container.getBoundingClientRect();
-    const cueElement = document.querySelector(
-      `.subtitle-cue[data-index="${activeCue}"]`,
-    );
+    const cueElement = document.querySelector(`.subtitle-cue[data-index="${activeCue}"]`);
     const elementRect = cueElement!.getBoundingClientRect();
 
     const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
@@ -189,86 +166,91 @@ export default function Watch() {
   return (
     <Container maxWidth="xl" className="mt-4">
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 8,
+          }}
+        >
           <Stack>
             <video ref={refCallback} controls onTimeUpdate={onTimeUpdate} />
 
-            <Stack
-              direction={"row"}
-              justifyContent={"space-between"}
-              alignItems={"center"}
-            >
+            <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
               <Stack>
-                <Typography
-                  variant="h1"
-                  marginTop={"0.5rem"}
-                  fontWeight={700}
-                  fontSize={"1.5rem"}
-                >
+                <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>
                   {data.title}
                 </Typography>
                 <Typography variant="body1" className="mt-2">
                   {data.userId}
                 </Typography>
               </Stack>
-              <ToggleButtonGroup
-                color="primary"
-                aria-label="Basic button group"
-                value={formats}
-                onChange={handleFormat}
-              >
-                <ToggleButton value="subscribe" sx={{ gap: "0.5rem" }}>
-                  {formats.includes("subscribe") ? (
-                    <Subscriptions />
-                  ) : (
-                    <SubscriptionsOutlined />
-                  )}
-                  <span>
-                    {formats.includes("subscribe") ? "Subscribed" : "Subscribe"}
-                  </span>
+              <ToggleButtonGroup color="primary" aria-label="Basic button group" value={formats} onChange={handleFormat}>
+                <ToggleButton
+                  value="subscribe"
+                  sx={{
+                    gap: "0.5rem",
+                  }}
+                >
+                  {formats.includes("subscribe") ? <Subscriptions /> : <SubscriptionsOutlined />}
+                  <span>{formats.includes("subscribe") ? "Subscribed" : "Subscribe"}</span>
                 </ToggleButton>
-                <ToggleButton value="like" sx={{ gap: "0.5rem" }}>
+                <ToggleButton
+                  value="like"
+                  sx={{
+                    gap: "0.5rem",
+                  }}
+                >
                   {formats.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
-                  <span>Like (78)</span>
+                  <span>Like ({data.likes})</span>
                 </ToggleButton>
               </ToggleButtonGroup>
             </Stack>
-            <Card variant="outlined" sx={{ padding: "0.5rem" }}>
+            <Card
+              variant="outlined"
+              sx={{
+                padding: "0.5rem",
+              }}
+            >
               <Stack>
-                <Typography
-                  component="span"
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  {"2 days ago — 357 views"}
+                <Typography component="span" variant="body2" color="text.secondary">
+                  {`${formatDistanceToNow(data.uploadDate, {addSuffix: true})} — ${data.views} views`}
                 </Typography>
-                <span>Description</span>
+                <span>{data.description}</span>
               </Stack>
             </Card>
           </Stack>
         </Grid>
 
         <Grid
-          size={{ xs: 12, lg: 4 }}
+          size={{
+            xs: 12,
+            lg: 4,
+          }}
           container
           spacing={2}
           direction={"column"}
         >
-          <Grid size={{ xs: 12, lg: 12 }}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 12,
+            }}
+          >
             <div
               className="subtitle-panel"
-              style={{ border: "1px solid black" }}
+              style={{
+                border: "1px solid black",
+              }}
             >
               <div className="subtitle-container">
                 {cues
                   ? cues.map((cue, index) => (
                       <div
                         key={index}
-                        style={{ marginBottom: "8px" }}
-                        className={clsx(
-                          "subtitle-cue",
-                          activeCue == index ? "active" : null,
-                        )}
+                        style={{
+                          marginBottom: "8px",
+                        }}
+                        className={clsx("subtitle-cue", activeCue == index ? "active" : null)}
                         data-index={index}
                         onClick={() => handleCueClick(index)}
                       >
@@ -282,7 +264,10 @@ export default function Watch() {
                 <img
                   src={AWSTranscribe}
                   alt="AWS Transcribe"
-                  style={{ width: "48px", borderRadius: "4px" }}
+                  style={{
+                    width: "48px",
+                    borderRadius: "4px",
+                  }}
                 />
                 <span>
                   Powered by
@@ -293,10 +278,20 @@ export default function Watch() {
             </div>
           </Grid>
 
-          <Grid size={{ xs: 12, lg: 12 }}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 12,
+            }}
+          >
             {/* Display available qualities */}
             {qualities.length > 0 && (
-              <table style={{ width: "100%" }} className="quality-grid">
+              <table
+                style={{
+                  width: "100%",
+                }}
+                className="quality-grid"
+              >
                 <thead>
                   <tr>
                     <th>Quality</th>
@@ -309,18 +304,14 @@ export default function Watch() {
                     <tr
                       key={quality.index}
                       style={{
-                        backgroundColor:
-                          currentQuality?.index === quality.index
-                            ? "#e0e0e0"
-                            : "transparent",
+                        backgroundColor: currentQuality?.index === quality.index ? "#e0e0e0" : "transparent",
                       }}
                     >
                       <td>
                         <Link
                           href="#"
                           onClick={() => {
-                            if (hlsRef.current)
-                              hlsRef.current.currentLevel = quality.index;
+                            if (hlsRef.current) hlsRef.current.currentLevel = quality.index;
                           }}
                         >
                           {quality.name}
@@ -337,7 +328,12 @@ export default function Watch() {
             )}
           </Grid>
         </Grid>
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 8,
+          }}
+        >
           <CommentSection />
         </Grid>
       </Grid>

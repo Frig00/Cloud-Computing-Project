@@ -1,14 +1,4 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Avatar, Box, Button, List, ListItem, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 
 interface Comment {
@@ -29,8 +19,7 @@ export default function CommentSection() {
     {
       id: 2,
       author: "Bob Smith",
-      content:
-        "I found this very informative. Looking forward to more content like this.",
+      content: "I found this very informative. Looking forward to more content like this.",
       timestamp: "1 hour ago",
     },
   ]);
@@ -52,30 +41,19 @@ export default function CommentSection() {
 
   return (
     <Box margin="auto">
-      <Typography
-        variant="h1"
-        marginTop={"0.5rem"}
-        fontWeight={500}
-        fontSize={"1.2rem"}
-      >
+      <Typography variant="h1" marginTop={"0.5rem"} fontWeight={500} fontSize={"1.2rem"}>
         Comments
       </Typography>
 
       <form onSubmit={handleSubmit}>
-        <TextField
-          fullWidth
-          multiline
-          rows={1}
-          variant="outlined"
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
-        />
+        <TextField fullWidth multiline rows={1} variant="outlined" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment..." />
         <Button
           type="submit"
           variant="contained"
           color="primary"
-          sx={{ marginTop: "0.5rem" }}
+          sx={{
+            marginTop: "0.5rem",
+          }}
         >
           Post Comment
         </Button>
@@ -86,7 +64,9 @@ export default function CommentSection() {
           <ListItem
             key={comment.id}
             alignItems="flex-start"
-            sx={{ padding: 0 }}
+            sx={{
+              padding: 0,
+            }}
           >
             <ListItemAvatar>
               <Avatar alt={comment.author} />
@@ -94,19 +74,11 @@ export default function CommentSection() {
             <ListItemText
               primary={
                 <>
-                  <Typography
-                    component="span"
-                    variant="subtitle1"
-                    color="text.primary"
-                  >
+                  <Typography component="span" variant="subtitle1" color="text.primary">
                     {comment.author}
                   </Typography>
                   {" — "}
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    color="text.secondary"
-                  >
+                  <Typography component="span" variant="body2" color="text.secondary">
                     {comment.timestamp}
                   </Typography>
                 </>

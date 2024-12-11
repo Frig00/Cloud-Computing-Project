@@ -77,6 +77,7 @@ services:
       RABBITMQ_AMQP: ${RABBITMQ_AMQP}
       TRANSCODE_QUEUE_NAME: ${TRANSCODE_QUEUE_NAME}
       STATUS_QUEUE_NAME: ${STATUS_QUEUE_NAME}
+      DB_CONNECTION: ${DB_CONNECTION}
     depends_on:
       - minio
       - rabbitmq

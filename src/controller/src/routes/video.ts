@@ -12,7 +12,7 @@ const FindVideoSchema = Type.Array(
     id: Type.String(),
     userId: Type.String(),
     title: Type.String(),
-    uploadDate: Type.String(),
+    uploadDate: Type.String({ format: "date-time" }),
   }),
 );
 
@@ -20,7 +20,8 @@ const AllInfosVideoSchema = Type.Object({
   id: Type.String(),
   userId: Type.String(),
   title: Type.String(),
-  uploadDate: Type.String(),
+  description: Type.String(),
+  uploadDate: Type.String({ format: "date-time" }),
   likes: Type.Number(),
   userHasLiked: Type.Boolean(),
   views: Type.Number(),
@@ -73,7 +74,7 @@ export default async function videoRoutes(app: FastifyInstance) {
             id,
             userId,
             title,
-            uploadDate: uploadDate.toString(),
+            uploadDate: uploadDate.toISOString(),
           })),
         );
       } catch {
@@ -114,7 +115,8 @@ export default async function videoRoutes(app: FastifyInstance) {
             id: video.id,
             userId: video.userId,
             title: video.title,
-            uploadDate: video.uploadDate.toString(),
+            description: video.description ?? "",
+            uploadDate: video.uploadDate.toISOString(),
             likes: video.totalLikes,
             userHasLiked: video.userHasLiked,
             views: video.totalViews,
@@ -122,9 +124,7 @@ export default async function videoRoutes(app: FastifyInstance) {
           });
         }
       } catch (error) {
-        reply
-          .status(500)
-          .send({ error: "Internal server error " + JSON.stringify(error) });
+        reply.status(500).send({ error: "Internal server error " + JSON.stringify(error) });
       }
     },
   );
@@ -160,9 +160,7 @@ export default async function videoRoutes(app: FastifyInstance) {
       try {
         const videos = await VideoService.searchVideos(searchWords); // Pass array of words to the service
         if (videos.length === 0) {
-          reply
-            .status(404)
-            .send({ error: "No videos found with the given title" });
+          reply.status(404).send({ error: "No videos found with the given title" });
         } else {
           reply.send(
             videos.map(({ id, userId, title, uploadDate }) => ({

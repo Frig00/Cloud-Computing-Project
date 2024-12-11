@@ -83,9 +83,17 @@ export default function DropZoneView({ onFileSelected }: DropZoneViewProps) {
         type="file"
         ref={fileInputRef}
         onChange={handleFileInput}
-        style={{ display: "none" }}
+        style={{
+          display: "none",
+        }}
       />
-      <CloudUploadIcon sx={{ fontSize: 48, color: "textSecondary", mb: 2 }} />
+      <CloudUploadIcon
+        sx={{
+          fontSize: 48,
+          color: "textSecondary",
+          mb: 2,
+        }}
+      />
       <Typography variant="body1" color="textSecondary" gutterBottom>
         Drag and drop video here, or click to select video
       </Typography>

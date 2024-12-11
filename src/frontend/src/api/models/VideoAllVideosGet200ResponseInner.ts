@@ -39,16 +39,10 @@ export interface VideoAllVideosGet200ResponseInner {
     title: string;
     /**
      * 
-     * @type {number}
+     * @type {Date}
      * @memberof VideoAllVideosGet200ResponseInner
      */
-    uploadDate: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof VideoAllVideosGet200ResponseInner
-     */
-    status: string;
+    uploadDate: Date;
 }
 
 /**
@@ -59,7 +53,6 @@ export function instanceOfVideoAllVideosGet200ResponseInner(value: object): valu
     if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('title' in value) || value['title'] === undefined) return false;
     if (!('uploadDate' in value) || value['uploadDate'] === undefined) return false;
-    if (!('status' in value) || value['status'] === undefined) return false;
     return true;
 }
 
@@ -76,8 +69,7 @@ export function VideoAllVideosGet200ResponseInnerFromJSONTyped(json: any, ignore
         'id': json['id'],
         'userId': json['userId'],
         'title': json['title'],
-        'uploadDate': json['uploadDate'],
-        'status': json['status'],
+        'uploadDate': (new Date(json['uploadDate'])),
     };
 }
 
@@ -95,8 +87,7 @@ export function VideoAllVideosGet200ResponseInnerToJSONTyped(value?: VideoAllVid
         'id': value['id'],
         'userId': value['userId'],
         'title': value['title'],
-        'uploadDate': value['uploadDate'],
-        'status': value['status'],
+        'uploadDate': ((value['uploadDate']).toISOString()),
     };
 }
 

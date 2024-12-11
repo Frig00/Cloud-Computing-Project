@@ -17,11 +17,7 @@ export class UserService {
     });
   }
 
-  static async login(
-    userId: string,
-    password: string,
-    fastify: FastifyInstance,
-  ) {
+  static async login(userId: string, password: string, fastify: FastifyInstance) {
     const user = await prisma.users.findUnique({ where: { userId } });
     if (!user) throw new Error("User not found");
 
@@ -50,11 +46,7 @@ export class UserService {
     });
   }
 
-  static async updateUserProfile(
-    userId: string,
-    data: { name?: string; password?: string },
-    fastify: FastifyInstance,
-  ) {
+  static async updateUserProfile(userId: string, data: { name?: string; password?: string }, fastify: FastifyInstance) {
     const user = await prisma.users.findUnique({ where: { userId } });
     if (!user) throw new Error("User not found");
 
@@ -65,8 +57,7 @@ export class UserService {
 
     const updateData: { name?: string; password?: string } = {};
     if (data.name) updateData.name = data.name;
-    if (data.password)
-      updateData.password = await bcrypt.hash(data.password, 10);
+    if (data.password) updateData.password = await bcrypt.hash(data.password, 10);
 
     return prisma.users.update({
       where: { userId },

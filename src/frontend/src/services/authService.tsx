@@ -1,11 +1,5 @@
 import { Configuration, DefaultConfig } from "@/api";
-import {
-  createContext,
-  useState,
-  useContext,
-  ReactNode,
-  useEffect,
-} from "react";
+import { createContext, useState, useContext, ReactNode } from "react";
 
 interface AuthContextType {
   token: string | null;
@@ -17,21 +11,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("jwtToken") || null,
-  );
+  const [token, setToken] = useState<string | null>(localStorage.getItem("jwtToken") || null);
 
-  useEffect(() => {
-    DefaultConfig.config = new Configuration({
-      basePath: DefaultConfig.basePath,
-      accessToken: token ?? undefined,
-    });
-  }, [token]);
+  DefaultConfig.config = new Configuration({
+    basePath: DefaultConfig.basePath,
+    accessToken: token ?? undefined,
+  });
 
   const login = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem("jwtToken", newToken);
-    console.log("login", newToken);
   };
 
   const logout = () => {
@@ -41,7 +30,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ token, login, logout, isAuthenticated: !!token }}
+      value={{
+        token,
+        login,
+        logout,
+        isAuthenticated: !!token,
+      }}
     >
       {children}
     </AuthContext.Provider>

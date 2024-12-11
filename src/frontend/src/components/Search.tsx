@@ -7,13 +7,11 @@ import { useEffect } from "react";
 import { thumbnailSrc } from "../lib/consts";
 
 export default function Search() {
-
-
   const [searchParams] = useSearchParams();
   const searchedTitle = searchParams.get("q")!;
   const videoApi = new VideoApi();
 
-  const { isPending, error, data,refetch } = useQuery({
+  const { isPending, error, data, refetch } = useQuery({
     queryKey: ["videoSearchPost"],
     queryFn: () =>
       videoApi.videoSearchPost({
@@ -35,14 +33,7 @@ export default function Search() {
     <Container maxWidth="xl">
       <div className="flex gap-2 flex-wrap m-2">
         {data.map((video) => (
-          <VideoThumbnail
-            id={video.id}
-            src={thumbnailSrc(video.id)}
-            title={video.title}
-            user={video.userId}
-            key={video.id}
-            variant="horizontal"
-          />
+          <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="horizontal" />
         ))}
       </div>
     </Container>

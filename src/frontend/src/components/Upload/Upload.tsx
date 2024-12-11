@@ -16,12 +16,14 @@ export default function Upload() {
           marginTop: "2rem",
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: "80%" }}>
-          {file ? (
-            <UploadForm file={file} onCancel={() => setFile(null)} />
-          ) : (
-            <DropZoneView onFileSelected={setFile} />
-          )}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: "80%",
+          }}
+        >
+          {file ? <UploadForm file={file} onCancel={() => setFile(null)} /> : <DropZoneView onFileSelected={setFile} />}
         </Paper>
       </Box>
     </Container>

@@ -1,18 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
-import {
-  alpha,
-  AppBar,
-  Box,
-  IconButton,
-  InputBase,
-  Menu,
-  MenuItem,
-  styled,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { alpha, AppBar, Box, IconButton, InputBase, Menu, MenuItem, styled, Toolbar, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
@@ -64,10 +53,7 @@ function App() {
 
   const [searchedTitle, setSearchedTitle] = useState("");
 
-  const handleSearchChange = (
-    event: React.KeyboardEvent<HTMLInputElement> &
-      React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleSearchChange = (event: React.KeyboardEvent<HTMLInputElement> & React.ChangeEvent<HTMLInputElement>) => {
     setSearchedTitle(event.target.value);
     if (event.key === "Enter") {
       setSearchedTitle("");
@@ -116,9 +102,19 @@ function App() {
 
   return (
     <>
-      <Box sx={{ flexGrow: 1, position: "sticky", top: 0 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          position: "sticky",
+          top: 0,
+        }}
+      >
         <AppBar position="static">
-          <Toolbar sx={{ justifyContent: "space-between" }}>
+          <Toolbar
+            sx={{
+              justifyContent: "space-between",
+            }}
+          >
             <Link to="/">
               <Typography variant="h6" component="div">
                 Sunomi
@@ -130,7 +126,9 @@ function App() {
               </SearchIconWrapper>
               <StyledInputBase
                 placeholder="Search…"
-                inputProps={{ "aria-label": "search" }}
+                inputProps={{
+                  "aria-label": "search",
+                }}
                 value={searchedTitle}
                 onChange={handleSearchChange}
                 onKeyDown={handleSearchChange}
@@ -152,15 +150,7 @@ function App() {
                   <FileUpload />
                 </IconButton>
               </Link>
-              <IconButton
-                size="large"
-                edge="end"
-                aria-label="account of current user"
-                aria-controls={menuId}
-                aria-haspopup="true"
-                onClick={handleProfileMenuOpen}
-                color="inherit"
-              >
+              <IconButton size="large" edge="end" aria-label="account of current user" aria-controls={menuId} aria-haspopup="true" onClick={handleProfileMenuOpen} color="inherit">
                 <AccountCircle />
               </IconButton>
             </div>
