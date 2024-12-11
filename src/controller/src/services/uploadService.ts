@@ -129,16 +129,7 @@ export class UploadService {
               }
 
               if (content.status === "COMPLETED" ) {
-                prisma.videos.findUnique({
-                  where: { id: videoId },
-                }).then((video) => {
-                  if (video) {
-                    prisma.videos.update({
-                      where: { id: videoId },
-                      data: { status: "PUBLIC" },
-                    });
-                  }
-                });
+                this.updateVideoStatus(videoId, "PUBLIC");
               }
 
               channel.ack(msg); // Acknowledge the message
@@ -162,7 +153,7 @@ export class UploadService {
 
   static async isVideoTranscoded(videoID: string): Promise<boolean> {
     const video = await prisma.videos.findUnique({
-      where: { id: videoID },
+      where: { id: videoID, status: "PUBLIC" },
     });
     return !!video;
   }
@@ -177,6 +168,13 @@ export class UploadService {
         uploadDate: new Date().getUTCSeconds(),
         status: videoStatus,
       },
+    });
+  }
+
+  static async updateVideoStatus(videoID: string, status: string) {
+    await prisma.videos.update({
+      where: { id: videoID },
+      data: { status },
     });
   }
 }

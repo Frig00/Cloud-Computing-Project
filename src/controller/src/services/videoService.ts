@@ -5,14 +5,17 @@ export class VideoService {
 
   // Get all videos
   static async getAllVideos() {
-    return await prisma.videos.findMany();
+    return await prisma.videos.findMany({
+      where: { status: "PUBLIC" },
+    }
+    );
   }
 
   // Get a video by ID
   static async getVideoById(videoId: string, userId: string) {
     // Fetch the video details, including relationships
     const video = await prisma.videos.findUnique({
-      where: { id: videoId },
+      where: { id: videoId, status: "PUBLIC" },
       include: {
         likes: {
           where: {
@@ -25,7 +28,7 @@ export class VideoService {
     });
 
     const videoCounts = await prisma.videos.findUnique({
-      where: { id: videoId },
+      where: { id: videoId, status: "PUBLIC" },
       select: {
         _count: {
           select: {
@@ -72,6 +75,7 @@ export class VideoService {
       return await prisma.videos.findMany({
         where: {
           OR: searchConditions,
+          status: "PUBLIC",
         },
       });
     } catch (error) {
