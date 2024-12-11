@@ -2,7 +2,6 @@ import { FastifyInstance } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import { VideoService } from "../services/videoService";
 import { JWTPayload } from "../plugins/auth";
-import { json } from "stream/consumers";
 
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
@@ -13,8 +12,7 @@ const FindVideoSchema = Type.Array(
     id: Type.String(),
     userId: Type.String(),
     title: Type.String(),
-    uploadDate: Type.Number(),
-    status: Type.String(),
+    uploadDate: Type.String(),
   }),
 );
 
@@ -22,11 +20,10 @@ const AllInfosVideoSchema = Type.Object({
   id: Type.String(),
   userId: Type.String(),
   title: Type.String(),
-  uploadDate: Type.Number(),
-  status: Type.String(),
-  totalLikes: Type.Number(),
+  uploadDate: Type.String(),
+  likes: Type.Number(),
   userHasLiked: Type.Boolean(),
-  totalViews: Type.Number(),
+  views: Type.Number(),
   comments: Type.Array(
     Type.Object({
       author: Type.String(),
@@ -37,11 +34,10 @@ const AllInfosVideoSchema = Type.Object({
 
 const VideoCommentSchema = Type.Object({
   comment: Type.String(),
-})
+});
 
-
-const IdVideoSchema = Type.Object({ 
-  videoId: Type.String()
+const IdVideoSchema = Type.Object({
+  videoId: Type.String(),
 });
 
 const IsLikingSchema = Type.Object({ isLiking: Type.Boolean() });
@@ -72,8 +68,15 @@ export default async function videoRoutes(app: FastifyInstance) {
     async (_, reply) => {
       try {
         const videos = await VideoService.getAllVideos();
-        reply.send(videos);
-      } catch (error) {
+        reply.send(
+          videos.map(({ id, userId, title, uploadDate }) => ({
+            id,
+            userId,
+            title,
+            uploadDate: uploadDate.toString(),
+          })),
+        );
+      } catch {
         reply.status(500).send({ error: "Internal server error" });
       }
     },
@@ -92,7 +95,7 @@ export default async function videoRoutes(app: FastifyInstance) {
           404: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
-        
+
         security: [{ bearerAuth: [] }],
       },
     },
@@ -111,16 +114,17 @@ export default async function videoRoutes(app: FastifyInstance) {
             id: video.id,
             userId: video.userId,
             title: video.title,
-            uploadDate: video.uploadDate,
-            status: video.status,
-            totalLikes: video.totalLikes,
+            uploadDate: video.uploadDate.toString(),
+            likes: video.totalLikes,
             userHasLiked: video.userHasLiked,
-            totalViews: video.totalViews,
+            views: video.totalViews,
             comments: video.comments,
           });
         }
       } catch (error) {
-        reply.status(500).send({ error: "Internal server error " + JSON.stringify(error) });
+        reply
+          .status(500)
+          .send({ error: "Internal server error " + JSON.stringify(error) });
       }
     },
   );
@@ -160,7 +164,14 @@ export default async function videoRoutes(app: FastifyInstance) {
             .status(404)
             .send({ error: "No videos found with the given title" });
         } else {
-          reply.send(videos);
+          reply.send(
+            videos.map(({ id, userId, title, uploadDate }) => ({
+              id,
+              userId,
+              title,
+              uploadDate: uploadDate.toString(),
+            })),
+          );
         }
       } catch (error) {
         console.error("Error searching videos:", error);
@@ -169,7 +180,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get<{Params: IdVideo; Query: IsLiking }>(
+  app.get<{ Params: IdVideo; Query: IsLiking }>(
     "/:videoId/like",
     {
       onRequest: [app.authenticate],
@@ -192,7 +203,7 @@ export default async function videoRoutes(app: FastifyInstance) {
       try {
         await VideoService.likeVideo(videoId, userId, isLiking);
         reply.status(200).send();
-      } catch (error) {
+      } catch {
         reply.status(500).send({ error: "Internal server error" });
       }
     },
@@ -214,14 +225,14 @@ export default async function videoRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const { videoId } = request.params
-      const { comment } = request.body
+      const { videoId } = request.params;
+      const { comment } = request.body;
       const jwt = await request.jwtVerify<JWTPayload>();
       const userId = jwt.id;
       try {
         await VideoService.addComment(videoId, userId, comment);
         reply.status(200);
-      } catch (error) {
+      } catch {
         reply.status(500).send({ error: "Internal server error" });
       }
     },

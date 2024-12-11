@@ -32,9 +32,10 @@ type TranscodeVideoResponse = Static<typeof TranscodeVideoResponseSchema>;
 type UploadUrlRequest = Static<typeof UploadUrlRequestSchema>;
 
 export default async function uploadRoutes(app: FastifyInstance) {
-  app.post<{ 
+  app.post<{
     Body: UploadUrlRequest;
-    Reply: UploadUrlResponse }>(
+    Reply: UploadUrlResponse;
+  }>(
     "/upload-url",
     {
       onRequest: [app.authenticate],
@@ -51,7 +52,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const {title, description} = request.body;
+      const { title, description } = request.body;
       const jwt = await request.jwtVerify<JWTPayload>();
       const userId = jwt.id;
 
@@ -103,7 +104,6 @@ export default async function uploadRoutes(app: FastifyInstance) {
         params: TranscodeVideoRequestSchema,
         security: [{ bearerAuth: [] }],
       },
-      
     },
     async (request, reply) => {
       const { videoID } = request.params;

@@ -3,68 +3,81 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DB_CONNECTION")
 }
 
 model comments {
-  id      String  @id
-  videoId String
-  userId  String
-  content String
-  date    Decimal
-  users   users   @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  videos  videos  @relation(fields: [videoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id      String   @id @db.VarChar(255)
+  videoId String   @db.VarChar(255)
+  userId  String   @db.VarChar(255)
+  content String   @db.Text
+  date    DateTime @db.DateTime(0)
+  videos  videos   @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_1")
+  users   users    @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "comments_ibfk_2")
+
+  @@index([videoId], map: "comments_ibfk_1")
+  @@index([userId], map: "comments_ibfk_2")
 }
 
 model likes {
-  videoId String
-  userId  String
-  users   users  @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  videos  videos @relation(fields: [videoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  videoId String @db.VarChar(255)
+  userId  String @db.VarChar(255)
+  videos  videos @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "likes_ibfk_1")
+  users   users  @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "likes_ibfk_2")
 
   @@id([videoId, userId])
+  @@index([userId], map: "likes_ibfk_2")
 }
 
 model subscriptions {
-  subscriberId                              String
-  subscribedToId                            String
-  users_subscriptions_subscribedToIdTousers users  @relation("subscriptions_subscribedToIdTousers", fields: [subscribedToId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  users_subscriptions_subscriberIdTousers   users  @relation("subscriptions_subscriberIdTousers", fields: [subscriberId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  subscriberId                              String @db.VarChar(255)
+  subscribedToId                            String @db.VarChar(255)
+  users_subscriptions_subscriberIdTousers   users  @relation("subscriptions_subscriberIdTousers", fields: [subscriberId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "subscriptions_ibfk_1")
+  users_subscriptions_subscribedToIdTousers users  @relation("subscriptions_subscribedToIdTousers", fields: [subscribedToId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "subscriptions_ibfk_2")
 
   @@id([subscriberId, subscribedToId])
+  @@index([subscribedToId], map: "subscriptions_ibfk_2")
 }
 
 model users {
-  userId                                            String          @id
-  password                                          String
-  name                                              String
+  userId                                            String          @id @db.VarChar(255)
+  password                                          String          @db.VarChar(255)
+  name                                              String          @db.VarChar(255)
   comments                                          comments[]
   likes                                             likes[]
-  subscriptions_subscriptions_subscribedToIdTousers subscriptions[] @relation("subscriptions_subscribedToIdTousers")
   subscriptions_subscriptions_subscriberIdTousers   subscriptions[] @relation("subscriptions_subscriberIdTousers")
+  subscriptions_subscriptions_subscribedToIdTousers subscriptions[] @relation("subscriptions_subscribedToIdTousers")
   videos                                            videos[]
   views                                             views[]
 }
 
 model videos {
-  id          String     @id
-  userId      String
-  title       String
-  uploadDate  Int
-  status      String
-  description String?
+  id          String        @id @db.VarChar(255)
+  userId      String        @db.VarChar(255)
+  title       String        @db.VarChar(255)
+  uploadDate  DateTime      @db.DateTime(0)
+  status      videos_status
+  description String?       @db.Text
   comments    comments[]
   likes       likes[]
-  users       users      @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  users       users         @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "videos_ibfk_1")
   views       views[]
+
+  @@index([userId], map: "videos_ibfk_1")
 }
 
 model views {
-  videoId String
-  userId  String
-  users   users  @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  videos  videos @relation(fields: [videoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  videoId String @db.VarChar(255)
+  userId  String @db.VarChar(255)
+  videos  videos @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "views_ibfk_1")
+  users   users  @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "views_ibfk_2")
 
   @@id([videoId, userId])
+  @@index([userId], map: "views_ibfk_2")
+}
+
+enum videos_status {
+  PROCESSING
+  PUBLIC
 }

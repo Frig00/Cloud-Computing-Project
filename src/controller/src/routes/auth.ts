@@ -73,10 +73,10 @@ export default async function authRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { userId, password, name } = request.body;
       try {
-        await UserService.signUp(name, userId, password, app);
+        await UserService.signUp(name, userId, password);
         reply.status(200).send();
-      } catch {
-        reply.status(500).send({ error: "Error creating user!" });
+      } catch (error) {
+        reply.status(500).send({ error: JSON.stringify(error) });
       }
     },
   );

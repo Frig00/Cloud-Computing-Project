@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as amqp from "amqplib";
 import * as crypto from "crypto";
 import prisma from "../data/prisma";
+import { videos_status } from "@prisma/client";
 
 // UploadService class
 export class UploadService {
@@ -17,7 +18,11 @@ export class UploadService {
   /**
    * Generate a pre-signed URL for video uploads.
    */
-  static async getPresignedUrl(userId: string, videoTitle: string, description: string) {
+  static async getPresignedUrl(
+    userId: string,
+    videoTitle: string,
+    description: string,
+  ) {
     const s3Client = new S3Client({
       region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
@@ -44,14 +49,19 @@ export class UploadService {
       const url = await getSignedUrl(s3Client, command, { expiresIn });
 
       // Add video to database
-      await this.uploadVideo(videoId, videoTitle, userId, description, "PROCESSING");
+      await this.uploadVideo(
+        videoId,
+        videoTitle,
+        userId,
+        description,
+        "PROCESSING",
+      );
 
       return { videoId, url };
     } catch (error) {
       console.error("Error generating pre-signed URL:", error);
       throw new Error("Could not generate pre-signed URL " + bucketName);
     }
-
   }
 
   /**
@@ -128,7 +138,7 @@ export class UploadService {
                 callback(content); // Trigger callback with filtered message
               }
 
-              if (content.status === "COMPLETED" ) {
+              if (content.status === "COMPLETED") {
                 this.updateVideoStatus(videoId, "PUBLIC");
               }
 
@@ -158,20 +168,26 @@ export class UploadService {
     return !!video;
   }
 
-  static async uploadVideo(videoID: string, title: string, user: string, description: string, videoStatus: string) {
+  static async uploadVideo(
+    videoID: string,
+    title: string,
+    user: string,
+    description: string,
+    videoStatus: videos_status,
+  ) {
     await prisma.videos.create({
       data: {
         id: videoID,
         userId: user,
         title,
         description,
-        uploadDate: new Date().getUTCSeconds(),
+        uploadDate: new Date(),
         status: videoStatus,
       },
     });
   }
 
-  static async updateVideoStatus(videoID: string, status: string) {
+  static async updateVideoStatus(videoID: string, status: videos_status) {
     await prisma.videos.update({
       where: { id: videoID },
       data: { status },

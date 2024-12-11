@@ -27,8 +27,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - ./src/minio/data:/data
-      - ./src/minio/buckets:/buckets
+      - minio-data:/data
+      - minio-buckets:/buckets
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
       interval: 30s
@@ -68,8 +68,6 @@ services:
     build: src/controller
     ports:
      - "3000:3000"
-    volumes:
-      - ./src/controller/prisma/dev.db:/app/prisma/dev.db
     environment:
       S3_REGION: ${S3_REGION}
       S3_ENDPOINT: ${S3_ENDPOINT}
@@ -83,10 +81,27 @@ services:
       - minio
       - rabbitmq
 
-
   nginx:
     image: nginx
     ports:
       - "9005:9000"
     volumes:
       - ./src/nginx/nginx.conf:/etc/nginx/nginx.conf
+      
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./src/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
+  minio-data:
+  minio-buckets:

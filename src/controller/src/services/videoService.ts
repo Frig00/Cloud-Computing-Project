@@ -2,13 +2,11 @@ import prisma from "../data/prisma";
 import { v4 as uuidv4 } from "uuid";
 
 export class VideoService {
-
   // Get all videos
   static async getAllVideos() {
     return await prisma.videos.findMany({
       where: { status: "PUBLIC" },
-    }
-    );
+    });
   }
 
   // Get a video by ID
@@ -19,12 +17,12 @@ export class VideoService {
       include: {
         likes: {
           where: {
-            userId: userId
+            userId: userId,
           },
-          take: 1
+          take: 1,
         },
-        comments: true
-      }
+        comments: true,
+      },
     });
 
     const videoCounts = await prisma.videos.findUnique({
@@ -33,23 +31,23 @@ export class VideoService {
         _count: {
           select: {
             likes: true,
-            views: true
-          }
-        }
-      }
+            views: true,
+          },
+        },
+      },
     });
-  
+
     if (!video || !videoCounts) return null;
-  
+
     const totalLikes = videoCounts._count.likes;
     const userHasLiked = video.likes.length === 1;
     const totalViews = videoCounts._count.views;
-  
+
     const comments = video.comments.map((comment) => ({
       author: comment.userId,
       text: comment.content,
     }));
-  
+
     return {
       ...video,
       totalLikes,
@@ -58,7 +56,6 @@ export class VideoService {
       comments,
     };
   }
-  
 
   // Search for videos by title
   static async searchVideos(words: string[]) {
@@ -85,33 +82,34 @@ export class VideoService {
   }
 
   // Add or remove like from a video
-static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
-  if (isLiking) {
-    return await prisma.likes.upsert({
-      where: {
-        videoId_userId: {
+  static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
+    if (isLiking) {
+      return await prisma.likes.upsert({
+        where: {
+          videoId_userId: {
+            videoId,
+            userId,
+          },
+        },
+        create: {
           videoId,
           userId,
-        }
-      },
-      create: {
-        videoId,
-        userId
-      },
-      update: {}
-    });
-  } else {
-    return await prisma.likes.delete({
-      where: {
-        videoId_userId: {
-          videoId,
-          userId,
-        }
-      }
-    }).catch(() => null); // Return null if like doesn't exist
+        },
+        update: {},
+      });
+    } else {
+      return await prisma.likes
+        .delete({
+          where: {
+            videoId_userId: {
+              videoId,
+              userId,
+            },
+          },
+        })
+        .catch(() => null); // Return null if like doesn't exist
+    }
   }
-}
-  
 
   // Add a comment to a video
   static async addComment(videoId: string, userId: string, content: string) {
@@ -121,29 +119,25 @@ static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
         videoId,
         userId,
         content,
-        date: new Date().getTime(),
+        date: new Date(),
       },
     });
   }
 
-  
   // Increment the view count for a video
   static async incrementViewCount(videoId: string, userId: string) {
-
-      return await prisma.views.upsert({
-        where: {
-          videoId_userId: {
-            videoId,
-            userId,
-          }
-        },
-        create: {
+    return await prisma.views.upsert({
+      where: {
+        videoId_userId: {
           videoId,
           userId,
         },
-        update: {}
-      });
-    
+      },
+      create: {
+        videoId,
+        userId,
+      },
+      update: {},
+    });
   }
-  
 }

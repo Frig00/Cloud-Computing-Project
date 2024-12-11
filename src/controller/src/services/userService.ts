@@ -31,12 +31,7 @@ export class UserService {
     return fastify.jwt.sign({ id: user.userId }); //
   }
 
-  static async signUp(
-    name: string,
-    username: string,
-    password: string,
-    fastify: FastifyInstance,
-  ) {
+  static async signUp(name: string, username: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.users.create({
       data: {
