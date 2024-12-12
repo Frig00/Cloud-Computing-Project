@@ -26,11 +26,17 @@ export default function VideoPreview({ src, thumbnail }: VideoPreviewProps) {
             hlsRef.current = new HLS({
                 debug: false,
                 capLevelToPlayerSize: true,
+                startLevel: 0,
+                autoStartLoad: true,
             });
 
             hlsRef.current.loadSource(src);
             hlsRef.current.attachMedia(element);
             hlsRef.current.on(HLS.Events.MANIFEST_PARSED, () => {
+                if (hlsRef.current) {
+                    hlsRef.current.currentLevel = 0;
+                    hlsRef.current.loadLevel = 0;
+                }
                 element.play()
                     .then(() => setIsReady(true))
                     .catch((error) => console.log("Error playing video:", error));

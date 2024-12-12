@@ -45,6 +45,7 @@ services:
         sleep 3;
       done;
       mc mb myminio/video;
+      mc anonymous set public myminio/video
       "
   
   transcoder:

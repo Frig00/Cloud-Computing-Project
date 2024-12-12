@@ -213,7 +213,7 @@ export default function Watch() {
             >
               <Stack>
                 <Typography component="span" variant="body2" color="text.secondary">
-                  {`${formatDistanceToNow(data.uploadDate, {addSuffix: true})} — ${data.views} views`}
+                  {`${formatDistanceToNow(data.uploadDate, { addSuffix: true })} — ${data.views} views`}
                 </Typography>
                 <span>{data.description}</span>
               </Stack>
@@ -236,28 +236,27 @@ export default function Watch() {
               lg: 12,
             }}
           >
-            <div
+            <Card
+              variant="outlined"
               className="subtitle-panel"
-              style={{
-                border: "1px solid black",
-              }}
+              sx={{ overflowY: "scroll" }}
             >
               <div className="subtitle-container">
                 {cues
                   ? cues.map((cue, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          marginBottom: "8px",
-                        }}
-                        className={clsx("subtitle-cue", activeCue == index ? "active" : null)}
-                        data-index={index}
-                        onClick={() => handleCueClick(index)}
-                      >
-                        <div className="cue-time">{cue.formattedStart}</div>
-                        <div>{cue.text}</div>
-                      </div>
-                    ))
+                    <div
+                      key={index}
+                      style={{
+                        marginBottom: "8px",
+                      }}
+                      className={clsx("subtitle-cue", activeCue == index ? "active" : null)}
+                      data-index={index}
+                      onClick={() => handleCueClick(index)}
+                    >
+                      <div className="cue-time">{cue.formattedStart}</div>
+                      <div>{cue.text}</div>
+                    </div>
+                  ))
                   : null}
               </div>
               <div className="subtitle-pb">
@@ -275,7 +274,7 @@ export default function Watch() {
                   <b>AWS Transcribe</b>
                 </span>
               </div>
-            </div>
+            </Card>
           </Grid>
 
           <Grid
@@ -284,48 +283,48 @@ export default function Watch() {
               lg: 12,
             }}
           >
-            {/* Display available qualities */}
-            {qualities.length > 0 && (
-              <table
-                style={{
-                  width: "100%",
-                }}
-                className="quality-grid"
-              >
-                <thead>
-                  <tr>
-                    <th>Quality</th>
-                    <th>Resolution</th>
-                    <th>Bitrate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {qualities.map((quality) => (
-                    <tr
-                      key={quality.index}
-                      style={{
-                        backgroundColor: currentQuality?.index === quality.index ? "#e0e0e0" : "transparent",
-                      }}
-                    >
-                      <td>
-                        <Link
-                          href="#"
-                          onClick={() => {
-                            if (hlsRef.current) hlsRef.current.currentLevel = quality.index;
-                          }}
-                        >
-                          {quality.name}
-                        </Link>
-                      </td>
-                      <td>
-                        {quality.width}x{quality.height}
-                      </td>
-                      <td>{formatBitrate(quality.bitrate)}</td>
+              {/* Display available qualities */}
+              {qualities.length > 0 && (
+                <table
+                  style={{
+                    width: "100%",
+                  }}
+                  className="quality-grid"
+                >
+                  <thead>
+                    <tr>
+                      <th>Quality</th>
+                      <th>Resolution</th>
+                      <th>Bitrate</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {qualities.map((quality) => (
+                      <tr
+                        key={quality.index}
+                        style={{
+                          backgroundColor: currentQuality?.index === quality.index ? "#e0e0e0" : "transparent",
+                        }}
+                      >
+                        <td>
+                          <Link
+                            href="#"
+                            onClick={() => {
+                              if (hlsRef.current) hlsRef.current.currentLevel = quality.index;
+                            }}
+                          >
+                            {quality.name}
+                          </Link>
+                        </td>
+                        <td>
+                          {quality.width}x{quality.height}
+                        </td>
+                        <td>{formatBitrate(quality.bitrate)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
           </Grid>
         </Grid>
         <Grid
