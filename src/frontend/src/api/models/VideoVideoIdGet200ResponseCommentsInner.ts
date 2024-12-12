@@ -24,6 +24,12 @@ export interface VideoVideoIdGet200ResponseCommentsInner {
      * @type {string}
      * @memberof VideoVideoIdGet200ResponseCommentsInner
      */
+    id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof VideoVideoIdGet200ResponseCommentsInner
+     */
     author: string;
     /**
      * 
@@ -31,14 +37,22 @@ export interface VideoVideoIdGet200ResponseCommentsInner {
      * @memberof VideoVideoIdGet200ResponseCommentsInner
      */
     text: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof VideoVideoIdGet200ResponseCommentsInner
+     */
+    timeStamp: string;
 }
 
 /**
  * Check if a given object implements the VideoVideoIdGet200ResponseCommentsInner interface.
  */
 export function instanceOfVideoVideoIdGet200ResponseCommentsInner(value: object): value is VideoVideoIdGet200ResponseCommentsInner {
+    if (!('id' in value) || value['id'] === undefined) return false;
     if (!('author' in value) || value['author'] === undefined) return false;
     if (!('text' in value) || value['text'] === undefined) return false;
+    if (!('timeStamp' in value) || value['timeStamp'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +66,10 @@ export function VideoVideoIdGet200ResponseCommentsInnerFromJSONTyped(json: any, 
     }
     return {
         
+        'id': json['id'],
         'author': json['author'],
         'text': json['text'],
+        'timeStamp': json['timeStamp'],
     };
 }
 
@@ -68,8 +84,10 @@ export function VideoVideoIdGet200ResponseCommentsInnerToJSONTyped(value?: Video
 
     return {
         
+        'id': value['id'],
         'author': value['author'],
         'text': value['text'],
+        'timeStamp': value['timeStamp'],
     };
 }
 

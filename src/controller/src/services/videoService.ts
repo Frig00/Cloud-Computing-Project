@@ -1,3 +1,4 @@
+import { timeStamp } from "console";
 import prisma from "../data/prisma";
 import { v4 as uuidv4 } from "uuid";
 
@@ -44,8 +45,10 @@ export class VideoService {
     const totalViews = videoCounts._count.views;
 
     const comments = video.comments.map((comment) => ({
+      id: comment.id,
       author: comment.userId,
       text: comment.content,
+      timeStamp: comment.date.toISOString()
     }));
 
     return {

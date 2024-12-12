@@ -27,8 +27,10 @@ const AllInfosVideoSchema = Type.Object({
   views: Type.Number(),
   comments: Type.Array(
     Type.Object({
+      id: Type.String(),
       author: Type.String(),
       text: Type.String(),
+      timeStamp: Type.String(),
     }),
   ),
 });
