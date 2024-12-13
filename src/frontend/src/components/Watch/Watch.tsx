@@ -35,7 +35,9 @@ export default function Watch() {
         videoId,
       }),
   });
-
+  
+  const [formats, setFormats] = useState<string[]>(() => []);
+  const [likes,setLikes] = useState(0);
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
   const [cues, setCues] = useState<Array<{
@@ -48,6 +50,25 @@ export default function Watch() {
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
+  
+
+  useEffect(() => {
+    setLikes(data?.likes ?? 0);
+    setFormats(prevArray => {
+      // Check if "like" is already in the array, if not add it
+      if (data?.userHasLiked  && !prevArray.includes('like')) {
+        return [...prevArray, 'like']; // Add "like"
+      } else if (!data?.userHasLiked  && prevArray.includes('like')) {
+        // Remove "like" if userHasLiked is false
+        return prevArray.filter(item => item !== 'like');
+      }
+      return prevArray; // Return the same array if no change needed
+    });
+  }, [data]);
+  
+  
+  
+
   // Ref callback
   const refCallback = (element: HTMLVideoElement) => {
     if (element) {
@@ -55,14 +76,13 @@ export default function Watch() {
     }
   };
 
-  const [formats, setFormats] = useState<string[]>(() => []);
 
   const handleFormat = (event: React.MouseEvent<HTMLElement>, newFormats: string[]) => {
     setFormats(newFormats);
   };
 
   const src = masterPlaylistSrc(videoId);
-
+  
   const initPlayer = useCallback(() => {
     if (!videoElement) return;
 
@@ -163,6 +183,12 @@ export default function Watch() {
 
   if (error) return "An error has occurred: " + error.message;
 
+  function handleLike (){
+    videoApi.videoVideoIdLikeGet({videoId,isLiking : !formats.includes("like")});
+    formats.includes("like") ? setLikes(likes -1):setLikes(likes +1);
+   
+  }
+  
   return (
     <Container maxWidth="xl" className="mt-4">
       <Grid container spacing={2}>
@@ -196,12 +222,13 @@ export default function Watch() {
                 </ToggleButton>
                 <ToggleButton
                   value="like"
+                  onClick={handleLike}
                   sx={{
                     gap: "0.5rem",
                   }}
                 >
                   {formats.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
-                  <span>Like ({data.likes})</span>
+                  <span>Like ({likes})</span>
                 </ToggleButton>
               </ToggleButtonGroup>
             </Stack>
