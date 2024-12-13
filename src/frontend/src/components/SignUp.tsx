@@ -2,6 +2,8 @@ import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Link, 
 import { useState } from "react";
 import MuiCard from "@mui/material/Card";
 import { AuthApi } from "@/api";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/services/authService";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -48,6 +50,8 @@ export default function SignIn() {
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const [nameError, setNameError] = useState(false);
   const [nameErrorMessage, setNameErrorMessage] = useState("");
+  const navigate = useNavigate();
+  const auth = useAuth();
 
   const validateInputs = () => {
     const email = document.getElementById("email") as HTMLInputElement;
@@ -93,18 +97,34 @@ export default function SignIn() {
       return;
     }
     const data = new FormData(event.currentTarget);
+    const mail = data.get("email");
+    const name = data.get("name");
+    const psw = data.get("password");
 
     const authApi = new AuthApi();
     try {
-      await authApi.authSignupPost({
+
+       await authApi.authSignupPost({
         authSignupPostRequest: {
-          userId: data.get("mail") as string,
-          password: data.get("password") as string,
-          name: data.get("name") as string,
+          userId: mail as string,
+          password: psw as string,
+          name: name as string,
         },
       });
-    } catch {
-      /* empty */
+
+      
+      const res = await authApi.authLoginPost({
+        authLoginPostRequest: {
+          userId: mail as string,
+          password: psw as string,
+        },
+      });
+      auth.login(res.token);
+      navigate("/");
+      
+      
+    } catch (error){
+      console.error("Sign up failed", error);
     }
   };
 
