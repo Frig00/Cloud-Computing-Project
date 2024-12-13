@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://sa:cloudvideo@mysql:3306/cloudvideo"
+  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo"
 }
 
 model comments {
