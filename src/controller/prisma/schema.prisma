@@ -4,7 +4,9 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo"
+  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo" 
+  // This is used for local development and schema generation
+  // Actual connection string is provided by the environment variable DB_CONNECTION (../src/data/prisma.ts)
 }
 
 model comments {
