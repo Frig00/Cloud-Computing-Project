@@ -52,6 +52,34 @@ export interface AuthSignupPostOperationRequest {
 export class AuthApi extends runtime.BaseAPI {
 
     /**
+     * Login check
+     * Login check
+     */
+    async authCheckGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthLoginPost200Response>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/auth/check`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuthLoginPost200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Login check
+     * Login check
+     */
+    async authCheckGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthLoginPost200Response> {
+        const response = await this.authCheckGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * GitHub OAuth callback endpoint
      * Process GitHub authentication callback
      */
@@ -114,34 +142,6 @@ export class AuthApi extends runtime.BaseAPI {
      */
     async authGithubGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.authGithubGetRaw(initOverrides);
-    }
-
-    /**
-     * Github login
-     * Github endpoint
-     */
-    async authGithubLoginGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthLoginPost200Response>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/auth/github/login`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AuthLoginPost200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Github login
-     * Github endpoint
-     */
-    async authGithubLoginGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthLoginPost200Response> {
-        const response = await this.authGithubLoginGetRaw(initOverrides);
-        return await response.value();
     }
 
     /**

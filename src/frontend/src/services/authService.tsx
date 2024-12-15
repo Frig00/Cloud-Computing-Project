@@ -1,4 +1,5 @@
 import { AuthApi, AuthLoginPost200ResponseUser, Configuration, DefaultConfig } from "@/api";
+import { ca } from "date-fns/locale";
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 
 interface AuthContextType {
@@ -17,11 +18,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem("jwtToken") || null);
   const [user, setUser] = useState<AuthLoginPost200ResponseUser | null>(null);
 
-  const authApi = new AuthApi();
+  const [ready, setReady] = useState(false);
+
+  
   DefaultConfig.config = new Configuration({
     basePath: DefaultConfig.basePath,
     accessToken: token ?? undefined,
   });
+  const authApi = new AuthApi(DefaultConfig);
+
+
   
 
   const logout = () => setToken(null);
@@ -38,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loginWithCookie = async () => {
-    const {token, user} = await authApi.authGithubLoginGet({
+    const {token, user} = await authApi.authCheckGet({
       credentials: "include",
     });
     setToken(token);
@@ -53,6 +59,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
     }
   }, [token]);
+
+  useEffect(() => {
+
+    const fetchUser = async () => {
+      try {
+        const res = await authApi.authCheckGet({
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+        setUser(res.user);
+      } finally {
+        setReady(true);
+      }
+    }
+
+    if (token && !user && !ready) {
+      fetchUser();
+    } else {
+      setReady(true);
+    }
+  }, []);
+
+  if (!ready) {
+    return "Loading...";
+  }
 
 
   return (

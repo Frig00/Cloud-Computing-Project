@@ -22,7 +22,19 @@ export class VideoService {
           },
           take: 1,
         },
-        comments: true,
+        comments: {
+          orderBy: {
+            date: "desc",
+          },
+          include: {
+            users: {
+              select: {
+                userId: true,
+                profilePictureUrl: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -46,7 +58,10 @@ export class VideoService {
 
     const comments = video.comments.map((comment) => ({
       id: comment.id,
-      author: comment.userId,
+      user: {
+        userId: comment.users.userId,
+        profilePictureUrl: comment.users.profilePictureUrl,
+      },
       text: comment.content,
       timeStamp: comment.date.toISOString()
     }));

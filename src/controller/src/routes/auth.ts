@@ -176,44 +176,45 @@ export default async function authRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get<{ Reply: LoginResponse | ErrorResponse }>("/github/login", {
+  app.get<{ Reply: LoginResponse | ErrorResponse }>("/check", {
     schema: {
-      description: "Github login",
+      description: "Login check",
       tags: ["Auth"],
-      summary: "Github endpoint",
+      summary: "Login check",
       response: {
         200: LoginResponseSchema,
         500: ErrorResponseSchema,
       },
     },
   }, async (request, reply) => {
-    const githubJwtToken = request.cookies.githubJwtToken;
-    if (!githubJwtToken) return reply.status(401).send({ error: "Unauthorized" });
-    reply.clearCookie('githubJwtToken')
-    const jwt = app.jwt.decode<{ id: string }>(githubJwtToken);
+    var userId: string;
+
+    if (request.headers.authorization) {
+      const jwt = await request.jwtVerify<JWTPayload>();
+      userId = jwt.id;
+    } else if (request.cookies.githubJwtToken) {
+      const jwt = app.jwt.decode<{ id: string }>(request.cookies.githubJwtToken);
+      userId = jwt!.id;
+      reply.clearCookie('githubJwtToken')
+    } else {
+      return reply.status(500).send({ error: "Unauthorized" });
+    }
 
     const user = await prisma.users.findUnique({
-      where: { userId: jwt!.id },
+      where: { userId: userId },
     });
 
     if (!user) {
-      return reply.status(401).send({ error: "Unauthorized" });
+      return reply.status(500).send({ error: "Unauthorized" });
     }
 
     reply.status(200).send({
-      token: githubJwtToken,
+      token: app.jwt.sign({ id: user.userId }),
       user: {
         userId: user.userId,
         name: user.name,
         profilePictureUrl: user.profilePictureUrl
       }
     });
-
-  }
-
-
-
-  );
-
-
+  });
 }

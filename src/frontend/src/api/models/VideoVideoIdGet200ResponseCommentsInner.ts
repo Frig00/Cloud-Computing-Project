@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { VideoVideoIdGet200ResponseCommentsInnerUser } from './VideoVideoIdGet200ResponseCommentsInnerUser';
+import {
+    VideoVideoIdGet200ResponseCommentsInnerUserFromJSON,
+    VideoVideoIdGet200ResponseCommentsInnerUserFromJSONTyped,
+    VideoVideoIdGet200ResponseCommentsInnerUserToJSON,
+    VideoVideoIdGet200ResponseCommentsInnerUserToJSONTyped,
+} from './VideoVideoIdGet200ResponseCommentsInnerUser';
+
 /**
  * 
  * @export
@@ -27,10 +35,10 @@ export interface VideoVideoIdGet200ResponseCommentsInner {
     id: string;
     /**
      * 
-     * @type {string}
+     * @type {VideoVideoIdGet200ResponseCommentsInnerUser}
      * @memberof VideoVideoIdGet200ResponseCommentsInner
      */
-    author: string;
+    user: VideoVideoIdGet200ResponseCommentsInnerUser;
     /**
      * 
      * @type {string}
@@ -50,7 +58,7 @@ export interface VideoVideoIdGet200ResponseCommentsInner {
  */
 export function instanceOfVideoVideoIdGet200ResponseCommentsInner(value: object): value is VideoVideoIdGet200ResponseCommentsInner {
     if (!('id' in value) || value['id'] === undefined) return false;
-    if (!('author' in value) || value['author'] === undefined) return false;
+    if (!('user' in value) || value['user'] === undefined) return false;
     if (!('text' in value) || value['text'] === undefined) return false;
     if (!('timeStamp' in value) || value['timeStamp'] === undefined) return false;
     return true;
@@ -67,7 +75,7 @@ export function VideoVideoIdGet200ResponseCommentsInnerFromJSONTyped(json: any, 
     return {
         
         'id': json['id'],
-        'author': json['author'],
+        'user': VideoVideoIdGet200ResponseCommentsInnerUserFromJSON(json['user']),
         'text': json['text'],
         'timeStamp': (new Date(json['timeStamp'])),
     };
@@ -85,7 +93,7 @@ export function VideoVideoIdGet200ResponseCommentsInnerToJSONTyped(value?: Video
     return {
         
         'id': value['id'],
-        'author': value['author'],
+        'user': VideoVideoIdGet200ResponseCommentsInnerUserToJSON(value['user']),
         'text': value['text'],
         'timeStamp': ((value['timeStamp']).toISOString()),
     };

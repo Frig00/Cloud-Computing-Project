@@ -28,7 +28,10 @@ const AllInfosVideoSchema = Type.Object({
   comments: Type.Array(
     Type.Object({
       id: Type.String(),
-      author: Type.String(),
+      user: Type.Object({
+        userId: Type.String(),
+        profilePictureUrl: Type.Union([Type.String(), Type.Null()]),
+      }),
       text: Type.String(),
       timeStamp: Type.String({ format: "date-time" }),
     }),
