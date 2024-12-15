@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { AuthLoginPost200ResponseUser } from './AuthLoginPost200ResponseUser';
+import {
+    AuthLoginPost200ResponseUserFromJSON,
+    AuthLoginPost200ResponseUserFromJSONTyped,
+    AuthLoginPost200ResponseUserToJSON,
+    AuthLoginPost200ResponseUserToJSONTyped,
+} from './AuthLoginPost200ResponseUser';
+
 /**
  * 
  * @export
@@ -25,6 +33,12 @@ export interface AuthLoginPost200Response {
      * @memberof AuthLoginPost200Response
      */
     token: string;
+    /**
+     * 
+     * @type {AuthLoginPost200ResponseUser}
+     * @memberof AuthLoginPost200Response
+     */
+    user: AuthLoginPost200ResponseUser;
 }
 
 /**
@@ -32,6 +46,7 @@ export interface AuthLoginPost200Response {
  */
 export function instanceOfAuthLoginPost200Response(value: object): value is AuthLoginPost200Response {
     if (!('token' in value) || value['token'] === undefined) return false;
+    if (!('user' in value) || value['user'] === undefined) return false;
     return true;
 }
 
@@ -46,6 +61,7 @@ export function AuthLoginPost200ResponseFromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'token': json['token'],
+        'user': AuthLoginPost200ResponseUserFromJSON(json['user']),
     };
 }
 
@@ -61,6 +77,7 @@ export function AuthLoginPost200ResponseToJSONTyped(value?: AuthLoginPost200Resp
     return {
         
         'token': value['token'],
+        'user': AuthLoginPost200ResponseUserToJSON(value['user']),
     };
 }
 

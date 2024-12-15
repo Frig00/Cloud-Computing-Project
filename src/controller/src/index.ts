@@ -7,6 +7,7 @@ import authPlugin from "./plugins/auth";
 import registerRoutes from "./routes";
 import corsPlugin from "./plugins/cors";
 import websocket from "@fastify/websocket";
+import cookie from "@fastify/cookie";
 
 const env = dotenv.config();
 console.log(env);
@@ -19,6 +20,11 @@ const startServer = async () => {
     await authPlugin(fastify);
     await corsPlugin(fastify);
     await fastify.register(websocket);
+    fastify.register(cookie, {
+      secret: "your-secret-key", // Optional: for signed cookies
+      parseOptions: {}, // Options for `cookie.parse`
+  });
+  
 
     // Register routes
     registerRoutes(fastify);

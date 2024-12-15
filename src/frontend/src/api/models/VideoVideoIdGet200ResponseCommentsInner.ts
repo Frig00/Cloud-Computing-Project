@@ -39,10 +39,10 @@ export interface VideoVideoIdGet200ResponseCommentsInner {
     text: string;
     /**
      * 
-     * @type {string}
+     * @type {Date}
      * @memberof VideoVideoIdGet200ResponseCommentsInner
      */
-    timeStamp: string;
+    timeStamp: Date;
 }
 
 /**
@@ -69,7 +69,7 @@ export function VideoVideoIdGet200ResponseCommentsInnerFromJSONTyped(json: any, 
         'id': json['id'],
         'author': json['author'],
         'text': json['text'],
-        'timeStamp': json['timeStamp'],
+        'timeStamp': (new Date(json['timeStamp'])),
     };
 }
 
@@ -87,7 +87,7 @@ export function VideoVideoIdGet200ResponseCommentsInnerToJSONTyped(value?: Video
         'id': value['id'],
         'author': value['author'],
         'text': value['text'],
-        'timeStamp': value['timeStamp'],
+        'timeStamp': ((value['timeStamp']).toISOString()),
     };
 }
 

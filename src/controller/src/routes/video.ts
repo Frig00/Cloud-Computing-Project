@@ -30,7 +30,7 @@ const AllInfosVideoSchema = Type.Object({
       id: Type.String(),
       author: Type.String(),
       text: Type.String(),
-      timeStamp: Type.String(),
+      timeStamp: Type.String({ format: "date-time" }),
     }),
   ),
 });

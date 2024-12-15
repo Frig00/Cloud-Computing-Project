@@ -1,9 +1,20 @@
 create table if not exists users
 (
+    userId            varchar(255) not null
+        primary key,
+    password          varchar(255) not null,
+    name              varchar(255) not null,
+    profilePictureUrl tinytext     null
+);
+
+create table if not exists githubUsers
+(
     userId   varchar(255) not null
         primary key,
-    password varchar(255) not null,
-    name     varchar(255) not null
+    githubId int          not null,
+    constraint githubUsers_users_userId_fk
+        foreign key (userId) references users (userId)
+            on delete cascade
 );
 
 create table if not exists subscriptions

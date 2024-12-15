@@ -34,6 +34,10 @@ import {
     Get200ResponseToJSON,
 } from '../models/index';
 
+export interface AuthGithubCallbackGetRequest {
+    code: string;
+}
+
 export interface AuthLoginPostOperationRequest {
     authLoginPostRequest: AuthLoginPostRequest;
 }
@@ -46,6 +50,99 @@ export interface AuthSignupPostOperationRequest {
  * 
  */
 export class AuthApi extends runtime.BaseAPI {
+
+    /**
+     * GitHub OAuth callback endpoint
+     * Process GitHub authentication callback
+     */
+    async authGithubCallbackGetRaw(requestParameters: AuthGithubCallbackGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['code'] == null) {
+            throw new runtime.RequiredError(
+                'code',
+                'Required parameter "code" was null or undefined when calling authGithubCallbackGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['code'] != null) {
+            queryParameters['code'] = requestParameters['code'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/auth/github/callback`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * GitHub OAuth callback endpoint
+     * Process GitHub authentication callback
+     */
+    async authGithubCallbackGet(requestParameters: AuthGithubCallbackGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.authGithubCallbackGetRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Initiate authentication with GitHub
+     * GitHub authentication
+     */
+    async authGithubGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/auth/github`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Initiate authentication with GitHub
+     * GitHub authentication
+     */
+    async authGithubGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.authGithubGetRaw(initOverrides);
+    }
+
+    /**
+     * Github login
+     * Github endpoint
+     */
+    async authGithubLoginGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthLoginPost200Response>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/auth/github/login`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AuthLoginPost200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Github login
+     * Github endpoint
+     */
+    async authGithubLoginGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AuthLoginPost200Response> {
+        const response = await this.authGithubLoginGetRaw(initOverrides);
+        return await response.value();
+    }
 
     /**
      * User login

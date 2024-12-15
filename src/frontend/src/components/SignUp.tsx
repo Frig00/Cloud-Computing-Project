@@ -4,6 +4,7 @@ import MuiCard from "@mui/material/Card";
 import { AuthApi } from "@/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/services/authService";
+import { enqueueSnackbar } from "notistack";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -97,34 +98,29 @@ export default function SignIn() {
       return;
     }
     const data = new FormData(event.currentTarget);
-    const mail = data.get("email");
-    const name = data.get("name");
-    const psw = data.get("password");
+    const mail = data.get("email") as string;
+    const name = data.get("name") as string;
+    const psw = data.get("password") as string;
 
     const authApi = new AuthApi();
     try {
 
        await authApi.authSignupPost({
         authSignupPostRequest: {
-          userId: mail as string,
-          password: psw as string,
-          name: name as string,
+          userId: mail,
+          password: psw,
+          name: name,
         },
       });
 
       
-      const res = await authApi.authLoginPost({
-        authLoginPostRequest: {
-          userId: mail as string,
-          password: psw as string,
-        },
-      });
-      auth.login(res.token);
+      
+      auth.login(name, psw);
       navigate("/");
       
       
     } catch (error){
-      console.error("Sign up failed", error);
+      enqueueSnackbar(JSON.stringify(error), {variant: 'error'});
     }
   };
 

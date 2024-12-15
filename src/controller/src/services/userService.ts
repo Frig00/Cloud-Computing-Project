@@ -18,13 +18,15 @@ export class UserService {
   }
 
   static async login(userId: string, password: string, fastify: FastifyInstance) {
-    const user = await prisma.users.findUnique({ where: { userId } });
+    const user = await prisma.users.findUnique({ where: { userId }, include: { githubUsers: true } });
     if (!user) throw new Error("User not found");
+
+    if (user.githubUsers) throw new Error("User has a GitHub account linked");
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) throw new Error("Invalid password");
 
-    return fastify.jwt.sign({ id: user.userId }); //
+    return { jwt: fastify.jwt.sign({ id: user.userId }), user };
   }
 
   static async signUp(name: string, username: string, password: string) {

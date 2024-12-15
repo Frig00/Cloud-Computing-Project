@@ -1,6 +1,8 @@
 import { VideoApi } from "@/api";
+import { useAuth } from "@/services/authService";
 import { Avatar, Box, Button, List, ListItem, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -9,14 +11,17 @@ interface Comment {
   id: string;
   author: string;
   content: string;
-  timestamp: string;
+  timestamp: Date;
 }
 
-export default function CommentSection() {
+interface CommentSectionProps {
+  videoId: string;
+}
+export default function CommentSection({videoId}: CommentSectionProps) {
 
   const videoApi = new VideoApi();
-  const [searchParams] = useSearchParams();
-  const videoId = searchParams.get("v")!;
+  const auth = useAuth();
+
 
   const { isPending, error, data } = useQuery({
     queryKey: ["videoVideoIdGet", videoId],
@@ -48,11 +53,11 @@ export default function CommentSection() {
       if (newComment.trim()) {
       const comment: Comment = {
         id: comments.length.toString(), // In a real app, this would be a UUID
-        author: "Current User", // In a real app, this would be the logged-in user
+        author: auth.user?.userId!, // In a real app, this would be the logged-in user
         content: newComment.trim(),
-        timestamp: "Just now",
+        timestamp: new Date(),
       };
-      setComments([...comments, comment]);
+      setComments([comment, ...comments]);
       videoApi.videoVideoIdCommentPost({
         videoId : videoId,
         videoVideoIdCommentPostRequest : {comment: newComment.trim(),},
@@ -104,7 +109,7 @@ export default function CommentSection() {
                   </Typography>
                   {" — "}
                   <Typography component="span" variant="body2" color="text.secondary">
-                    {comment.timestamp}
+                    {formatDistanceToNow(comment.timestamp, { addSuffix: true })}
                   </Typography>
                 </>
               }

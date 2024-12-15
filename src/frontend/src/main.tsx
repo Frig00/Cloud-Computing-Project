@@ -13,6 +13,7 @@ import SignUp from "./components/SignUp.tsx";
 import Watch from "./components/Watch/Watch.tsx";
 import Upload from "./components/Upload/Upload.tsx";
 import Search from "./components/Search.tsx";
+import { SnackbarProvider } from 'notistack';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./services/authService.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
@@ -43,26 +44,28 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <BrowserRouter basename="/cloudwatch-web">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/sign-up" element={<SignUp />} />
-              <Route path="/" element={<App />} errorElement={<ErrorPage />}>
-                <Route element={<ProtectedRoute />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="watch" element={<Watch />} />
-                  <Route path="upload" element={<Upload />} />
-                  <Route path="search" element={<Search />} />
+    <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <BrowserRouter basename="/cloudwatch-web">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/sign-up" element={<SignUp />} />
+                <Route path="/" element={<App />} errorElement={<ErrorPage />}>
+                  <Route element={<ProtectedRoute />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="watch" element={<Watch />} />
+                    <Route path="upload" element={<Upload />} />
+                    <Route path="search" element={<Search />} />
+                  </Route>
                 </Route>
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </ThemeProvider>
-      </QueryClientProvider>,
-    </AuthProvider>
-  </StrictMode>,
+              </Routes>
+            </BrowserRouter>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </SnackbarProvider>
+  </StrictMode>
 );

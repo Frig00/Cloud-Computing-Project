@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
-import { alpha, AppBar, Box, IconButton, InputBase, Menu, MenuItem, styled, Toolbar, Typography } from "@mui/material";
+import { alpha, AppBar, Avatar, Box, IconButton, InputBase, Menu, MenuItem, Stack, styled, Toolbar, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
 import { useAuth } from "../../services/authService";
+import UserAvatar from "../UserAvatar";
 
 const SearchIconWrapper = styled("div")(({ theme }) => ({
   padding: theme.spacing(0, 2),
@@ -135,24 +136,15 @@ function App() {
               />
             </Search>
             <div className="actions">
-              <Link to="/login">
-                <IconButton aria-label="login" size="large" color="inherit">
-                  <LogInIcon />
-                </IconButton>
-              </Link>
-              <Link to={"/search? q=" + searchedTitle}>
-                <IconButton aria-label="search" size="large" color="inherit">
-                  <SearchIcon />
-                </IconButton>
-              </Link>
               <Link to="/upload">
                 <IconButton aria-label="upload" size="large" color="inherit">
                   <FileUpload />
                 </IconButton>
-              </Link>
+              </Link>      
               <IconButton size="large" edge="end" aria-label="account of current user" aria-controls={menuId} aria-haspopup="true" onClick={handleProfileMenuOpen} color="inherit">
-                <AccountCircle />
+                <UserAvatar user={auth.user} />
               </IconButton>
+                    
             </div>
           </Toolbar>
         </AppBar>

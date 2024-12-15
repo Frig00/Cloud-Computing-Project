@@ -4,9 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo" 
-  // This is used for local development and schema generation
-  // Actual connection string is provided by the environment variable DB_CONNECTION (../src/data/prisma.ts)
+  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo"
 }
 
 model comments {
@@ -20,6 +18,12 @@ model comments {
 
   @@index([videoId], map: "comments_ibfk_1")
   @@index([userId], map: "comments_ibfk_2")
+}
+
+model githubUsers {
+  userId   String @id @db.VarChar(255)
+  githubId Int
+  users    users  @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "githubUsers_users_userId_fk")
 }
 
 model likes {
@@ -46,7 +50,9 @@ model users {
   userId                                            String          @id @db.VarChar(255)
   password                                          String          @db.VarChar(255)
   name                                              String          @db.VarChar(255)
+  profilePictureUrl                                 String?         @db.TinyText
   comments                                          comments[]
+  githubUsers                                       githubUsers?
   likes                                             likes[]
   subscriptions_subscriptions_subscriberIdTousers   subscriptions[] @relation("subscriptions_subscriberIdTousers")
   subscriptions_subscriptions_subscribedToIdTousers subscriptions[] @relation("subscriptions_subscribedToIdTousers")

@@ -360,7 +360,7 @@ export default function Watch() {
             lg: 8,
           }}
         >
-          <CommentSection />
+          <CommentSection videoId={videoId} />
         </Grid>
       </Grid>
     </Container>
