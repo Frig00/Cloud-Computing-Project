@@ -101,7 +101,14 @@ services:
     volumes:
       - ./src/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - mysql-data:/var/lib/mysql
-
+  
+  frontend:
+    build: src/frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - controller
+      
 volumes:
   mysql-data:
   minio-data:
