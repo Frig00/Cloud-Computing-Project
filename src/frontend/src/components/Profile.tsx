@@ -11,14 +11,14 @@ import UserAvatar from "./UserAvatar";
 export default function Profile() {
 
     const [searchParams] = useSearchParams();
-    const searchedTitle = searchParams.get("userId")!;
+    const searchedUser = searchParams.get("userId")!;
     const videoApi = new VideoApi();
 
-    // add the logic to fetch the user's videos
+  
   
     const { isPending, error, data } = useQuery({
-      queryKey: ["videoAllVideosGet"],
-      queryFn: () => videoApi.videoAllVideosGet(),
+      queryKey: ["videoUserUserIdVideosGet"],
+      queryFn: () => videoApi.videoUserUserIdVideosGet({userId: searchedUser}),
     });
  
     if (isPending) return "Loading...";
@@ -28,7 +28,7 @@ export default function Profile() {
     return (
       
       <Container maxWidth="xl">
-        <UserAvatar user={null} />
+        <UserAvatar user={null} userId={searchedUser} />
         <div className="flex gap-2 flex-wrap m-2">
           {data.map((video) => (
             <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="horizontal" />

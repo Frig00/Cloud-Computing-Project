@@ -1,4 +1,4 @@
-import { VideoApi, VideoVideoIdGet200ResponseCommentsInner } from "@/api";
+import { VideoApi, VideoVideoIdCommentsGet200ResponseCommentsInner } from "@/api";
 import { useAuth } from "@/services/authService";
 import { Avatar, Box, Button, List, ListItem, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -18,29 +18,35 @@ export default function CommentSection({videoId}: CommentSectionProps) {
 
   const videoApi = new VideoApi();
   const auth = useAuth();
+  const [commentsNumber,setCommentsNumber] = useState(5);
+  const [skip,setSkip] = useState(0);
 
 
   const { isPending, error, data } = useQuery({
-    queryKey: ["videoVideoIdGet", videoId],
+    queryKey: ["videoVideoIdCommentsGet",skip,commentsNumber, videoId],
     queryFn: () =>
-      videoApi.videoVideoIdGet({
-        videoId,
+      videoApi.videoVideoIdCommentsGet({
+        skip: skip,
+        take: commentsNumber,
+        videoId: videoId,
+        
       }),
   });
 
   useEffect(() => {
     if (data) {
-      setComments(data.comments);
+      setComments([...comments,...data.comments]);
     }
   }, [data]);
   
-  const [comments, setComments] = useState<VideoVideoIdGet200ResponseCommentsInner[]>([]);
+  const [comments, setComments] = useState<VideoVideoIdCommentsGet200ResponseCommentsInner[]>([]);
   const [newComment, setNewComment] = useState("");
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
       if (newComment.trim()) {
-      const comment: VideoVideoIdGet200ResponseCommentsInner = {
+      const comment: VideoVideoIdCommentsGet200ResponseCommentsInner = {
         id: new Date().toISOString(), // In a real app, this would be a UUID
         user: {
           userId: auth.user?.userId ?? "",
@@ -60,6 +66,10 @@ export default function CommentSection({videoId}: CommentSectionProps) {
     }
       
   };
+
+  const handleLoadMore = () => {
+    setSkip(skip + 5);
+  }
 
   return (
     <Box margin="auto">
@@ -91,7 +101,7 @@ export default function CommentSection({videoId}: CommentSectionProps) {
             }}
           >
             <ListItemAvatar>
-              <UserAvatar user={{userId: comment.user.userId, profilePictureUrl: comment.user.profilePictureUrl, name: "na"}} />
+              <UserAvatar user={{ userId: comment.user.userId, profilePictureUrl: comment.user.profilePictureUrl, name: "na" }} userId={""} />
             </ListItemAvatar>
             <ListItemText
               primary={
@@ -110,6 +120,16 @@ export default function CommentSection({videoId}: CommentSectionProps) {
           </ListItem>
         ))}
       </List>
+      <Button
+          variant="outlined"
+          color="primary"
+          sx={{
+            marginTop: "0.5rem",
+          }}
+          onClick={handleLoadMore}
+        >
+          Load More
+        </Button>
     </Box>
   );
 }

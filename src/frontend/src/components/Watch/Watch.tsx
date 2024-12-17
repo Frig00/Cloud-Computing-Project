@@ -183,9 +183,9 @@ export default function Watch() {
 
   if (error) return "An error has occurred: " + error.message;
 
-  function handleLike (){
-    videoApi.videoVideoIdLikeGet({videoId,isLiking : !formats.includes("like")});
-    formats.includes("like") ? setLikes(likes -1):setLikes(likes +1);
+  async function handleLike (){
+    const newLikes = await videoApi.videoVideoIdLikePost({videoId: videoId,videoVideoIdLikePostRequest: {isLiking: !data?.userHasLiked}});
+    setLikes(newLikes.likes);
    
   }
   
