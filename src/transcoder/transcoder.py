@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import json
 import shutil
+import time
 from multiprocessing import Pool, Manager
 from S3_storage import download_s3_file, upload_s3_folder
 from transcode_flow import create_master_playlist, get_total_frames, get_video_quality, transcode_to_quality
@@ -85,16 +86,20 @@ def callback(ch, method, properties, body):
 
 def main():
     """Set up RabbitMQ connection and start consuming messages."""
-
-    print(f"Connecting to RabbitMQ on {RABBITMQ_HOST}...")
-
-    try:
-        RABBITMQ_CHANNEL.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
-        RABBITMQ_CHANNEL.queue_declare(queue=STATUS_QUEUE_NAME, passive=True)
-    except Exception as e:
-        send_combined_progress(ProgressStatus.ERROR, error=str(e))
-        print(f"Queue '{TRANSCODE_QUEUE_NAME}' does not exist.")
-        return 0
+    attempt = 1
+    while True:
+        try:
+            print(f"Attempt {attempt}: Connecting to RabbitMQ on {RABBITMQ_HOST}...")
+            RABBITMQ_CHANNEL.queue_declare(queue=TRANSCODE_QUEUE_NAME, passive=True)
+            RABBITMQ_CHANNEL.queue_declare(queue=STATUS_QUEUE_NAME, passive=True)
+            print("Successfully connected to RabbitMQ!")
+            break
+        except Exception as e:
+            print(f"Failed to connect to RabbitMQ: {str(e)}")
+            print("Retrying in 5 seconds...")
+            attempt += 1
+            time.sleep(5)
+            continue
 
     RABBITMQ_CHANNEL.basic_consume(queue=TRANSCODE_QUEUE_NAME, on_message_callback=callback)
     
