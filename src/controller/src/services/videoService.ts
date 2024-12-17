@@ -12,7 +12,6 @@ export class VideoService {
 
   // Get a video by ID
   static async getVideoById(videoId: string, userId: string) {
-    // Fetch the video details, including relationships
     const video = await prisma.videos.findUnique({
       where: { id: videoId, status: "PUBLIC" },
       include: {
@@ -21,19 +20,6 @@ export class VideoService {
             userId: userId,
           },
           take: 1,
-        },
-        comments: {
-          orderBy: {
-            date: "desc",
-          },
-          include: {
-            users: {
-              select: {
-                userId: true,
-                profilePictureUrl: true,
-              },
-            },
-          },
         },
       },
     });
@@ -56,23 +42,32 @@ export class VideoService {
     const userHasLiked = video.likes.length === 1;
     const totalViews = videoCounts._count.views;
 
-    const comments = video.comments.map((comment) => ({
-      id: comment.id,
-      user: {
-        userId: comment.users.userId,
-        profilePictureUrl: comment.users.profilePictureUrl,
-      },
-      text: comment.content,
-      timeStamp: comment.date.toISOString()
-    }));
-
     return {
       ...video,
       totalLikes,
       userHasLiked,
       totalViews,
-      comments,
     };
+  }
+
+  // Retrieve all videos by userId
+  static async getVideosByUserId(userId: string) {
+    try {
+      const videos = await prisma.videos.findMany({
+        where: {
+          userId: userId,
+          status: "PUBLIC",
+        },
+        orderBy: {
+          uploadDate: "desc",
+        },
+      });
+
+      return videos;
+    } catch (error) {
+      console.error("Database query error:", error);
+      throw new Error("Database query failed");
+    }
   }
 
   // Search for videos by title
@@ -99,33 +94,44 @@ export class VideoService {
     }
   }
 
-  // Add or remove like from a video
+  // Add or remove like from a video and return the updated number of likes
   static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
-    if (isLiking) {
-      return await prisma.likes.upsert({
-        where: {
-          videoId_userId: {
-            videoId,
-            userId,
-          },
-        },
-        create: {
-          videoId,
-          userId,
-        },
-        update: {},
-      });
-    } else {
-      return await prisma.likes
-        .delete({
+    try {
+      if (isLiking) {
+        await prisma.likes.upsert({
           where: {
             videoId_userId: {
               videoId,
               userId,
             },
           },
-        })
-        .catch(() => null); // Return null if like doesn't exist
+          create: {
+            videoId,
+            userId,
+          },
+          update: {},
+        });
+      } else {
+        await prisma.likes.delete({
+          where: {
+            videoId_userId: {
+              videoId,
+              userId,
+            },
+          },
+        }).catch(() => null); // Return null if like doesn't exist
+      }
+
+      const updatedLikesCount = await prisma.likes.count({
+        where: {
+          videoId,
+        },
+      });
+
+      return updatedLikesCount;
+    } catch (error) {
+      console.error("Database query error:", error);
+      throw new Error("Database query failed");
     }
   }
 
@@ -140,6 +146,47 @@ export class VideoService {
         date: new Date(),
       },
     });
+  }
+
+   // Get paginated comments for a video
+  static async getComments(videoId: string, skip: number, take: number) {
+    try {
+      const video = await prisma.videos.findUnique({
+        where: { id: videoId, status: "PUBLIC" },
+        include: {
+          comments: {
+            orderBy: {
+              date: "desc",
+            },
+            skip: skip,
+            take: take,
+            include: {
+              users: {
+                select: {
+                  userId: true,
+                  profilePictureUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!video) return [];
+
+      return video.comments.map((comment) => ({
+        id: comment.id,
+        user: {
+          userId: comment.users.userId,
+          profilePictureUrl: comment.users.profilePictureUrl,
+        },
+        text: comment.content,
+        timeStamp: comment.date.toISOString(),
+      }));
+    } catch (error) {
+      console.error("Database query error:", error);
+      throw new Error("Database query failed");
+    }
   }
 
   // Increment the view count for a video

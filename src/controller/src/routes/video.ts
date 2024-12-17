@@ -25,6 +25,23 @@ const AllInfosVideoSchema = Type.Object({
   likes: Type.Number(),
   userHasLiked: Type.Boolean(),
   views: Type.Number(),
+});
+
+const VideoCommentSchema = Type.Object({
+  comment: Type.String(),
+});
+
+const CommentSchema = Type.Object({
+  id: Type.String(),
+  user: Type.Object({
+    userId: Type.String(),
+    profilePictureUrl: Type.Union([Type.String(), Type.Null()]),
+  }),
+  text: Type.String(),
+  timeStamp: Type.String({ format: "date-time" }),
+});
+
+const CommentsResponseSchema = Type.Object({
   comments: Type.Array(
     Type.Object({
       id: Type.String(),
@@ -34,16 +51,25 @@ const AllInfosVideoSchema = Type.Object({
       }),
       text: Type.String(),
       timeStamp: Type.String({ format: "date-time" }),
-    }),
+    })
   ),
 });
 
-const VideoCommentSchema = Type.Object({
-  comment: Type.String(),
+const PaginatedCommentsQuerySchema = Type.Object({
+  skip: Type.Integer({ minimum: 0 }),
+  take: Type.Integer({ minimum: 1, maximum: 100 }),
 });
 
 const IdVideoSchema = Type.Object({
   videoId: Type.String(),
+});
+
+const IdUserSchema = Type.Object({
+  userId: Type.String(),
+});
+
+const LikesResponseSchema = Type.Object({
+  likes: Type.Number(),
 });
 
 const IsLikingSchema = Type.Object({ isLiking: Type.Boolean() });
@@ -52,12 +78,17 @@ const TitleVideoSchema = Type.Object({ q: Type.String() });
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type IsLiking = Static<typeof IsLikingSchema>;
 type IdVideo = Static<typeof IdVideoSchema>;
+type IdUser = Static<typeof IdUserSchema>;
 type AllInfosVideo = Static<typeof AllInfosVideoSchema>;
 type FindVideo = Static<typeof FindVideoSchema>;
 type VideoComment = Static<typeof VideoCommentSchema>;
+type Comment = Static<typeof CommentSchema>;
+type LikesResponse = Static<typeof LikesResponseSchema>;
+type CommentsResponse = Static<typeof CommentsResponseSchema>;
+type PaginatedCommentsQuery = Static<typeof PaginatedCommentsQuerySchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
-  //videoService
+  //videoService endpoint
   app.get<{ Reply: FindVideo | ErrorResponse }>(
     "/all-videos",
     {
@@ -124,14 +155,45 @@ export default async function videoRoutes(app: FastifyInstance) {
             uploadDate: video.uploadDate.toISOString(),
             likes: video.totalLikes,
             userHasLiked: video.userHasLiked,
-            views: video.totalViews,
-            comments: video.comments,
+            views: video.totalViews
           });
         }
       } catch (error) {
         reply.status(500).send({ error: "Internal server error " + JSON.stringify(error) });
       }
     },
+  );
+
+  // Video search by user endpoint
+  app.get<{ Params: IdUser; Reply: FindVideo | ErrorResponse }>(
+    "/user/:userId/videos",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ["Video"],
+        params: IdUserSchema,
+        response: {
+          200: FindVideoSchema,
+          500: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (request, reply) => {
+      const { userId } = request.params;
+      try {
+        const videos = await VideoService.getVideosByUserId(userId);
+        reply.send(videos.map(video => ({
+          id: video.id,
+          userId: video.userId,
+          title: video.title,
+          uploadDate: video.uploadDate.toISOString(),
+        })));
+      } catch (error) {
+        console.error("Error retrieving videos:", error);
+        reply.status(500).send({ error: "Internal server error" });
+      }
+    }
   );
 
   //video search by string endpoint
@@ -183,16 +245,17 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get<{ Params: IdVideo; Query: IsLiking }>(
+  //video like endpoint
+  app.post<{ Params: IdVideo; Body: IsLiking; Reply: LikesResponse | ErrorResponse }>(
     "/:videoId/like",
     {
       onRequest: [app.authenticate],
       schema: {
         tags: ["Video"],
-        querystring: IsLikingSchema,
         params: IdVideoSchema,
+        body: IsLikingSchema,
         response: {
-          200: {},
+          200: LikesResponseSchema,
           500: ErrorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
@@ -200,18 +263,20 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { videoId } = request.params;
-      const { isLiking } = request.query as IsLiking;
+      const { isLiking } = request.body;
       const jwt = await request.jwtVerify<JWTPayload>();
       const userId = jwt.id;
       try {
-        await VideoService.likeVideo(videoId, userId, isLiking);
-        reply.status(200).send();
-      } catch {
+        const updatedLikesCount = await VideoService.likeVideo(videoId, userId, isLiking);
+        reply.send({ likes: updatedLikesCount });
+      } catch (error) {
+        console.error("Error updating likes:", error);
         reply.status(500).send({ error: "Internal server error" });
       }
-    },
+    }
   );
 
+  // Endpoint to add a comment to a video
   app.post<{ Body: VideoComment; Reply: ErrorResponse; Params: IdVideo }>(
     "/:videoId/comment",
     {
@@ -240,4 +305,35 @@ export default async function videoRoutes(app: FastifyInstance) {
       }
     },
   );
+
+// Endpoint to get paginated comments for a video
+app.get<{ Params: IdVideo; Querystring: PaginatedCommentsQuery; Reply: CommentsResponse | ErrorResponse }>(
+  "/:videoId/comments",
+  {
+    onRequest: [app.authenticate],
+    schema: {
+      tags: ["Video"],
+      params: IdVideoSchema,
+      querystring: PaginatedCommentsQuerySchema,
+      response: {
+        200: CommentsResponseSchema,
+        500: ErrorResponseSchema,
+      },
+      security: [{ bearerAuth: [] }],
+    },
+  },
+  async (request, reply) => {
+    const { videoId } = request.params;
+    const { skip, take } = request.query;
+    try {
+      const comments = await VideoService.getComments(videoId, skip, take);
+      reply.send({ comments });
+    } catch (error) {
+      console.error("Error retrieving paginated comments:", error);
+      reply.status(500).send({ error: "Internal server error" });
+    }
+  }
+);
+
+ 
 }
