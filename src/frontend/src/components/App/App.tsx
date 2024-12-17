@@ -77,6 +77,12 @@ function App() {
     navigate("/");
   };
 
+  const goToProfile = () => {
+    handleMenuClose();
+    navigate("/profile?userId=" + auth.user?.userId);
+  }
+
+
   const menuId = "primary-search-account-menu";
   const isMenuOpen = Boolean(anchorEl);
   const renderMenu = (
@@ -96,7 +102,7 @@ function App() {
       onClose={handleMenuClose}
     >
       <MenuItem onClick={logout}>Logout</MenuItem>
-      <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+      <MenuItem onClick={goToProfile}>My account</MenuItem>
     </Menu>
   );
 

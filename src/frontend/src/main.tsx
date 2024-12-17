@@ -29,6 +29,7 @@ import "@fontsource/geist-sans/700.css";
 import "@fontsource/geist-sans/800.css";
 import "@fontsource/geist-sans/900.css";
 import { API_BASE_PATH } from "./lib/consts.ts";
+import Profile from "./components/Profile.tsx";
 
 DefaultConfig.config = new Configuration({
   basePath: API_BASE_PATH,
@@ -59,6 +60,7 @@ createRoot(document.getElementById("root")!).render(
                     <Route path="watch" element={<Watch />} />
                     <Route path="upload" element={<Upload />} />
                     <Route path="search" element={<Search />} />
+                    <Route path="profile" element={<Profile />} />
                   </Route>
                 </Route>
               </Routes>

@@ -14,7 +14,12 @@ export default function UserAvatar({ user }: UserAvatarProps) {
       };
     
       if (!user) {
-        return <Avatar />;
+        return <Avatar   sx={{
+          width: 100, 
+          height: 100,
+          marginBottom: 2,
+          marginTop: 2,
+        }} />;
       }
 
       return (
