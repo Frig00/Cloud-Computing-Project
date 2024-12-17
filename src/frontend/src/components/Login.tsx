@@ -137,7 +137,7 @@ export default function Login() {
               id="username"
               type="username"
               name="username"
-              placeholder="jeff"
+              placeholder="billionareboy"
               autoComplete="username"
               autoFocus
               required

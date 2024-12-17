@@ -45,8 +45,8 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignIn() {
-  const [emailError, setEmailError] = useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = useState("");
+  const [usernameError, setUsernameError] = useState(false);
+  const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const [nameError, setNameError] = useState(false);
@@ -55,19 +55,20 @@ export default function SignIn() {
   const auth = useAuth();
 
   const validateInputs = () => {
-    const email = document.getElementById("email") as HTMLInputElement;
+    const username = document.getElementById("username") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
     const name = document.getElementById("name") as HTMLInputElement;
 
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true);
-      setEmailErrorMessage("Please enter a valid email address.");
+
+    if (!username.value || username.value.length < 1) {
+      setUsernameError(true);
+      setUsernameErrorMessage("Please enter a valid username.");
       isValid = false;
     } else {
-      setEmailError(false);
-      setEmailErrorMessage("");
+      setUsernameError(false);
+      setUsernameErrorMessage("");
     }
 
     if (!password.value || password.value.length < 6) {
@@ -93,12 +94,12 @@ export default function SignIn() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (nameError || emailError || passwordError) {
+    if (nameError || usernameError || passwordError) {
       event.preventDefault();
       return;
     }
     const data = new FormData(event.currentTarget);
-    const mail = data.get("email") as string;
+    const username = data.get("username") as string;
     const name = data.get("name") as string;
     const psw = data.get("password") as string;
 
@@ -107,7 +108,7 @@ export default function SignIn() {
 
        await authApi.authSignupPost({
         authSignupPostRequest: {
-          userId: mail,
+          userId: username,
           password: psw,
           name: name,
         },
@@ -115,8 +116,8 @@ export default function SignIn() {
 
       
       
-      auth.login(name, psw);
-      navigate("/");
+      
+      navigate("/login");
       
       
     } catch (error){
@@ -135,7 +136,7 @@ export default function SignIn() {
             fontSize: "clamp(2rem, 10vw, 2.15rem)",
           }}
         >
-          Sign in
+          Sign up
         </Typography>
         <Box
           component="form"
@@ -148,17 +149,16 @@ export default function SignIn() {
         >
           <FormControl>
             <FormLabel htmlFor="name">Full name</FormLabel>
-            <TextField autoComplete="name" name="name" required fullWidth id="name" placeholder="Jon Snow" error={nameError} helperText={nameErrorMessage} color={nameError ? "error" : "primary"} />
+            <TextField autoComplete="name" name="name" required fullWidth id="name" placeholder="Jeff Bezos" error={nameError} helperText={nameErrorMessage} color={nameError ? "error" : "primary"} />
           </FormControl>
           <FormControl>
-            <FormLabel htmlFor="email">Email</FormLabel>
-            <TextField required fullWidth id="email" placeholder="your@email.com" name="email" autoComplete="email" variant="outlined" error={emailError} helperText={emailErrorMessage} color={passwordError ? "error" : "primary"} />
+            <FormLabel htmlFor="username">Username</FormLabel>
+            <TextField required fullWidth id="username" placeholder="billionareboy" name="username" autoComplete="username" variant="outlined" error={usernameError} helperText={usernameErrorMessage} color={passwordError ? "error" : "primary"} />
           </FormControl>
           <FormControl>
             <FormLabel htmlFor="password">Password</FormLabel>
             <TextField required fullWidth name="password" placeholder="••••••" type="password" id="password" autoComplete="new-password" variant="outlined" error={passwordError} helperText={passwordErrorMessage} color={passwordError ? "error" : "primary"} />
           </FormControl>
-          <FormControlLabel control={<Checkbox value="allowExtraEmails" color="primary" />} label="I want to receive updates via email." />
           <Button type="submit" fullWidth variant="contained" onClick={validateInputs}>
             Sign up
           </Button>
