@@ -3,10 +3,7 @@ import { useAuth } from "@/services/authService";
 import { Avatar, Box, Button, List, ListItem, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { id } from "date-fns/locale";
-import { User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import UserAvatar from "../UserAvatar";
 
 
@@ -18,16 +15,16 @@ export default function CommentSection({videoId}: CommentSectionProps) {
 
   const videoApi = new VideoApi();
   const auth = useAuth();
-  const [commentsNumber,setCommentsNumber] = useState(5);
+  const TAKE = 5;
   const [skip,setSkip] = useState(0);
 
 
   const { isPending, error, data } = useQuery({
-    queryKey: ["videoVideoIdCommentsGet",skip,commentsNumber, videoId],
+    queryKey: ["videoVideoIdCommentsGet",skip, videoId],
     queryFn: () =>
       videoApi.videoVideoIdCommentsGet({
         skip: skip,
-        take: commentsNumber,
+        take: TAKE,
         videoId: videoId,
         
       }),
@@ -47,7 +44,7 @@ export default function CommentSection({videoId}: CommentSectionProps) {
     e.preventDefault();
       if (newComment.trim()) {
       const comment: VideoVideoIdCommentsGet200ResponseCommentsInner = {
-        id: new Date().toISOString(), // In a real app, this would be a UUID
+        id: new Date().toISOString(),
         user: {
           userId: auth.user?.userId ?? "",
           profilePictureUrl: auth.user?.profilePictureUrl ?? null,
@@ -67,9 +64,7 @@ export default function CommentSection({videoId}: CommentSectionProps) {
       
   };
 
-  const handleLoadMore = () => {
-    setSkip(skip + 5);
-  }
+  const handleLoadMore = () => setSkip(skip + TAKE);
 
   return (
     <Box margin="auto">
