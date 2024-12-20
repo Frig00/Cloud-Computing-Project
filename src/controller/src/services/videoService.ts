@@ -4,11 +4,37 @@ import { v4 as uuidv4 } from "uuid";
 
 export class VideoService {
   // Get all videos
-  static async getAllVideos() {
+  static async getAllVideos(skip: number, take: number) {
     return await prisma.videos.findMany({
       where: { status: "PUBLIC" },
+      orderBy: {
+        uploadDate: "desc",
+      },
+      skip: skip,
+      take: take
     });
-  }
+}
+
+static async getSubscriptionVideos(subscriberId: string, skip: number, take: number) {
+  return await prisma.videos.findMany({
+    where: {
+      status: "PUBLIC",
+      users: {
+        subscriptions_subscriptions_subscriberIdTousers: {
+          some: {
+            subscriberId: subscriberId
+          }
+        }
+      }
+    },
+    orderBy: {
+      uploadDate: "desc",
+    },
+    skip: skip,
+    take: take
+  });
+}
+
 
   // Get a video by ID
   static async getVideoById(videoId: string, userId: string) {
@@ -205,4 +231,50 @@ export class VideoService {
       update: {},
     });
   }
+
+  // Add or remove subscription from a video and return the updated number of subscriptions
+  static async subscribeVideo(videoId: string, userId: string, isUserSubscribed: boolean) {
+    try {
+      if (isUserSubscribed) {
+        await prisma.subscriptions.upsert({
+          where: {
+            subscriberId_subscribedToId: {
+              subscriberId: userId,
+              subscribedToId: videoId,
+            },
+          },
+          create: {
+            subscriberId: userId,
+            subscribedToId: videoId,
+          },
+          update: {},
+        });
+      } else {
+        await prisma.subscriptions.delete({
+          where: {
+            subscriberId_subscribedToId: {
+              subscriberId: userId,
+              subscribedToId: videoId,
+            },
+          },
+        }).catch(() => null);
+      }
+
+      const isSubscribed = await prisma.subscriptions.findUnique({
+        where: {
+          subscriberId_subscribedToId: {
+            subscriberId: userId,
+            subscribedToId: videoId,
+          },
+        },
+      });
+
+      return !!isSubscribed;
+    } catch (error) {
+      console.error("Database query error:", error);
+      throw new Error("Database query failed");
+    }
+  }
+
+
 }
