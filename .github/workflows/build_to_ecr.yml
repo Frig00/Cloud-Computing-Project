@@ -38,7 +38,6 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:latest
         working-directory: ./src
 
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster ecs-cluster --service ${{ matrix.service }} --force-new-deployment 
-        
+#      - name: Deploy to ECS
+#        run: |
+#          aws ecs update-service --cluster ecs-cluster --service ${{ matrix.service }} --force-new-deployment
