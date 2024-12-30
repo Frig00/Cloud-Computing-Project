@@ -3,10 +3,12 @@ import { Static, Type } from "@sinclair/typebox";
 import { VideoService } from "../services/videoService";
 import { JWTPayload } from "../plugins/auth";
 
+// Error response schema
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
 });
 
+// Schema for finding videos
 const FindVideoSchema = Type.Array(
   Type.Object({
     id: Type.String(),
@@ -16,6 +18,7 @@ const FindVideoSchema = Type.Array(
   }),
 );
 
+// Schema for all video information
 const AllInfosVideoSchema = Type.Object({
   id: Type.String(),
   userId: Type.String(),
@@ -27,10 +30,12 @@ const AllInfosVideoSchema = Type.Object({
   views: Type.Number(),
 });
 
+// Schema for video comments
 const VideoCommentSchema = Type.Object({
   comment: Type.String(),
 });
 
+// Schema for a single comment
 const CommentSchema = Type.Object({
   id: Type.String(),
   user: Type.Object({
@@ -41,6 +46,7 @@ const CommentSchema = Type.Object({
   timeStamp: Type.String({ format: "date-time" }),
 });
 
+// Schema for comments response
 const CommentsResponseSchema = Type.Object({
   comments: Type.Array(
     Type.Object({
@@ -55,33 +61,45 @@ const CommentsResponseSchema = Type.Object({
   ),
 });
 
+// Schema for paginated comments query
 const PaginatedCommentsQuerySchema = Type.Object({
   skip: Type.Integer({ minimum: 0 }),
   take: Type.Integer({ minimum: 1, maximum: 100 }),
 });
 
+// Schema for paginated all video query
 const PaginatedAllVideoQuerySchema = Type.Object({
   skip: Type.Integer({ minimum: 0 }),
   take: Type.Integer({ minimum: 1, maximum: 100 }),
 });
 
+// Schema for video ID
 const IdVideoSchema = Type.Object({
   videoId: Type.String(),
 });
 
+// Schema for user ID
 const IdUserSchema = Type.Object({
   userId: Type.String(),
 });
 
+// Schema for likes response
 const LikesResponseSchema = Type.Object({
   likes: Type.Number(),
 });
 
+// Schema for liking a video
 const IsLikingSchema = Type.Object({ isLiking: Type.Boolean() });
+
+// Schema for video title search
 const TitleVideoSchema = Type.Object({ q: Type.String() });
 
+// Schema for checking if user is subscribed
 const IsUserSubscribedSchema = Type.Object({ isUserSubscribed: Type.Boolean() });
+
+// Schema for subscription response
 const SubscriptionResponseSchema = Type.Object({ subscriptionStatus: Type.Boolean() });
+
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type IsLiking = Static<typeof IsLikingSchema>;
 type IdVideo = Static<typeof IdVideoSchema>;
@@ -98,7 +116,7 @@ type SubscriptionResponse = Static<typeof SubscriptionResponseSchema>;
 type PaginatedAllVideoQuery = Static<typeof PaginatedAllVideoQuerySchema>;
 
 export default async function videoRoutes(app: FastifyInstance) {
-  //videoService endpoint
+  // Endpoint to get all public videos with pagination
   app.get<{ Querystring: PaginatedAllVideoQuery, Reply: FindVideo | ErrorResponse }>(
     "/all-videos",
     {
@@ -131,7 +149,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  //video subscription endpoint
+  // Endpoint to get subscription videos for a user with pagination
   app.get<{ Querystring: PaginatedAllVideoQuery, Params: { subscriberId: string }, Reply: FindVideo | ErrorResponse }>(
     "/subscriptions/:subscriberId",
     {
@@ -165,8 +183,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-
-  //video searching by ID endpoint
+  // Endpoint to get video details by ID
   app.get<{ Reply: AllInfosVideo | ErrorResponse }>(
     "/:videoId",
     {
@@ -179,7 +196,6 @@ export default async function videoRoutes(app: FastifyInstance) {
           404: ErrorResponseSchema,
           500: ErrorResponseSchema,
         },
-
         security: [{ bearerAuth: [] }],
       },
     },
@@ -211,7 +227,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  // Video search by user endpoint
+  // Endpoint to get videos by user ID
   app.get<{ Params: IdUser; Reply: FindVideo | ErrorResponse }>(
     "/user/:userId/videos",
     {
@@ -243,7 +259,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     }
   );
 
-  //video search by string endpoint
+  // Endpoint to search videos by title
   app.post<{ Reply: FindVideo | ErrorResponse }>(
     "/search",
     {
@@ -292,7 +308,7 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-  //video like endpoint
+  // Endpoint to like or unlike a video
   app.post<{ Params: IdVideo; Body: IsLiking; Reply: LikesResponse | ErrorResponse }>(
     "/:videoId/like",
     {
@@ -353,65 +369,92 @@ export default async function videoRoutes(app: FastifyInstance) {
     },
   );
 
-// Endpoint to get paginated comments for a video
-app.get<{ Params: IdVideo; Querystring: PaginatedCommentsQuery; Reply: CommentsResponse | ErrorResponse }>(
-  "/:videoId/comments",
-  {
-    onRequest: [app.authenticate],
-    schema: {
-      tags: ["Video"],
-      params: IdVideoSchema,
-      querystring: PaginatedCommentsQuerySchema,
-      response: {
-        200: CommentsResponseSchema,
-        500: ErrorResponseSchema,
+  // Endpoint to get paginated comments for a video
+  app.get<{ Params: IdVideo; Querystring: PaginatedCommentsQuery; Reply: CommentsResponse | ErrorResponse }>(
+    "/:videoId/comments",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ["Video"],
+        params: IdVideoSchema,
+        querystring: PaginatedCommentsQuerySchema,
+        response: {
+          200: CommentsResponseSchema,
+          500: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
       },
-      security: [{ bearerAuth: [] }],
     },
-  },
-  async (request, reply) => {
-    const { videoId } = request.params;
-    const { skip, take } = request.query;
-    try {
-      const comments = await VideoService.getComments(videoId, skip, take);
-      reply.send({ comments });
-    } catch (error) {
-      console.error("Error retrieving paginated comments:", error);
-      reply.status(500).send({ error: "Internal server error" });
+    async (request, reply) => {
+      const { videoId } = request.params;
+      const { skip, take } = request.query;
+      try {
+        const comments = await VideoService.getComments(videoId, skip, take);
+        reply.send({ comments });
+      } catch (error) {
+        console.error("Error retrieving paginated comments:", error);
+        reply.status(500).send({ error: "Internal server error" });
+      }
     }
-  }
-);
+  );
 
-//video subscribe endpoint
-app.post<{ Params: IdVideo; Body: IsUserSubscribed; Reply: SubscriptionResponse | ErrorResponse }>(
-  "/:videoId/subscribe",
-  {
-    onRequest: [app.authenticate],
-    schema: {
-      tags: ["Video"],
-      params: IdVideoSchema,
-      body: IsUserSubscribedSchema,
-      response: {
-        200: SubscriptionResponseSchema,
-        500: ErrorResponseSchema,
+  // Endpoint to subscribe or unsubscribe from a video
+  app.post<{ Params: IdVideo; Body: IsUserSubscribed; Reply: SubscriptionResponse | ErrorResponse }>(
+    "/:videoId/subscribe",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ["Video"],
+        params: IdVideoSchema,
+        body: IsUserSubscribedSchema,
+        response: {
+          200: SubscriptionResponseSchema,
+          500: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
       },
-      security: [{ bearerAuth: [] }],
     },
-  },
-  async (request, reply) => {
-    const { videoId } = request.params;
-    const { isUserSubscribed } = request.body;
-    const jwt = await request.jwtVerify<JWTPayload>();
-    const userId = jwt.id;
-    try {
-      const updatedSubscriptionStatus = await VideoService.subscribeVideo(videoId, userId, isUserSubscribed);
-      reply.send({ subscriptionStatus: updatedSubscriptionStatus });
-    } catch (error) {
-      console.error("Error updating subscription status:", error);
-      reply.status(500).send({ error: "Internal server error" });
+    async (request, reply) => {
+      const { videoId } = request.params;
+      const { isUserSubscribed } = request.body;
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const userId = jwt.id;
+      try {
+        const updatedSubscriptionStatus = await VideoService.subscribeVideo(videoId, userId, isUserSubscribed);
+        reply.send({ subscriptionStatus: updatedSubscriptionStatus });
+      } catch (error) {
+        console.error("Error updating subscription status:", error);
+        reply.status(500).send({ error: "Internal server error" });
+      }
     }
-  }
-);
- 
+  );
+
+  // Endpoint to check if the user is subscribed to the uploader of the video
+  app.get<{ Params: IdVideo; Reply: SubscriptionResponse | ErrorResponse }>(
+    "/:videoId/is-subscribed",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ["Video"],
+        params: IdVideoSchema,
+        response: {
+          200: SubscriptionResponseSchema,
+          500: ErrorResponseSchema,
+        },
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (request, reply) => {
+      const { videoId } = request.params;
+      const jwt = await request.jwtVerify<JWTPayload>();
+      const userId = jwt.id;
+      try {
+        const isSubscribed = await VideoService.isUserSubscribedToUploader(videoId, userId);
+        reply.send({ subscriptionStatus: isSubscribed });
+      } catch (error) {
+        console.error("Error checking subscription status:", error);
+        reply.status(500).send({ error: "Internal server error" });
+      }
+    }
+  );
 }
-  

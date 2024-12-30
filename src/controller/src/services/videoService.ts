@@ -13,28 +13,7 @@ export class VideoService {
       skip: skip,
       take: take
     });
-}
-
-static async getSubscriptionVideos(subscriberId: string, skip: number, take: number) {
-  return await prisma.videos.findMany({
-    where: {
-      status: "PUBLIC",
-      users: {
-        subscriptions_subscriptions_subscriberIdTousers: {
-          some: {
-            subscriberId: subscriberId
-          }
-        }
-      }
-    },
-    orderBy: {
-      uploadDate: "desc",
-    },
-    skip: skip,
-    take: take
-  });
-}
-
+  }
 
   // Get a video by ID
   static async getVideoById(videoId: string, userId: string) {
@@ -174,7 +153,7 @@ static async getSubscriptionVideos(subscriberId: string, skip: number, take: num
     });
   }
 
-   // Get paginated comments for a video
+  // Get paginated comments for a video
   static async getComments(videoId: string, skip: number, take: number) {
     try {
       const video = await prisma.videos.findUnique({
@@ -274,6 +253,47 @@ static async getSubscriptionVideos(subscriberId: string, skip: number, take: num
       console.error("Database query error:", error);
       throw new Error("Database query failed");
     }
+  }
+
+  static async getSubscriptionVideos(subscriberId: string, skip: number, take: number) {
+    return await prisma.videos.findMany({
+      where: {
+        status: "PUBLIC",
+        users: {
+          subscriptions_subscriptions_subscriberIdTousers: {
+            some: {
+              subscriberId: subscriberId
+            }
+          }
+        }
+      },
+      orderBy: {
+        uploadDate: "desc",
+      },
+      skip: skip,
+      take: take
+    });
+  }
+
+  // Check if a user is subscribed to the channel of the video uploader
+  static async isUserSubscribedToUploader(videoId: string, userId: string) {
+    const video = await prisma.videos.findUnique({
+      where: { id: videoId, status: "PUBLIC" },
+      select: { userId: true },
+    });
+
+    if (!video) throw new Error("Video not found");
+
+    const subscription = await prisma.subscriptions.findUnique({
+      where: {
+        subscriberId_subscribedToId: {
+          subscriberId: userId,
+          subscribedToId: video.userId,
+        },
+      },
+    });
+
+    return !!subscription;
   }
 
 
