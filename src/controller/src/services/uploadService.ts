@@ -17,6 +17,10 @@ export class UploadService {
 
   /**
    * Generate a pre-signed URL for video uploads.
+   * @param userId - ID of the user uploading the video
+   * @param videoTitle - Title of the video
+   * @param description - Description of the video
+   * @returns Object containing videoId and pre-signed URL
    */
   static async getPresignedUrl(userId: string, videoTitle: string, description: string) {
     const s3Client = new S3Client({
@@ -56,6 +60,8 @@ export class UploadService {
 
   /**
    * Generate a random string of the specified length.
+   * @param length - Length of the random string
+   * @returns Random string
    */
   static randomString(length: number): string {
     return crypto.randomBytes(length).toString("hex").slice(0, length);
@@ -63,6 +69,7 @@ export class UploadService {
 
   /**
    * Publish a video processing message to RabbitMQ.
+   * @param videoId - ID of the video to be transcoded
    */
   static async transcodeVideo(videoId: string) {
     const channel = await this.initRabbitMQ();
@@ -91,8 +98,9 @@ export class UploadService {
 
   /**
    * Consume messages from RabbitMQ and filter by videoId.
+   * @param videoId - ID of the video to filter messages
+   * @param callback - Callback function to handle the messages
    */
-
   static consumeMessages(videoId: string, callback: (message: unknown) => void) {
     return new Promise(async (resolve) => {
       try {
@@ -141,6 +149,11 @@ export class UploadService {
     });
   }
 
+  /**
+   * Check if a video has already been transcoded.
+   * @param videoID - ID of the video
+   * @returns Boolean indicating if the video is transcoded
+   */
   static async isVideoTranscoded(videoID: string): Promise<boolean> {
     const video = await prisma.videos.findUnique({
       where: { id: videoID, status: "PUBLIC" },
@@ -148,6 +161,14 @@ export class UploadService {
     return !!video;
   }
 
+  /**
+   * Upload video metadata to the database.
+   * @param videoID - ID of the video
+   * @param title - Title of the video
+   * @param user - ID of the user uploading the video
+   * @param description - Description of the video
+   * @param videoStatus - Status of the video
+   */
   static async uploadVideo(videoID: string, title: string, user: string, description: string, videoStatus: videos_status) {
     await prisma.videos.create({
       data: {
@@ -161,6 +182,11 @@ export class UploadService {
     });
   }
 
+  /**
+   * Update the status of a video in the database.
+   * @param videoID - ID of the video
+   * @param status - New status of the video
+   */
   static async updateVideoStatus(videoID: string, status: videos_status) {
     try {
       await prisma.videos.update({

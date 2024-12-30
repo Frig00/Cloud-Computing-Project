@@ -1,15 +1,19 @@
 import { FastifyInstance } from "fastify";
 import prisma from "../data/prisma";
 
+// Configuration for GitHub OAuth
 const config = {
     clientId: process.env.GITHUB_CLIENT_ID!,
     clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     redirectUri: process.env.CTRL_BASE_URL + '/auth/github/callback',
 }
 
-
 export class GitHubService {
 
+    /**
+     * Generate GitHub authentication URL.
+     * @returns GitHub authentication URL
+     */
     static authenticateWithGitHub() {
         const githubAuthUrl = 'https://github.com/login/oauth/authorize';
         const params = new URLSearchParams({
@@ -21,7 +25,14 @@ export class GitHubService {
         return `${githubAuthUrl}?${params.toString()}`;
     }
 
+    /**
+     * Login with GitHub OAuth code.
+     * @param code - GitHub OAuth code
+     * @param fastify - Fastify instance
+     * @returns JWT token
+     */
     static async loginWithGitHubCode(code: string, fastify: FastifyInstance) {
+        // Exchange code for access token
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
             method: 'POST',
             headers: {
@@ -38,6 +49,7 @@ export class GitHubService {
         const tokenData = await tokenResponse.json();
         const accessToken = tokenData.access_token;
 
+        // Fetch user data from GitHub
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -47,6 +59,7 @@ export class GitHubService {
 
         const githubUserData = await userResponse.json();
 
+        // Check if user already exists in the database
         const existingUser = await prisma.users.findUnique({
             where: { userId: githubUserData.login },
             include: { githubUsers: true }
@@ -61,6 +74,7 @@ export class GitHubService {
             }
         }
 
+        // Create a new user in the database
         const newUser = await prisma.users.create({
             data: {
                 userId: githubUserData.login,
@@ -77,6 +91,5 @@ export class GitHubService {
         });
 
         return fastify.jwt.sign({ id: newUser.userId });
-
     }
 }

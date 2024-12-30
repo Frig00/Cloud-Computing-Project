@@ -3,7 +3,11 @@ import prisma from "../data/prisma";
 import { v4 as uuidv4 } from "uuid";
 
 export class VideoService {
-  // Get all videos
+  /**
+   * Get all public videos with pagination
+   * @param skip - Number of videos to skip
+   * @param take - Number of videos to take
+   */
   static async getAllVideos(skip: number, take: number) {
     return await prisma.videos.findMany({
       where: { status: "PUBLIC" },
@@ -15,7 +19,11 @@ export class VideoService {
     });
   }
 
-  // Get a video by ID
+  /**
+   * Get a video by its ID and check if the user has liked it
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   */
   static async getVideoById(videoId: string, userId: string) {
     const video = await prisma.videos.findUnique({
       where: { id: videoId, status: "PUBLIC" },
@@ -55,7 +63,10 @@ export class VideoService {
     };
   }
 
-  // Retrieve all videos by userId
+  /**
+   * Retrieve all public videos by a specific user
+   * @param userId - ID of the user
+   */
   static async getVideosByUserId(userId: string) {
     try {
       const videos = await prisma.videos.findMany({
@@ -75,7 +86,10 @@ export class VideoService {
     }
   }
 
-  // Search for videos by title
+  /**
+   * Search for public videos by title keywords
+   * @param words - Array of keywords to search for
+   */
   static async searchVideos(words: string[]) {
     if (words.length === 0) throw new Error("Empty search words"); // Guard against empty input
 
@@ -99,7 +113,12 @@ export class VideoService {
     }
   }
 
-  // Add or remove like from a video and return the updated number of likes
+  /**
+   * Add or remove like from a video and return the updated number of likes
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   * @param isLiking - Boolean indicating if the user is liking or unliking the video
+   */
   static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
     try {
       if (isLiking) {
@@ -140,7 +159,12 @@ export class VideoService {
     }
   }
 
-  // Add a comment to a video
+  /**
+   * Add a comment to a video
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   * @param content - Content of the comment
+   */
   static async addComment(videoId: string, userId: string, content: string) {
     return await prisma.comments.create({
       data: {
@@ -153,7 +177,12 @@ export class VideoService {
     });
   }
 
-  // Get paginated comments for a video
+  /**
+   * Get paginated comments for a video
+   * @param videoId - ID of the video
+   * @param skip - Number of comments to skip
+   * @param take - Number of comments to take
+   */
   static async getComments(videoId: string, skip: number, take: number) {
     try {
       const video = await prisma.videos.findUnique({
@@ -194,7 +223,11 @@ export class VideoService {
     }
   }
 
-  // Increment the view count for a video
+  /**
+   * Increment the view count for a video
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   */
   static async incrementViewCount(videoId: string, userId: string) {
     return await prisma.views.upsert({
       where: {
@@ -211,7 +244,12 @@ export class VideoService {
     });
   }
 
-  // Add or remove subscription from a video and return the updated number of subscriptions
+  /**
+   * Add or remove subscription from a video and return the updated subscription status
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   * @param isUserSubscribed - Boolean indicating if the user is subscribed or unsubscribed
+   */
   static async subscribeVideo(videoId: string, userId: string, isUserSubscribed: boolean) {
     try {
       if (isUserSubscribed) {
@@ -255,6 +293,12 @@ export class VideoService {
     }
   }
 
+  /**
+   * Get videos from subscriptions with pagination
+   * @param subscriberId - ID of the subscriber
+   * @param skip - Number of videos to skip
+   * @param take - Number of videos to take
+   */
   static async getSubscriptionVideos(subscriberId: string, skip: number, take: number) {
     return await prisma.videos.findMany({
       where: {
@@ -275,7 +319,11 @@ export class VideoService {
     });
   }
 
-  // Check if a user is subscribed to the channel of the video uploader
+  /**
+   * Check if a user is subscribed to the channel of the video uploader
+   * @param videoId - ID of the video
+   * @param userId - ID of the user
+   */
   static async isUserSubscribedToUploader(videoId: string, userId: string) {
     const video = await prisma.videos.findUnique({
       where: { id: videoId, status: "PUBLIC" },
@@ -295,6 +343,4 @@ export class VideoService {
 
     return !!subscription;
   }
-
-
 }

@@ -1,29 +1,32 @@
 import { FastifyInstance } from "fastify";
-
 import { Static, Type } from "@sinclair/typebox";
 import { UserService } from "../services/userService";
 import { JWTPayload } from "../plugins/auth";
 
+// Schema for error responses
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
 });
 
+// Schema for the response of the sign-up endpoint
 const SignUpResponseSchema = Type.Object({
   userId: Type.String(),
   name: Type.String(),
 });
 
+// Schema for the request body of the update user endpoint
 const UpdateUserBodySchema = Type.Object({
   name: Type.Optional(Type.String()),
   password: Type.Optional(Type.String()),
 });
 
+// Type definitions for the schemas
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
 type SignUpResponse = Static<typeof SignUpResponseSchema>;
 type UpdateUserBody = Static<typeof UpdateUserBodySchema>;
 
 export default async function userRoutes(app: FastifyInstance) {
-  //update user profile endpoint
+  // Endpoint to update user profile
   app.put<{ Body: UpdateUserBody; Reply: ErrorResponse }>(
     "/",
     {
@@ -49,7 +52,6 @@ export default async function userRoutes(app: FastifyInstance) {
       try {
         await UserService.updateUserProfile(userId, request.body, app);
         reply.status(200).send();
-        //return { message: "Profile updated" };
       } catch (err) {
         reply.status(400).send({
           error: err instanceof Error ? err.message : "Unknown error",
@@ -58,13 +60,13 @@ export default async function userRoutes(app: FastifyInstance) {
     },
   );
 
-  //get user ID endpoint
+  // Endpoint to get current user
   app.get<{ Reply: SignUpResponse | ErrorResponse }>(
     "/",
     {
       onRequest: [app.authenticate],
       schema: {
-        description: "Get currrent user",
+        description: "Get current user",
         tags: ["User"],
         summary: "Get current user",
         response: {
@@ -91,7 +93,7 @@ export default async function userRoutes(app: FastifyInstance) {
     },
   );
 
-  //delete user endpoint
+  // Endpoint to delete current user
   app.delete<{ Reply: ErrorResponse }>(
     "/",
     {

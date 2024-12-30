@@ -5,34 +5,40 @@ import { GitHubService } from "../services/githubService";
 import { JWTPayload } from "../plugins/auth";
 import prisma from "../data/prisma";
 
+// Schema for login request
 const LoginRequestSchema = Type.Object({
   userId: Type.String(),
   password: Type.String(),
 });
 
+// Schema for login response
 const LoginResponseSchema = Type.Object({
   token: Type.String(),
   user: Type.Object({
     userId: Type.String(),
     name: Type.String(),
-    profilePictureUrl: Type.Union([Type.String(), Type.Null()])
+    profilePictureUrl: Type.Union([Type.String(), Type.Null()]),
   }),
 });
 
+// Schema for error response
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
 });
 
+// Schema for sign-up request
 const SignUpRequestSchema = Type.Object({
   userId: Type.String(),
   password: Type.String(),
   name: Type.String(),
 });
 
+// Schema for GitHub callback request
 const GitHubCallbackRequestSchema = Type.Object({
   code: Type.String(),
 });
 
+// Type definitions for request and response schemas
 type LoginRequest = Static<typeof LoginRequestSchema>;
 type LoginResponse = Static<typeof LoginResponseSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
@@ -40,7 +46,7 @@ type SignUpRequest = Static<typeof SignUpRequestSchema>;
 type GitHubCallbackRequest = Static<typeof GitHubCallbackRequestSchema>;
 
 export default async function authRoutes(app: FastifyInstance) {
-  //login endpoint
+  // Login endpoint
   app.post<{ Body: LoginRequest; Reply: LoginResponse | ErrorResponse }>(
     "/login",
     {
@@ -60,11 +66,12 @@ export default async function authRoutes(app: FastifyInstance) {
       try {
         const { jwt, user } = await UserService.login(userId, password, app);
         return {
-          token: jwt, user: {
+          token: jwt,
+          user: {
             userId: user.userId,
             name: user.name,
-            profilePictureUrl: user.profilePictureUrl
-          }
+            profilePictureUrl: user.profilePictureUrl,
+          },
         };
       } catch {
         reply.status(500).send({ error: "Error logging in (username or password wrong)" });
@@ -72,7 +79,7 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  //signup endpoint
+  // Sign-up endpoint
   app.post<{ Body: SignUpRequest; Reply: ErrorResponse }>(
     "/signup",
     {
@@ -98,7 +105,7 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  //Protected endpoint requiring JWT
+  // Protected endpoint requiring JWT
   app.get(
     "/protected",
     {
@@ -123,6 +130,7 @@ export default async function authRoutes(app: FastifyInstance) {
     },
   );
 
+  // GitHub authentication initiation endpoint
   app.get(
     "/github",
     {
@@ -142,9 +150,10 @@ export default async function authRoutes(app: FastifyInstance) {
       } catch (error) {
         reply.status(500).send({ error: "Failed to initiate GitHub authentication" });
       }
-    }
+    },
   );
 
+  // GitHub OAuth callback endpoint
   app.get<{ Querystring: GitHubCallbackRequest; Reply: LoginResponse | any }>(
     "/github/callback",
     {
@@ -163,58 +172,65 @@ export default async function authRoutes(app: FastifyInstance) {
       try {
         const { code } = request.query;
         const userToken = await GitHubService.loginWithGitHubCode(code, app);
-        reply.setCookie('githubJwtToken', userToken, {
-          httpOnly: false,
-          secure: false, // TODO: set true if HTTPS is enabled
-          sameSite: 'strict',
-          path: '/',
-          maxAge: 3600
-        }).redirect('http://localhost:5173/cloudwatch-web/login?useCookie=1')
+        reply
+          .setCookie("githubJwtToken", userToken, {
+            httpOnly: false,
+            secure: false, // TODO: set true if HTTPS is enabled
+            sameSite: "strict",
+            path: "/",
+            maxAge: 3600,
+          })
+          .redirect("http://localhost:5173/cloudwatch-web/login?useCookie=1");
       } catch (error) {
         reply.status(500).send(error);
       }
-    }
+    },
   );
 
-  app.get<{ Reply: LoginResponse | ErrorResponse }>("/check", {
-    schema: {
-      description: "Login check",
-      tags: ["Auth"],
-      summary: "Login check",
-      response: {
-        200: LoginResponseSchema,
-        500: ErrorResponseSchema,
+  // Login check endpoint
+  app.get<{ Reply: LoginResponse | ErrorResponse }>(
+    "/check",
+    {
+      schema: {
+        description: "Login check",
+        tags: ["Auth"],
+        summary: "Login check",
+        response: {
+          200: LoginResponseSchema,
+          500: ErrorResponseSchema,
+        },
       },
     },
-  }, async (request, reply) => {
-    var userId: string;
+    async (request, reply) => {
+      var userId: string;
 
-    if (request.headers.authorization) {
-      const jwt = await request.jwtVerify<JWTPayload>();
-      userId = jwt.id;
-    } else if (request.cookies.githubJwtToken) {
-      const jwt = app.jwt.decode<{ id: string }>(request.cookies.githubJwtToken);
-      userId = jwt!.id;
-      reply.clearCookie('githubJwtToken')
-    } else {
-      return reply.status(500).send({ error: "Unauthorized" });
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { userId: userId },
-    });
-
-    if (!user) {
-      return reply.status(500).send({ error: "Unauthorized" });
-    }
-
-    reply.status(200).send({
-      token: app.jwt.sign({ id: user.userId }),
-      user: {
-        userId: user.userId,
-        name: user.name,
-        profilePictureUrl: user.profilePictureUrl
+      if (request.headers.authorization) {
+        const jwt = await request.jwtVerify<JWTPayload>();
+        userId = jwt.id;
+      } else if (request.cookies.githubJwtToken) {
+        const jwt = app.jwt.decode<{ id: string }>(request.cookies.githubJwtToken);
+        userId = jwt!.id;
+        reply.clearCookie("githubJwtToken");
+      } else {
+        return reply.status(500).send({ error: "Unauthorized" });
       }
-    });
-  });
+
+      const user = await prisma.users.findUnique({
+        where: { userId: userId },
+      });
+
+      if (!user) {
+        return reply.status(500).send({ error: "Unauthorized" });
+      }
+
+      reply.status(200).send({
+        token: app.jwt.sign({ id: user.userId }),
+        user: {
+          userId: user.userId,
+          name: user.name,
+          profilePictureUrl: user.profilePictureUrl,
+        },
+      });
+    },
+  );
 }

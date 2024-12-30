@@ -3,28 +3,34 @@ import { Static, Type } from "@sinclair/typebox";
 import { UploadService } from "../services/uploadService";
 import { JWTPayload } from "../plugins/auth";
 
+// Schema for error responses
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
 });
 
+// Schema for the response of the upload URL endpoint
 const UploadUrlResponseSchema = Type.Object({
   url: Type.String(),
   videoId: Type.String(),
 });
 
+// Schema for the request body of the upload URL endpoint
 const UploadUrlRequestSchema = Type.Object({
   title: Type.String(),
   description: Type.String(),
 });
 
+// Schema for the request body of the transcode video endpoint
 const TranscodeVideoRequestSchema = Type.Object({
   videoID: Type.String(),
 });
 
+// Schema for the response of the transcode video endpoint
 const TranscodeVideoResponseSchema = Type.Object({
   success: Type.String(),
 });
 
+// Type definitions for the schemas
 type UploadUrlResponse = Static<typeof UploadUrlResponseSchema>;
 type TranscodeVideoRequest = Static<typeof TranscodeVideoRequestSchema>;
 type ErrorResponse = Static<typeof ErrorResponseSchema>;
@@ -32,6 +38,7 @@ type TranscodeVideoResponse = Static<typeof TranscodeVideoResponseSchema>;
 type UploadUrlRequest = Static<typeof UploadUrlRequestSchema>;
 
 export default async function uploadRoutes(app: FastifyInstance) {
+  // Endpoint to get a pre-signed URL for video uploads
   app.post<{
     Body: UploadUrlRequest;
     Reply: UploadUrlResponse;
@@ -60,6 +67,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Endpoint to transcode a video
   app.post<{
     Body: TranscodeVideoRequest;
     Reply: TranscodeVideoResponse | ErrorResponse;
@@ -93,6 +101,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Endpoint to get transcoding percentage via Server-Sent Events (SSE)
   app.get<{ Params: TranscodeVideoRequest }>(
     "/sse/:videoID",
     {
@@ -123,7 +132,6 @@ export default async function uploadRoutes(app: FastifyInstance) {
 
         // Log message to terminal and stream to SSE client
         console.log("Message sent to SSE client:", message);
-        // await new Promise(() => reply.raw.write(messageString));
         reply.raw.write(messageString);
       });
 
@@ -137,6 +145,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Endpoint to get transcoding percentage via WebSocket
   app.get<{ Params: TranscodeVideoRequest }>(
     "/ws/:videoID",
     {
@@ -153,7 +162,7 @@ export default async function uploadRoutes(app: FastifyInstance) {
     async (connection, request) => {
       const { videoID } = request.params;
 
-      console.log(`Starting SSE for videoID: ${videoID}`);
+      console.log(`Starting WebSocket for videoID: ${videoID}`);
 
       connection.on("close", () => {
         console.log(`WebSocket connection closed for videoID: ${videoID}`);
