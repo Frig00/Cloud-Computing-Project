@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -35,9 +36,19 @@ export default function Watch() {
         videoId,
       }),
   });
+
+  /*
+
+  const { isPending: isPending2, error: error2, data: data2 } = useQuery({
+    queryKey: ["videoVideoIdIsSubscribedGet",videoId],
+    queryFn: () => videoApi.videoVideoIdIsSubscribedGet({videoId: videoId}),
+  });
+
+  */
   
   const [formats, setFormats] = useState<string[]>(() => []);
   const [likes,setLikes] = useState(0);
+  const [subscribed,setSubscribed] = useState(false);
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
   const [cues, setCues] = useState<Array<{
@@ -51,9 +62,10 @@ export default function Watch() {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
   
-
+  
   useEffect(() => {
     setLikes(data?.likes ?? 0);
+    // setSubscribed(data2?.subscriptionStatus ?? false);
     setFormats(prevArray => {
       // Check if "like" is already in the array, if not add it
       if (data?.userHasLiked  && !prevArray.includes('like')) {
@@ -66,7 +78,33 @@ export default function Watch() {
     });
   }, [data]);
   
+ /*
+
+  useEffect(() => {
+    setLikes(data?.likes ?? 0);
+    setSubscribed(data2?.subscriptionStatus ?? false);
+    setFormats((prevArray) => {
+      let newArray = [...prevArray];
   
+      // Manage "like" status
+      if (data?.userHasLiked && !newArray.includes("like")) {
+        newArray.push("like");
+      } else if (!data?.userHasLiked && newArray.includes("like")) {
+        newArray = newArray.filter((item) => item !== "like");
+      }
+  
+      // Manage "subscribe" status
+      if (data2?.subscriptionStatus && !newArray.includes("subscribe")) {
+        newArray.push("subscribe");
+      } else if (!data2?.subscriptionStatus && newArray.includes("subscribe")) {
+        newArray = newArray.filter((item) => item !== "subscribe");
+      }
+  
+      return newArray;
+    });
+  }, [data, data2]);
+  
+  */
   
 
   // Ref callback
@@ -186,9 +224,18 @@ export default function Watch() {
   async function handleLike (){
     const newLikes = await videoApi.videoVideoIdLikePost({videoId: videoId,videoVideoIdLikePostRequest: {isLiking: !data?.userHasLiked}});
     setLikes(newLikes.likes);
-   
   }
+
+  /*
+  async function handleSubscribe (){
+    const newSubscribed = await videoApi.videoVideoIdSubscribePost({videoId: videoId,videoVideoIdSubscribePostRequest: {subscriptionStatus : !data2?.subscriptionStatus}});
+    setSubscribed(newSubscribed.subscriptionStatus);
+  }
+  */
   
+
+
+
   return (
     <Container maxWidth="xl" className="mt-4">
       <Grid container spacing={2}>
@@ -213,6 +260,7 @@ export default function Watch() {
               <ToggleButtonGroup color="primary" aria-label="Basic button group" value={formats} onChange={handleFormat}>
                 <ToggleButton
                   value="subscribe"
+                  onClick={() => console.log("Subscribe")}
                   sx={{
                     gap: "0.5rem",
                   }}
