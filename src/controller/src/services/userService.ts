@@ -79,4 +79,53 @@ export class UserService {
       where: { userId },
     });
   }
+
+
+  
+  static async subscribe(subscriberId: string, subscribedToId: string, isUserSubscribed: boolean) {
+    try {
+      if (isUserSubscribed) {
+        await prisma.subscriptions.upsert({
+          where: {
+            subscriberId_subscribedToId: {
+              subscriberId,
+              subscribedToId,
+            },
+          },
+          create: {
+            subscriberId,
+            subscribedToId,
+          },
+          update: {},
+        });
+      } else {
+        await prisma.subscriptions.delete({
+          where: {
+            subscriberId_subscribedToId: {
+              subscriberId,
+              subscribedToId,
+            },
+          },
+        });
+      }
+      return isUserSubscribed;
+    } catch (error) {
+      console.error("Database query error:", error);
+      throw new Error("Database query failed");
+    }
+  }
+
+
+  static async isUserSubscribed(selfUserId: string, userId: string) {
+    const subscription = await prisma.subscriptions.findUnique({
+      where: {
+        subscriberId_subscribedToId: {
+          subscriberId: selfUserId,
+          subscribedToId: userId,
+        },
+      },
+    });
+
+    return !!subscription;
+  }
 }
