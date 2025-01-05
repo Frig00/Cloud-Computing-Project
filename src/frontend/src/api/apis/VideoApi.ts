@@ -22,8 +22,6 @@ import type {
   VideoVideoIdGet200Response,
   VideoVideoIdLikePost200Response,
   VideoVideoIdLikePostRequest,
-  VideoVideoIdSubscribePost200Response,
-  VideoVideoIdSubscribePostRequest,
 } from '../models/index';
 import {
     AuthLoginPost500ResponseFromJSON,
@@ -40,10 +38,6 @@ import {
     VideoVideoIdLikePost200ResponseToJSON,
     VideoVideoIdLikePostRequestFromJSON,
     VideoVideoIdLikePostRequestToJSON,
-    VideoVideoIdSubscribePost200ResponseFromJSON,
-    VideoVideoIdSubscribePost200ResponseToJSON,
-    VideoVideoIdSubscribePostRequestFromJSON,
-    VideoVideoIdSubscribePostRequestToJSON,
 } from '../models/index';
 
 export interface VideoAllVideosGetRequest {
@@ -55,10 +49,9 @@ export interface VideoSearchPostRequest {
     q: string;
 }
 
-export interface VideoSubscriptionsSubscriberIdGetRequest {
+export interface VideoSubscriptionsGetRequest {
     skip: number;
     take: number;
-    subscriberId: string;
 }
 
 export interface VideoUserUserIdVideosGetRequest {
@@ -80,18 +73,9 @@ export interface VideoVideoIdGetRequest {
     videoId: string;
 }
 
-export interface VideoVideoIdIsSubscribedGetRequest {
-    videoId: string;
-}
-
 export interface VideoVideoIdLikePostOperationRequest {
     videoId: string;
     videoVideoIdLikePostRequest: VideoVideoIdLikePostRequest;
-}
-
-export interface VideoVideoIdSubscribePostOperationRequest {
-    videoId: string;
-    videoVideoIdSubscribePostRequest: VideoVideoIdSubscribePostRequest;
 }
 
 /**
@@ -100,6 +84,8 @@ export interface VideoVideoIdSubscribePostOperationRequest {
 export class VideoApi extends runtime.BaseAPI {
 
     /**
+     * Get all public videos with pagination
+     * Retrieves a paginated list of all public videos
      */
     async videoAllVideosGetRaw(requestParameters: VideoAllVideosGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
         if (requestParameters['skip'] == null) {
@@ -147,6 +133,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all public videos with pagination
+     * Retrieves a paginated list of all public videos
      */
     async videoAllVideosGet(requestParameters: VideoAllVideosGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
         const response = await this.videoAllVideosGetRaw(requestParameters, initOverrides);
@@ -154,6 +142,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Search for videos by title
+     * Searches for videos matching the provided search terms
      */
     async videoSearchPostRaw(requestParameters: VideoSearchPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
         if (requestParameters['q'] == null) {
@@ -190,6 +180,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Search for videos by title
+     * Searches for videos matching the provided search terms
      */
     async videoSearchPost(requestParameters: VideoSearchPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
         const response = await this.videoSearchPostRaw(requestParameters, initOverrides);
@@ -197,26 +189,21 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get subscription videos for a user
+     * Retrieves a paginated list of videos from channels the user is subscribed to
      */
-    async videoSubscriptionsSubscriberIdGetRaw(requestParameters: VideoSubscriptionsSubscriberIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
+    async videoSubscriptionsGetRaw(requestParameters: VideoSubscriptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
         if (requestParameters['skip'] == null) {
             throw new runtime.RequiredError(
                 'skip',
-                'Required parameter "skip" was null or undefined when calling videoSubscriptionsSubscriberIdGet().'
+                'Required parameter "skip" was null or undefined when calling videoSubscriptionsGet().'
             );
         }
 
         if (requestParameters['take'] == null) {
             throw new runtime.RequiredError(
                 'take',
-                'Required parameter "take" was null or undefined when calling videoSubscriptionsSubscriberIdGet().'
-            );
-        }
-
-        if (requestParameters['subscriberId'] == null) {
-            throw new runtime.RequiredError(
-                'subscriberId',
-                'Required parameter "subscriberId" was null or undefined when calling videoSubscriptionsSubscriberIdGet().'
+                'Required parameter "take" was null or undefined when calling videoSubscriptionsGet().'
             );
         }
 
@@ -241,7 +228,7 @@ export class VideoApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/video/subscriptions/{subscriberId}`.replace(`{${"subscriberId"}}`, encodeURIComponent(String(requestParameters['subscriberId']))),
+            path: `/video/subscriptions`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -251,13 +238,17 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get subscription videos for a user
+     * Retrieves a paginated list of videos from channels the user is subscribed to
      */
-    async videoSubscriptionsSubscriberIdGet(requestParameters: VideoSubscriptionsSubscriberIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
-        const response = await this.videoSubscriptionsSubscriberIdGetRaw(requestParameters, initOverrides);
+    async videoSubscriptionsGet(requestParameters: VideoSubscriptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
+        const response = await this.videoSubscriptionsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
+     * Get all videos from a specific user
+     * Retrieves a list of videos uploaded by a particular user
      */
     async videoUserUserIdVideosGetRaw(requestParameters: VideoUserUserIdVideosGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<VideoAllVideosGet200ResponseInner>>> {
         if (requestParameters['userId'] == null) {
@@ -290,6 +281,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all videos from a specific user
+     * Retrieves a list of videos uploaded by a particular user
      */
     async videoUserUserIdVideosGet(requestParameters: VideoUserUserIdVideosGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<VideoAllVideosGet200ResponseInner>> {
         const response = await this.videoUserUserIdVideosGetRaw(requestParameters, initOverrides);
@@ -297,6 +290,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Add a comment to a video
+     * Posts a new comment on a specific video
      */
     async videoVideoIdCommentPostRaw(requestParameters: VideoVideoIdCommentPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['videoId'] == null) {
@@ -343,6 +338,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Add a comment to a video
+     * Posts a new comment on a specific video
      */
     async videoVideoIdCommentPost(requestParameters: VideoVideoIdCommentPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.videoVideoIdCommentPostRaw(requestParameters, initOverrides);
@@ -350,6 +347,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get paginated comments for a video
+     * Retrieves a paginated list of comments for a specific video
      */
     async videoVideoIdCommentsGetRaw(requestParameters: VideoVideoIdCommentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdCommentsGet200Response>> {
         if (requestParameters['skip'] == null) {
@@ -404,6 +403,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get paginated comments for a video
+     * Retrieves a paginated list of comments for a specific video
      */
     async videoVideoIdCommentsGet(requestParameters: VideoVideoIdCommentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdCommentsGet200Response> {
         const response = await this.videoVideoIdCommentsGetRaw(requestParameters, initOverrides);
@@ -411,6 +412,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get detailed information about a specific video
+     * Retrieves comprehensive details of a video including likes and view count
      */
     async videoVideoIdGetRaw(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdGet200Response>> {
         if (requestParameters['videoId'] == null) {
@@ -443,6 +446,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get detailed information about a specific video
+     * Retrieves comprehensive details of a video including likes and view count
      */
     async videoVideoIdGet(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdGet200Response> {
         const response = await this.videoVideoIdGetRaw(requestParameters, initOverrides);
@@ -450,45 +455,8 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
-     */
-    async videoVideoIdIsSubscribedGetRaw(requestParameters: VideoVideoIdIsSubscribedGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdSubscribePost200Response>> {
-        if (requestParameters['videoId'] == null) {
-            throw new runtime.RequiredError(
-                'videoId',
-                'Required parameter "videoId" was null or undefined when calling videoVideoIdIsSubscribedGet().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/video/{videoId}/is-subscribed`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => VideoVideoIdSubscribePost200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     */
-    async videoVideoIdIsSubscribedGet(requestParameters: VideoVideoIdIsSubscribedGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdSubscribePost200Response> {
-        const response = await this.videoVideoIdIsSubscribedGetRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
+     * Like or unlike a video
+     * Toggles the like status of a video for the current user
      */
     async videoVideoIdLikePostRaw(requestParameters: VideoVideoIdLikePostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdLikePost200Response>> {
         if (requestParameters['videoId'] == null) {
@@ -531,58 +499,11 @@ export class VideoApi extends runtime.BaseAPI {
     }
 
     /**
+     * Like or unlike a video
+     * Toggles the like status of a video for the current user
      */
     async videoVideoIdLikePost(requestParameters: VideoVideoIdLikePostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdLikePost200Response> {
         const response = await this.videoVideoIdLikePostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     */
-    async videoVideoIdSubscribePostRaw(requestParameters: VideoVideoIdSubscribePostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdSubscribePost200Response>> {
-        if (requestParameters['videoId'] == null) {
-            throw new runtime.RequiredError(
-                'videoId',
-                'Required parameter "videoId" was null or undefined when calling videoVideoIdSubscribePost().'
-            );
-        }
-
-        if (requestParameters['videoVideoIdSubscribePostRequest'] == null) {
-            throw new runtime.RequiredError(
-                'videoVideoIdSubscribePostRequest',
-                'Required parameter "videoVideoIdSubscribePostRequest" was null or undefined when calling videoVideoIdSubscribePost().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/video/{videoId}/subscribe`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: VideoVideoIdSubscribePostRequestToJSON(requestParameters['videoVideoIdSubscribePostRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => VideoVideoIdSubscribePost200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     */
-    async videoVideoIdSubscribePost(requestParameters: VideoVideoIdSubscribePostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdSubscribePost200Response> {
-        const response = await this.videoVideoIdSubscribePostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -3,7 +3,7 @@ import { Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButton
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { VideoApi } from "../../api";
+import { UserApi, VideoApi } from "../../api";
 import { useQuery } from "@tanstack/react-query";
 import { parseVTT, sampleVTT } from "../Bench/Bench";
 import clsx from "clsx";
@@ -26,8 +26,8 @@ export default function Watch() {
   const [searchParams] = useSearchParams();
   const videoId = searchParams.get("v")!;
   const hlsRef = useRef<HLS | null>(null);
-
   const videoApi = new VideoApi();
+  const userApi = new UserApi();
 
   const { isPending, error, data } = useQuery({
     queryKey: ["videoVideoIdGet", videoId],
@@ -37,14 +37,19 @@ export default function Watch() {
       }),
   });
 
-  /*
+  
 
   const { isPending: isPending2, error: error2, data: data2 } = useQuery({
-    queryKey: ["videoVideoIdIsSubscribedGet",videoId],
-    queryFn: () => videoApi.videoVideoIdIsSubscribedGet({videoId: videoId}),
+    queryKey: ["userUserIdSubscribeGet",data?.userId],
+    queryFn: () => {
+      if (data?.userId) {
+        return userApi.userUserIdSubscribeGet({ userId: data.userId });
+      }
+      return Promise.reject(new Error("User ID is undefined"));
+    },
   });
 
-  */
+  
   
   const [formats, setFormats] = useState<string[]>(() => []);
   const [likes,setLikes] = useState(0);
@@ -62,24 +67,6 @@ export default function Watch() {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
   
-  
-  useEffect(() => {
-    setLikes(data?.likes ?? 0);
-    // setSubscribed(data2?.subscriptionStatus ?? false);
-    setFormats(prevArray => {
-      // Check if "like" is already in the array, if not add it
-      if (data?.userHasLiked  && !prevArray.includes('like')) {
-        return [...prevArray, 'like']; // Add "like"
-      } else if (!data?.userHasLiked  && prevArray.includes('like')) {
-        // Remove "like" if userHasLiked is false
-        return prevArray.filter(item => item !== 'like');
-      }
-      return prevArray; // Return the same array if no change needed
-    });
-  }, [data]);
-  
- /*
-
   useEffect(() => {
     setLikes(data?.likes ?? 0);
     setSubscribed(data2?.subscriptionStatus ?? false);
@@ -104,7 +91,6 @@ export default function Watch() {
     });
   }, [data, data2]);
   
-  */
   
 
   // Ref callback
@@ -226,12 +212,12 @@ export default function Watch() {
     setLikes(newLikes.likes);
   }
 
-  /*
+  
   async function handleSubscribe (){
-    const newSubscribed = await videoApi.videoVideoIdSubscribePost({videoId: videoId,videoVideoIdSubscribePostRequest: {subscriptionStatus : !data2?.subscriptionStatus}});
-    setSubscribed(newSubscribed.subscriptionStatus);
+    userApi.userUserIdSubscribePost({userId: data?.userId ?? "", userUserIdSubscribePostRequest: {isUserSubscribed: !subscribed}});
+ 
   }
-  */
+  
   
 
 
@@ -260,7 +246,7 @@ export default function Watch() {
               <ToggleButtonGroup color="primary" aria-label="Basic button group" value={formats} onChange={handleFormat}>
                 <ToggleButton
                   value="subscribe"
-                  onClick={() => console.log("Subscribe")}
+                  onClick={handleSubscribe}
                   sx={{
                     gap: "0.5rem",
                   }}
