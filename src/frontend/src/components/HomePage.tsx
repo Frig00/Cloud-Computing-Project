@@ -50,6 +50,8 @@ export default function HomePage() {
 
     if (isPending) return "Loading...";
     if (error) return "An error has occurred: " + error.message;
+    if (isPending2) return "Loading...";
+    if (error2) return "An error has occurred: " + error2.message;
   
 
   const handleLoadMore = () => {setSkip(skip + TAKE);};
