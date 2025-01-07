@@ -20,3 +20,4 @@ src/mysql/data
 *.tfstate*
 .terraform/
 *.hcl
+terraform/lambda/**/*.zip
