@@ -17,3 +17,6 @@ src/minio/data/
 __pycache__/
 .vscode/settings.json
 src/mysql/data
+*.tfstate*
+.terraform/
+*.hcl
