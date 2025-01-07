@@ -27,7 +27,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "bucket_name" {
-  default = "video-bucket"
+  default = "unipv-cloud-sunomi-video-bucket"
   
 }
 
@@ -45,4 +45,15 @@ variable "project_name" {
 
 variable "environment" {
     default = "demo"
+}
+
+variable "db_master_credentials" {
+  default = {
+    username = "admin"
+    password = "password"
+  }
+}
+
+variable "db_instance_class" {
+  default = "db.c6gd.medium"
 }
