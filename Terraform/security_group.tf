@@ -23,6 +23,7 @@ resource "aws_security_group" "public" {
 }
 
 resource "aws_security_group" "db" {
+  name = "${var.project_name}-db-sg"
   vpc_id = aws_vpc.main.id
 
   ingress {

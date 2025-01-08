@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "${var.project_name}-db-credentials-${var.environment}-unipv-cloud-new6"
+  name = "${var.project_name}-db-credentials-${var.environment}-unipv-cloud-new8"
   force_overwrite_replica_secret = true
 }
 
@@ -22,7 +22,7 @@ resource "aws_db_subnet_group" "sunomi_db_subnet_group" {
 
 
 resource "aws_rds_cluster" "sunomi_db_cluster" {
-  cluster_identifier      = "${var.project_name}-db-cluster-unipv-cloud-new6"
+  cluster_identifier      = "${var.project_name}-db-cluster-unipv-cloud-new8"
   engine                  = "mysql"
   engine_version          = "8.0.39"
   allocated_storage       = "200"
