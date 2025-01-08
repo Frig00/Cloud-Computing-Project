@@ -96,6 +96,10 @@ const IsLikingSchema = Type.Object({ isLiking: Type.Boolean() });
 type TitleVideo = Static<typeof TitleVideoSchema>;
 const TitleVideoSchema = Type.Object({ q: Type.String() });
 
+// Delete Video Response Schema
+type DeleteVideoResponse = Static<typeof DeleteVideoResponseSchema>;
+const DeleteVideoResponseSchema = Type.Object({ message: Type.String() });
+
 export default async function videoRoutes(app: FastifyInstance) {
   // Endpoint to get all public videos with pagination
   app.get<{ Querystring: PaginatedAllVideoQuery, Reply: FindVideo | ErrorResponse }>(
@@ -394,4 +398,51 @@ export default async function videoRoutes(app: FastifyInstance) {
       }
     }
   );
+
+  // Endpoint to delete a video and its related data
+  app.delete<{ Params: IdVideo; Reply: DeleteVideoResponse }>(
+    "/:videoId",
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        description: "Delete a video and all related data",
+        summary: "Deletes a video and its associated comments, likes, and views",
+        tags: ["Video"],
+        params: IdVideoSchema,
+        response: {
+          200: DeleteVideoResponseSchema,
+          403: ErrorResponseSchema,
+          404: ErrorResponseSchema,
+          500: ErrorResponseSchema
+        },
+        security: [{ bearerAuth: [] }]
+      },
+    },
+    async (request, reply) => {
+      const { videoId } = request.params;
+      try {
+        const jwt = await request.jwtVerify<JWTPayload>();
+
+        // Check if video exists and belongs to user
+        const video = await prisma.videos.findUnique({
+          where: { id: videoId }
+        });
+
+        if (!video) {
+          return reply.status(404).send({ error: "Video not found" });
+        }
+
+        if (video.userId !== jwt.id) {
+          return reply.status(403).send({ error: "Not authorized to delete this video" });
+        }
+
+        await VideoService.deleteVideo(videoId);
+        reply.status(200).send({ message: "Video deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting video:", error);
+        reply.status(500).send({ error: "Internal server error" });
+      }
+    }
+  );
+
 }

@@ -273,4 +273,39 @@ export class VideoService {
       take: take
     });
   }
+
+  /**
+   * Delete a video and all its related data (comments, likes, views)
+   * @param videoId - ID of the video to delete
+   */
+  static async deleteVideo(videoId: string) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        // Delete all related comments
+        await tx.comments.deleteMany({
+          where: { videoId }
+        });
+
+        // Delete all related likes
+        await tx.likes.deleteMany({
+          where: { videoId }
+        });
+
+        // Delete all related views
+        await tx.views.deleteMany({
+          where: { videoId }
+        });
+
+        // Delete the video itself
+        const deletedVideo = await tx.videos.delete({
+          where: { id: videoId }
+        });
+
+        return deletedVideo;
+      });
+    } catch (error) {
+      console.error("Failed to delete video:", error);
+      throw new Error("Failed to delete video and its related data");
+    }
+  }
 }
