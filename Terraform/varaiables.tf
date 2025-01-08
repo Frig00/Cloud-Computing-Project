@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "vpc_cidr" {
-  default = "100.0.0.0/16"
+  default = "10.0.0.0/16"
 }
 
 variable "availability_zones" {

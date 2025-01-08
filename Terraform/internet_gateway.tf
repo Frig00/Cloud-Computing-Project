@@ -3,5 +3,6 @@ resource "aws_internet_gateway" "main" {
 
   tags = {
     Name = "${var.project_name}-igw"
+    deploy = "terraform"
   }
 }
