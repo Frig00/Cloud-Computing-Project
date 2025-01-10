@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   AuthLoginPost500Response,
+  Get200Response,
   VideoAllVideosGet200ResponseInner,
   VideoVideoIdCommentPostRequest,
   VideoVideoIdCommentsGet200Response,
@@ -26,6 +27,8 @@ import type {
 import {
     AuthLoginPost500ResponseFromJSON,
     AuthLoginPost500ResponseToJSON,
+    Get200ResponseFromJSON,
+    Get200ResponseToJSON,
     VideoAllVideosGet200ResponseInnerFromJSON,
     VideoAllVideosGet200ResponseInnerToJSON,
     VideoVideoIdCommentPostRequestFromJSON,
@@ -66,6 +69,10 @@ export interface VideoVideoIdCommentPostOperationRequest {
 export interface VideoVideoIdCommentsGetRequest {
     skip: number;
     take: number;
+    videoId: string;
+}
+
+export interface VideoVideoIdDeleteRequest {
     videoId: string;
 }
 
@@ -408,6 +415,49 @@ export class VideoApi extends runtime.BaseAPI {
      */
     async videoVideoIdCommentsGet(requestParameters: VideoVideoIdCommentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdCommentsGet200Response> {
         const response = await this.videoVideoIdCommentsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Delete a video and all related data
+     * Deletes a video and its associated comments, likes, and views
+     */
+    async videoVideoIdDeleteRaw(requestParameters: VideoVideoIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Get200Response>> {
+        if (requestParameters['videoId'] == null) {
+            throw new runtime.RequiredError(
+                'videoId',
+                'Required parameter "videoId" was null or undefined when calling videoVideoIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/video/{videoId}`.replace(`{${"videoId"}}`, encodeURIComponent(String(requestParameters['videoId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => Get200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Delete a video and all related data
+     * Deletes a video and its associated comments, likes, and views
+     */
+    async videoVideoIdDelete(requestParameters: VideoVideoIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Get200Response> {
+        const response = await this.videoVideoIdDeleteRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

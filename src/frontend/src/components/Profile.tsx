@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 
 import VideoThumbnail from "./VideoThumbnail";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ export default function Profile() {
 
   
   
-    const { isPending, error, data } = useQuery({
+    const { isPending, error, data, refetch } = useQuery({
       queryKey: ["videoUserUserIdVideosGet"],
       queryFn: () => videoApi.videoUserUserIdVideosGet({userId: searchedUser}),
     });
@@ -31,7 +32,7 @@ export default function Profile() {
         <UserAvatar user={null} userId={searchedUser} />
         <div className="flex gap-2 flex-wrap m-2">
           {data.map((video) => (
-            <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="horizontal" />
+            <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={video.id} variant="delete" onDelete={refetch} />
           ))}
         </div>
       </Container>
