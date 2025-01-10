@@ -57,3 +57,11 @@ variable "db_master_credentials" {
 variable "db_instance_class" {
   default = "db.c6gd.medium"
 }
+
+variable "ecr_transcoder" {
+  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder"
+}
+
+variable "ecr_controller" {
+  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/controller"
+}

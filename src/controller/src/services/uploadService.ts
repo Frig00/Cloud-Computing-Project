@@ -10,8 +10,8 @@ export class UploadService {
   /**
    * Initialize RabbitMQ for publishing and consuming.
    */
-  static async initRabbitMQ() {
-    const connection = await amqp.connect(process.env.RABBITMQ_AMQP!);
+  static async initRabbitMQ(connectionAmqp: string) {
+    const connection = await amqp.connect(connectionAmqp);
     return await connection.createChannel();
   }
 
@@ -27,10 +27,10 @@ export class UploadService {
       region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
       forcePathStyle: true, // Needed for MinIO
-      credentials: {
+      credentials: process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY ? {
         accessKeyId: process.env.S3_ACCESS_KEY!,
         secretAccessKey: process.env.S3_SECRET_KEY!,
-      },
+      }: undefined,
     });
 
     console.log("s3 client: ", s3Client);
@@ -72,7 +72,8 @@ export class UploadService {
    * @param videoId - ID of the video to be transcoded
    */
   static async transcodeVideo(videoId: string) {
-    const channel = await this.initRabbitMQ();
+    if (!this.isLocal()) { throw new Error("Transcoding is only supported in local environment"); }
+    const channel = await this.initRabbitMQ(process.env.RABBITMQ_AMQP!);
 
     const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
     if (alreadyTranscoded) throw new Error("Video already transcoded");
@@ -102,9 +103,12 @@ export class UploadService {
    * @param callback - Callback function to handle the messages
    */
   static consumeMessages(videoId: string, callback: (message: unknown) => void) {
+
+    if (!this.isLocal()) { throw new Error("Consuming messages is only supported in local environment"); }
+
     return new Promise(async (resolve) => {
       try {
-        const channel = await this.initRabbitMQ();
+        const channel = await this.initRabbitMQ(process.env.RABBITMQ_AMQP!);
 
         const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
         if (alreadyTranscoded) {
@@ -181,6 +185,11 @@ export class UploadService {
       },
     });
   }
+
+  static isLocal(): boolean {
+    return process.env.IS_LOCAL === 'true';
+  }
+
 
   /**
    * Update the status of a video in the database.

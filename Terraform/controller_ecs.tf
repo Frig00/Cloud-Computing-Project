@@ -1,6 +1,6 @@
 # ECS Cluster
-resource "aws_ecs_cluster" "sunomi-ecs-cluster-transcoder" {
-  name = "sunomi-ecs-cluster-transcoder"
+resource "aws_ecs_cluster" "sunomi-ecs-cluster-controller" {
+  name = "sunomi-ecs-cluster-controller"
 
   setting {
     name  = "containerInsights"
@@ -8,9 +8,9 @@ resource "aws_ecs_cluster" "sunomi-ecs-cluster-transcoder" {
   }
 }
 
-# IAM Role for ECS Tasks
-resource "aws_iam_role" "sunomi-ecs-task-role" {
-  name = "sunomi-ecs-task-role"
+# ECS Task Execution Role
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "sunomi-ecs-task-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -26,25 +26,30 @@ resource "aws_iam_role" "sunomi-ecs-task-role" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
 # Task Definition
-resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
-  family                   = "sunomi-ecs-tdf-transcoder"
+resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
+  family                   = "sunomi-ecs-tdf-controller"
   requires_compatibilities = ["FARGATE"]
   network_mode            = "awsvpc"
   cpu                     = 1024  # 1 vCPU
   memory                  = 3072  # 3 GB
-  execution_role_arn      = aws_iam_role.sunomi-ecs-task-role.arn
-  task_role_arn          = aws_iam_role.sunomi-ecs-task-role.arn
+  execution_role_arn      = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "transcoder"
-      image     = var.ecr_transcoder
+      name      = "controller"
+      image     = var.ecr_controller
       essential = true
       portMappings = [
         {
-          containerPort = 80
-          hostPort     = 80
+          containerPort = 3000
+          hostPort     = 3000
           protocol     = "tcp"
           name         = "http-port"
         }
@@ -60,8 +65,8 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
 }
 
 # Security Group
-resource "aws_security_group" "sunomi-ecs-sg-transcoder" {
-  name        = "sunomi-ecs-sg-transcoder"
+resource "aws_security_group" "sunomi-ecs-sg-controller" {
+  name        = "sunomi-ecs-sg-controller"
   description = "Allow inbound HTTP traffic"
   vpc_id      = aws_vpc.main.id
 
