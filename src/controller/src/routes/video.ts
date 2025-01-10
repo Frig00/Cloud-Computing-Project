@@ -400,7 +400,7 @@ export default async function videoRoutes(app: FastifyInstance) {
   );
 
   // Endpoint to delete a video and its related data
-  app.delete<{ Params: IdVideo; Reply: DeleteVideoResponse }>(
+  app.delete<{ Params: IdVideo; Reply: DeleteVideoResponse | ErrorResponse }>(
     "/:videoId",
     {
       onRequest: [app.authenticate],
@@ -423,20 +423,7 @@ export default async function videoRoutes(app: FastifyInstance) {
       try {
         const jwt = await request.jwtVerify<JWTPayload>();
 
-        // Check if video exists and belongs to user
-        const video = await prisma.videos.findUnique({
-          where: { id: videoId }
-        });
-
-        if (!video) {
-          return reply.status(404).send({ error: "Video not found" });
-        }
-
-        if (video.userId !== jwt.id) {
-          return reply.status(403).send({ error: "Not authorized to delete this video" });
-        }
-
-        await VideoService.deleteVideo(videoId);
+        await VideoService.deleteVideo(videoId, jwt.id);
         reply.status(200).send({ message: "Video deleted successfully" });
       } catch (error) {
         console.error("Error deleting video:", error);

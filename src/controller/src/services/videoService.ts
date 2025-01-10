@@ -278,8 +278,21 @@ export class VideoService {
    * Delete a video and all its related data (comments, likes, views)
    * @param videoId - ID of the video to delete
    */
-  static async deleteVideo(videoId: string) {
+  static async deleteVideo(videoId: string, userId: string) {
     try {
+      const video = await prisma.videos.findUnique({
+        where: { id: videoId },
+      });
+
+      if (!video) {
+        throw new Error("Video not found");
+      }
+
+      if (video.userId !== userId) {
+        throw new Error("Not authorized to delete this video");
+      }
+
+
       return await prisma.$transaction(async (tx) => {
         // Delete all related comments
         await tx.comments.deleteMany({
