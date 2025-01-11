@@ -25,24 +25,18 @@ resource "aws_lambda_invocation" "db_init" {
   input = jsonencode({
     action = "initialize"
   })
-#  depends_on = [ data.archive_file.packaging_dependecies ]
+  depends_on = [ data.archive_file.packaging_dependecies ]
 }
 
-#data "archive_file" "packaging_dependecies" {
-#  type = "zip"
-#  source {
-#    content = file("./lambda/create-tables/main.py")
-#    filename = "main.py"
-#  }
-#
-#  dynamic "source" {
-#    for_each = fileset("./lambda/create-tables/.venv/Lib/site-packages", "**/*")
-#    content {
-#      content = filebase64sha256("./lambda/create-tables/.venv/Lib/site-packages/${source.value}")
-#      filename = source.value
-#    }
-#    
-#  }
-#
-#  output_path = "./lambda/out/create-tables.zip"
-#}
+resource "local_file" "copy_main_py" {
+  content = file("lambda/create-tables/main.py")
+  filename = "lambda/create-tables/.venv/Lib/site-packages/main.py"
+}
+
+data "archive_file" "packaging_dependecies" {
+  type        = "zip"
+  output_path = "lambda/out/create-tables.zip"
+  source_dir  = "lambda/create-tables/.venv/Lib/site-packages"
+
+  depends_on = [local_file.copy_main_py]
+}
