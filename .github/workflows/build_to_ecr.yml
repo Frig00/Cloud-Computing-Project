@@ -7,7 +7,7 @@ jobs:
   build:
     strategy:
       matrix:
-        service: [controller, transcoder]
+        service: [controller, transcoder-aws]
     runs-on: ubuntu-latest
     steps:
 
