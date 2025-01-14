@@ -6,6 +6,7 @@ on:
 jobs:        
   build:
     strategy:
+      fail-fast: false
       matrix:
         service: [controller, transcoder-aws]
     runs-on: ubuntu-latest
