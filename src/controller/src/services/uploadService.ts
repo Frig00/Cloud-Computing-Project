@@ -4,7 +4,6 @@ import * as amqp from "amqplib";
 import * as crypto from "crypto";
 import prisma from "../data/prisma";
 import { videos_status } from "@prisma/client";
-import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 // UploadService class
 export class UploadService {
@@ -76,8 +75,6 @@ export class UploadService {
    * Publish a video processing message to RabbitMQ.
    * @param videoId - ID of the video to be transcoded
    */
-  
-  /****************************************** 
   static async transcodeVideo(videoId: string) {
     if (!this.isLocal()) { throw new Error("Transcoding is only supported in local environment"); }
     const channel = await this.initRabbitMQ(process.env.RABBITMQ_AMQP!);
@@ -102,7 +99,7 @@ export class UploadService {
       console.error("Error publishing video processing message to RabbitMQ:", error);
       throw new Error("Could not publish video processing message");
     }
-  }*/
+  }
 
   /**
    * Consume messages from RabbitMQ and filter by videoId.
@@ -110,48 +107,6 @@ export class UploadService {
    * @param callback - Callback function to handle the messages
    */
 
-static async consumeMessages(videoId: string, callback: (message: unknown) => void) {
-    const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
-    if (alreadyTranscoded) {
-      const completionMessage = {
-        message: "Video already transcoded",
-        timestamp: Date.now(),
-      };
-      callback(completionMessage);
-      return;
-    }
-
-    const lambdaClient = new LambdaClient();
-
-    return new Promise(async (resolve) => {
-      try {
-          const command = new InvokeCommand({
-            FunctionName: process.env.STATUS_LAMBDA!,
-            Payload: Buffer.from(JSON.stringify({ videoId }))
-          });
-
-          const response = await lambdaClient.send(command);
-          const result = JSON.parse(Buffer.from(response.Payload!).toString());
-
-          callback(result);
-
-          if (result.status === "COMPLETED") {
-            await this.updateVideoStatus(videoId, "PUBLIC");
-            resolve("Done");
-          } else if (result.status === "ERROR") {
-            resolve("Done");
-          };
-
-      } catch (error) {
-        console.error("Error checking video status:", error);
-        throw new Error("Could not check video status");
-      }
-    });
-  }
-
-
-
-  /*
   static consumeMessages(videoId: string, callback: (message: unknown) => void) {
 
     if (!this.isLocal()) { throw new Error("Consuming messages is only supported in local environment"); }
@@ -201,7 +156,7 @@ static async consumeMessages(videoId: string, callback: (message: unknown) => vo
         throw new Error("Could not consume RabbitMQ messages");
       }
     });
-  }*/
+  }
 
   /**
    * Check if a video has already been transcoded.
