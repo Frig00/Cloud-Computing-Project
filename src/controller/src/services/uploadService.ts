@@ -76,37 +76,7 @@ export class UploadService {
    * Publish a video processing message to RabbitMQ.
    * @param videoId - ID of the video to be transcoded
    */
-  static async transcodeVideo(videoId: string) {
-    const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
-    if (alreadyTranscoded) throw new Error("Video already transcoded");
-
-    const lambdaClient = new LambdaClient();
-
-    try {
-      const payload = {
-        videoId,
-        bucket: process.env.S3_BUCKET_NAME,
-        path: `${videoId}/original.mp4`,
-      };
-
-      const command = new InvokeCommand({
-        FunctionName: process.env.TRANSCODE_LAMBDA_NAME!,
-        InvocationType: 'Event',
-        Payload: Buffer.from(JSON.stringify(payload))
-      });
-
-      await lambdaClient.send(command);
-      console.log(`Invoked Lambda function for videoId: ${videoId}`);
-    } catch (error) {
-      console.error("Error invoking Lambda function:", error);
-      throw new Error("Could not start video transcoding");
-    }
-  }
-
-
-
-
-
+  
   /****************************************** 
   static async transcodeVideo(videoId: string) {
     if (!this.isLocal()) { throw new Error("Transcoding is only supported in local environment"); }
