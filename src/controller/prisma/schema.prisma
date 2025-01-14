@@ -4,8 +4,14 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo"
+  url      = env("DB_CONNECTION")
 }
+
+
+//datasource db {
+//  provider = "mysql"
+//  url      = "mysql://sa:cloudvideo@localhost:3306/cloudvideo"
+//}
 
 model comments {
   id      String   @id @db.VarChar(255)

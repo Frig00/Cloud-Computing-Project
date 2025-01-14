@@ -4,6 +4,7 @@ import * as amqp from "amqplib";
 import * as crypto from "crypto";
 import prisma from "../data/prisma";
 import { videos_status } from "@prisma/client";
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 // UploadService class
 export class UploadService {
@@ -23,7 +24,11 @@ export class UploadService {
    * @returns Object containing videoId and pre-signed URL
    */
   static async getPresignedUrl(userId: string, videoTitle: string, description: string) {
-    const s3Client = new S3Client({
+    const s3Client = new S3Client();
+    
+    
+    
+    /*const s3Client = new S3Client({
       region: process.env.S3_REGION,
       endpoint: process.env.S3_ENDPOINT, // MinIO endpoint
       forcePathStyle: true, // Needed for MinIO
@@ -31,7 +36,7 @@ export class UploadService {
         accessKeyId: process.env.S3_ACCESS_KEY!,
         secretAccessKey: process.env.S3_SECRET_KEY!,
       }: undefined,
-    });
+    });*/
 
     console.log("s3 client: ", s3Client);
 
@@ -72,6 +77,38 @@ export class UploadService {
    * @param videoId - ID of the video to be transcoded
    */
   static async transcodeVideo(videoId: string) {
+    const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
+    if (alreadyTranscoded) throw new Error("Video already transcoded");
+
+    const lambdaClient = new LambdaClient();
+
+    try {
+      const payload = {
+        videoId,
+        bucket: process.env.S3_BUCKET_NAME,
+        path: `${videoId}/original.mp4`,
+      };
+
+      const command = new InvokeCommand({
+        FunctionName: process.env.TRANSCODE_LAMBDA_NAME!,
+        InvocationType: 'Event',
+        Payload: Buffer.from(JSON.stringify(payload))
+      });
+
+      await lambdaClient.send(command);
+      console.log(`Invoked Lambda function for videoId: ${videoId}`);
+    } catch (error) {
+      console.error("Error invoking Lambda function:", error);
+      throw new Error("Could not start video transcoding");
+    }
+  }
+
+
+
+
+
+  /****************************************** 
+  static async transcodeVideo(videoId: string) {
     if (!this.isLocal()) { throw new Error("Transcoding is only supported in local environment"); }
     const channel = await this.initRabbitMQ(process.env.RABBITMQ_AMQP!);
 
@@ -95,13 +132,56 @@ export class UploadService {
       console.error("Error publishing video processing message to RabbitMQ:", error);
       throw new Error("Could not publish video processing message");
     }
-  }
+  }*/
 
   /**
    * Consume messages from RabbitMQ and filter by videoId.
    * @param videoId - ID of the video to filter messages
    * @param callback - Callback function to handle the messages
    */
+
+static async consumeMessages(videoId: string, callback: (message: unknown) => void) {
+    const alreadyTranscoded = await UploadService.isVideoTranscoded(videoId);
+    if (alreadyTranscoded) {
+      const completionMessage = {
+        message: "Video already transcoded",
+        timestamp: Date.now(),
+      };
+      callback(completionMessage);
+      return;
+    }
+
+    const lambdaClient = new LambdaClient();
+
+    return new Promise(async (resolve) => {
+      try {
+          const command = new InvokeCommand({
+            FunctionName: process.env.STATUS_LAMBDA!,
+            Payload: Buffer.from(JSON.stringify({ videoId }))
+          });
+
+          const response = await lambdaClient.send(command);
+          const result = JSON.parse(Buffer.from(response.Payload!).toString());
+
+          callback(result);
+
+          if (result.status === "COMPLETED") {
+            await this.updateVideoStatus(videoId, "PUBLIC");
+            resolve("Done");
+          } else if (result.status === "ERROR") {
+            resolve("Done");
+          };
+
+      } catch (error) {
+        console.error("Error checking video status:", error);
+        throw new Error("Could not check video status");
+      }
+    });
+  }
+
+
+
+  /*
   static consumeMessages(videoId: string, callback: (message: unknown) => void) {
 
     if (!this.isLocal()) { throw new Error("Consuming messages is only supported in local environment"); }
@@ -151,7 +231,7 @@ export class UploadService {
         throw new Error("Could not consume RabbitMQ messages");
       }
     });
-  }
+  }*/
 
   /**
    * Check if a video has already been transcoded.
