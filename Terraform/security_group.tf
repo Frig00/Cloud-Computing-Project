@@ -67,3 +67,24 @@ resource "aws_security_group_rule" "lambda_to_rds" {
   source_security_group_id = aws_security_group.lambda_sg.id
   security_group_id        = aws_security_group.db.id  # Replace with your RDS security group
 }
+
+# Security Group
+resource "aws_security_group" "sunomi-ecs-sg-controller" {
+  name        = "sunomi-ecs-sg-controller"
+  description = "Allow inbound HTTP traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 3000
+    to_port     = 3000
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

@@ -34,7 +34,7 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
   cpu                     = 1024  # 1 vCPU
   memory                  = 3072  # 3 GB
   execution_role_arn      = aws_iam_role.sunomi-ecs-task-role.arn
-  task_role_arn          = aws_iam_role.sunomi-ecs-task-role.arn
+  #task_role_arn          = aws_iam_role.sunomi-ecs-task-role.arn
 
   container_definitions = jsonencode([
     {
@@ -59,26 +59,6 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
   ])
 }
 
-# Security Group
-resource "aws_security_group" "sunomi-ecs-sg-transcoder" {
-  name        = "sunomi-ecs-sg-transcoder"
-  description = "Allow inbound HTTP traffic"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    protocol    = "tcp"
-    from_port   = 3000
-    to_port     = 3000
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
 
 # # ECS Service
 # resource "aws_ecs_service" "transcoder" {

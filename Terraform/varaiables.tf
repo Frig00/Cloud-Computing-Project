@@ -59,9 +59,9 @@ variable "db_instance_class" {
 }
 
 variable "ecr_transcoder" {
-  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder"
+  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder:latest"
 }
 
 variable "ecr_controller" {
-  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/controller"
+  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/controller:latest"
 }
