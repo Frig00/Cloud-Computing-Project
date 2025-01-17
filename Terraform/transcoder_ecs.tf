@@ -41,24 +41,41 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
       name      = "transcoder"
       image     = var.ecr_transcoder
       essential = true
-      portMappings = [
-        {
-          containerPort = 80
-          hostPort     = 80
-          protocol     = "tcp"
-          name         = "http-port"
-        }
-      ]
       environment = [
         {
-          name  = "TEST_KEY"
-          value = "TEST_VALUE"
+          name  = "S3_BUCKET_NAME"
+          value = ""
+        },
+        {
+          name  = "VIDEO_ID"
+          value = ""
+        },
+        {
+          name  = "STATUS_LAMBDA"
+          value = ""
+        },
+        {
+          name  = "VIDEO_PATH"
+          value = ""
         }
       ]
     }
   ])
 }
 
+# Security Group
+resource "aws_security_group" "sunomi-ecs-sg-transcoder" {
+  name        = "sunomi-ecs-sg-transcoder"
+  description = "Allow outbound traffic for S3 access"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 # # ECS Service
 # resource "aws_ecs_service" "transcoder" {

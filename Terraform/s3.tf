@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "video_bucket" {
-  bucket = "${var.project_name}-${var.bucket_name}"
+  bucket = "sunomi-unipv-cloud-sunomi-video-bucket"
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access" {

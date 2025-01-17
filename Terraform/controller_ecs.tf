@@ -29,15 +29,32 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
           containerPort = 80
           hostPort     = 80
           protocol     = "tcp"
-          name         = "http-port"
+          appProtocol = "http"
+          name         = "controller-80-tcp"
         }
       ]
       environment = [
         {
-          name  = "TEST_KEY"
-          value = "TEST_VALUE"
+          name  = "DB_CONNECTION"
+          value = ""
+        },
+        {
+          name  = "PORT"
+          value = "80"
+
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/demo-controller"
+          "mode"                  = "non-blocking"
+          "awslogs-create-group"  = "true"
+          "max-buffer-size"       = "25m"
+          "awslogs-region"        = "eu-west-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
 }

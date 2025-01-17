@@ -26,11 +26,6 @@ variable "public_subnet_cidrs" {
   ]
 }
 
-variable "bucket_name" {
-  default = "unipv-cloud-sunomi-video-bucket"
-  
-}
-
 variable "ami_id" {
   default = "ami-075449515af5df0d1"
 }
@@ -59,7 +54,7 @@ variable "db_instance_class" {
 }
 
 variable "ecr_transcoder" {
-  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder:latest"
+  default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder:latest-aws:latest"
 }
 
 variable "ecr_controller" {
