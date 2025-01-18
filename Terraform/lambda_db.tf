@@ -6,7 +6,7 @@ resource "aws_lambda_function" "db_init" {
   runtime          = "python3.13"
 
   vpc_config {
-    subnet_ids         = [aws_subnet.private[0].id]  # Replace with your subnet IDs
+    subnet_ids         = [aws_subnet.private[0].id]
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
@@ -31,6 +31,8 @@ resource "aws_lambda_invocation" "db_init" {
 resource "local_file" "copy_main_py" {
   content = file("lambda/create-tables/main.py")
   filename = "lambda/create-tables/.venv/Lib/site-packages/main.py"
+
+  depends_on = [ null_resource.create_venv ]
 }
 
 data "archive_file" "packaging_dependecies" {
@@ -39,4 +41,23 @@ data "archive_file" "packaging_dependecies" {
   source_dir  = "lambda/create-tables/.venv/Lib/site-packages"
 
   depends_on = [local_file.copy_main_py]
+}
+
+resource "null_resource" "create_venv" {
+
+  provisioner "local-exec" {
+    command     = <<EOT
+      if (-not (Test-Path ".venv")) {
+        python -m venv .venv
+      }
+      
+      $env:Path = "$PWD\.venv\Scripts;$env:Path"
+      
+      python -m pip install pymysql
+      
+      python -m pip freeze > requirements.txt
+    EOT
+    interpreter = ["PowerShell", "-Command"]
+    working_dir = "lambda/create-tables"
+  }
 }
