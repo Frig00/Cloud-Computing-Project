@@ -26,19 +26,76 @@ resource "aws_iam_role" "sunomi-ecs-task-role" {
   })
 }
 
+# Add after the existing role definition
+resource "aws_iam_role_policy" "ecs-ecr-policy" {
+  name = "sunomi-ecs-ecr-policy"
+  role = aws_iam_role.sunomi-ecs-task-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Resource = "arn:aws:lambda:eu-west-1:886436942768:function:debug-upload" # TODO: Link to arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:HeadObject",
+          "s3:ListBucket",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "${aws_s3_bucket.video_bucket.arn}/*",
+          aws_s3_bucket.video_bucket.arn
+        ]
+      }
+    ]
+  })
+}
+
+
+variable "sunomi-ecs-tdf-transcoder-container-name" {
+  default = "transcoder"
+}
+
 # Task Definition
 resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
   family                   = "sunomi-ecs-tdf-transcoder"
   requires_compatibilities = ["FARGATE"]
   network_mode            = "awsvpc"
-  cpu                     = 1024  # 1 vCPU
-  memory                  = 3072  # 3 GB
+  cpu                     = 4096  # 4 vCPU
+  memory                  = 8192  # 8 GB = 8192 MB
   execution_role_arn      = aws_iam_role.sunomi-ecs-task-role.arn
-  #task_role_arn          = aws_iam_role.sunomi-ecs-task-role.arn
+  task_role_arn          = aws_iam_role.sunomi-ecs-task-role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "transcoder"
+      name      = var.sunomi-ecs-tdf-transcoder-container-name
       image     = var.ecr_transcoder
       essential = true
       environment = [
@@ -59,6 +116,17 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
           value = ""
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/transcoder"
+          "mode"                  = "non-blocking"
+          "awslogs-create-group"  = "true"
+          "max-buffer-size"       = "25m"
+          "awslogs-region"        = "eu-west-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
     }
   ])
 }
