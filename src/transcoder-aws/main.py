@@ -12,7 +12,7 @@ from config import (
 )
 
 
-def process_file(file_path, output, videoId: str):
+def process_file(file_path, output, videoId):
     """Transcode the video into all qualities equal to or lower than its actual quality."""
     basePath = os.path.dirname(output)
     os.makedirs(basePath, exist_ok=True)
@@ -46,12 +46,9 @@ def process_file(file_path, output, videoId: str):
     # Create a master playlist for all qualities
     create_master_playlist(basePath, qualities_to_process, "master.m3u8")
 
-    send_combined_progress(ProgressStatus.COMPLETED, videoId)
-
 
 
 def main():
-    """Callback function for RabbitMQ consumer."""
     object_id = VIDEO_ID  # The S3 object name sent in the message
     object_path = VIDEO_PATH  # The S3 object location sent in the message
     object_bucket = S3_BUCKET_NAME # The S3 bucket name sent in the message
@@ -62,7 +59,9 @@ def main():
     file_path = download_s3_file(object_bucket, object_path)
     output = f"./encoded/{object_id}"
     process_file(file_path, output, object_id)
+    send_combined_progress(ProgressStatus.UPLOADING, object_id)
     upload_s3_folder("./encoded/", object_id, S3_BUCKET_NAME)
+    send_combined_progress(ProgressStatus.COMPLETED, object_id)
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ class ProgressStatus(enum.Enum):
     UPLOADING = 1
     COMPLETED = 2
     ERROR = 3
+    UPLOADED = 4
 
 
 def send_combined_progress(status: ProgressStatus, video_id=None, progress_dict=None, error=None):

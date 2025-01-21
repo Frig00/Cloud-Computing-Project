@@ -17,7 +17,7 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
   cpu                     = 1024  # 1 vCPU
   memory                  = 3072  # 3 GB
   execution_role_arn      = aws_iam_role.ecs_task_execution_role.arn
-  #task_role_arn           = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -26,22 +26,21 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
       essential = true
       portMappings = [
         {
-          containerPort = 80
-          hostPort     = 80
+          containerPort = 3000
+          hostPort     = 3000
           protocol     = "tcp"
           appProtocol = "http"
-          name         = "controller-80-tcp"
+          name         = "controller-3000-tcp"
         }
       ]
       environment = [
         {
           name  = "DB_CONNECTION"
-          value = ""
+          value = "mysql://${aws_db_instance.free_db.username}:${aws_db_instance.free_db.password}@${aws_db_instance.free_db.address}:3306/${aws_db_instance.free_db.db_name}"
         },
         {
-          name  = "PORT"
-          value = "80"
-
+          name = "S3_BUCKET_NAME"
+          value = aws_s3_bucket.video_bucket.bucket
         }
       ]
       logConfiguration = {
@@ -59,19 +58,94 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
   ])
 }
 
+# Application Load Balancer
+resource "aws_lb" "controller" {
+  name               = "sunomi-controller-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets           = aws_subnet.public.*.id
+}
 
+# ALB Listener
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.controller.arn
+  port              = "80"
+  protocol          = "HTTP"
 
-# # ECS Service
-# resource "aws_ecs_service" "transcoder" {
-#   name            = "transcoder"
-#   cluster         = aws_ecs_cluster.main.id
-#   task_definition = aws_ecs_task_definition.transcoder.arn
-#   desired_count   = 1
-#   launch_type     = "FARGATE"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.controller.arn
+  }
+}
 
-#   network_configuration {
-#     subnets          = var.subnet_ids
-#     security_groups  = [aws_security_group.ecs_tasks.id]
-#     assign_public_ip = true  # Set to false for private subnets
-#   }
-# }
+# Target Group
+resource "aws_lb_target_group" "controller" {
+  name        = "sunomi-controller-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 10
+  }
+}
+
+# Updated ECS Service
+resource "aws_ecs_service" "sunomi-controller" {
+  name                              = "sunomi-controller"
+  cluster                           = aws_ecs_cluster.sunomi-ecs-cluster-controller.id
+  task_definition                   = aws_ecs_task_definition.sunomi-ecs-tdf-controller.arn
+  desired_count                     = 1
+  launch_type                       = "FARGATE"
+  health_check_grace_period_seconds = 300
+  deployment_maximum_percent        = 200
+  deployment_minimum_healthy_percent = 100
+
+  network_configuration {
+    subnets          = aws_subnet.public.*.id
+    security_groups  = [aws_security_group.sunomi-ecs-sg-controller.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.controller.arn
+    container_name   = "controller"
+    container_port   = 3000
+  }
+
+  deployment_controller {
+    type = "ECS"
+  }
+}
+
+# Auto Scaling Target
+resource "aws_appautoscaling_target" "ecs_target" {
+  max_capacity       = 5
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.sunomi-ecs-cluster-controller.name}/${aws_ecs_service.sunomi-controller.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+# Auto Scaling Policy
+resource "aws_appautoscaling_policy" "ecs_policy" {
+  name               = "cpu-tracking"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 80.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 300
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+  }
+}

@@ -76,8 +76,8 @@ resource "aws_security_group" "sunomi-ecs-sg-controller" {
 
   ingress {
     protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
+    from_port   = 3000
+    to_port     = 3000
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -86,5 +86,33 @@ resource "aws_security_group" "sunomi-ecs-sg-controller" {
     from_port   = 0
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "alb" {
+  name        = "sunomi-alb-sg"
+  description = "Security group for Application Load Balancer"
+  vpc_id      = aws_vpc.main.id
+
+  # Allow inbound HTTP
+  ingress {
+    description = "HTTP from anywhere"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow outbound to ECS tasks
+  egress {
+    description     = "Access to ECS tasks"
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.sunomi-ecs-sg-controller.id]
+  }
+
+  tags = {
+    Name        = "sunomi-alb-sg"
   }
 }

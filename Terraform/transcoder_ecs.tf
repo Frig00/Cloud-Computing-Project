@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "ecs-ecr-policy" {
         Action = [
           "lambda:InvokeFunction"
         ]
-        Resource = "arn:aws:lambda:eu-west-1:886436942768:function:debug-upload" # TODO: Link to arn
+        Resource = aws_lambda_function.sunomi-ws-lambda-notify.arn
       },
       {
         Effect = "Allow"

@@ -36,6 +36,12 @@ data "archive_file" "disconnect-lambda" {
   output_path = "lambda/out/ws-disconnect.zip"
 }
 
+data "archive_file" "notify-lambda" {
+  type        = "zip"
+  source_file = "lambda/ws-notify/main.py"
+  output_path = "lambda/out/ws-notify.zip"
+}
+
 # IAM policy for Lambda functions to access DynamoDB
 resource "aws_iam_policy" "sunomi-ws-connect-lambda-policy" {
   name = "sunomi-ws-connect-dynamodb-policy"
@@ -74,10 +80,55 @@ resource "aws_iam_role" "sunomi-ws-connect-lambda-role" {
   })
 }
 
+resource "aws_iam_role" "sunomi-ws-notify-lambda-role" {
+  name = "sunomi-ws-notify-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "sunomi-ws-notify-lambda-policy" {
+  name = "sunomi-ws-notify-dynamodb-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "VisualEditor0"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Scan",
+          "execute-api:ManageConnections",
+          "execute-api:Invoke"
+        ]
+        Resource = [
+          aws_dynamodb_table.sunomi-ws-connections.arn,
+          "${aws_apigatewayv2_api.sunomi-ws.execution_arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
 # Attach the DynamoDB policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "sunomi-ws-connect-lambda-policy-attachment" {
   role       = aws_iam_role.sunomi-ws-connect-lambda-role.name
   policy_arn = aws_iam_policy.sunomi-ws-connect-lambda-policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "sunomi-ws-notify-lambda-policy-attachment" {
+  role       = aws_iam_role.sunomi-ws-notify-lambda-role.name
+  policy_arn = aws_iam_policy.sunomi-ws-notify-lambda-policy.arn
 }
 
 # Lambda function to handle WebSocket connect events
@@ -106,6 +157,21 @@ resource "aws_lambda_function" "sunomi-ws-lambda-disconnect" {
   environment {
     variables = {
       dynamodb_connections_table = aws_dynamodb_table.sunomi-ws-connections.name
+    }
+  }
+}
+
+resource "aws_lambda_function" "sunomi-ws-lambda-notify" {
+  filename      = data.archive_file.notify-lambda.output_path
+  function_name = "sunomi-ws-lambda-notify"
+  role          = aws_iam_role.sunomi-ws-notify-lambda-role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.13"
+
+  environment {
+    variables = {
+      dynamodb_connections_table = aws_dynamodb_table.sunomi-ws-connections.name,
+      websocket_api_endpoint = "https://${aws_apigatewayv2_api.sunomi-ws.id}.execute-api.${var.region}.amazonaws.com/${aws_apigatewayv2_stage.sunomi-ws-stage.name}/"
     }
   }
 }

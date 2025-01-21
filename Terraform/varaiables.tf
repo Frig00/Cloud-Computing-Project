@@ -26,13 +26,6 @@ variable "public_subnet_cidrs" {
   ]
 }
 
-variable "ami_id" {
-  default = "ami-075449515af5df0d1"
-}
-
-variable "instance_type" {
-  default = "t3.micro"
-}
 
 variable "project_name" {
     default = "sunomi"
@@ -40,13 +33,6 @@ variable "project_name" {
 
 variable "environment" {
     default = "demo"
-}
-
-variable "db_master_credentials" {
-  default = {
-    username = "admin"
-    password = "password"
-  }
 }
 
 variable "db_instance_class" {

@@ -38,15 +38,26 @@ resource "aws_lambda_function" "sunomi-upload-flow" {
 
   environment {
     variables = {
-      STATUS_LAMBDA           = "debug-upload"
+      STATUS_LAMBDA           = aws_lambda_function.sunomi-ws-lambda-notify.function_name
       ECS_CLUSTER_NAME        = aws_ecs_cluster.sunomi-ecs-cluster-transcoder.name
       ECS_TASK_DEFINITION     = aws_ecs_task_definition.sunomi-ecs-tdf-transcoder.arn
       ECS_TASK_CONTAINER_NAME = var.sunomi-ecs-tdf-transcoder-container-name
       SUBNETS                 = join(",", aws_subnet.private[*].id)
       SECURITY_GROUPS         = aws_security_group.sunomi-ecs-sg-transcoder.id
     }
-
   }
+  
+  tracing_config {
+    mode = "Active"
+  }
+
+}
+
+# Add event invoke config to control retries
+resource "aws_lambda_function_event_invoke_config" "upload_flow_retry" {
+  function_name                = aws_lambda_function.sunomi-upload-flow.function_name
+  maximum_retry_attempts       = 0
+  maximum_event_age_in_seconds = 60
 }
 
 resource "aws_iam_role" "sunomi-upload-flow-role" {
@@ -117,3 +128,8 @@ resource "aws_lambda_permission" "allow_s3" {
   source_arn    = aws_s3_bucket.video_bucket.arn
 }
 
+# Add CloudWatch Logs policy to role
+resource "aws_iam_role_policy_attachment" "lambda_logs" {
+  role       = aws_iam_role.sunomi-upload-flow-role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
