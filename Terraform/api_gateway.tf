@@ -171,7 +171,8 @@ resource "aws_lambda_function" "sunomi-ws-lambda-notify" {
   environment {
     variables = {
       dynamodb_connections_table = aws_dynamodb_table.sunomi-ws-connections.name,
-      websocket_api_endpoint = "https://${aws_apigatewayv2_api.sunomi-ws.id}.execute-api.${var.region}.amazonaws.com/${aws_apigatewayv2_stage.sunomi-ws-stage.name}/"
+      websocket_api_endpoint = "https://${aws_apigatewayv2_api.sunomi-ws.id}.execute-api.${var.region}.amazonaws.com/${aws_apigatewayv2_stage.sunomi-ws-stage.name}/",
+      publish_lambda_name = aws_lambda_function.publish_video.function_name
     }
   }
 }

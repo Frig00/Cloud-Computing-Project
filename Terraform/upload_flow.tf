@@ -36,6 +36,8 @@ resource "aws_lambda_function" "sunomi-upload-flow" {
   handler       = "main.lambda_handler"
   runtime       = "python3.13"
 
+  timeout = 60
+
   environment {
     variables = {
       STATUS_LAMBDA           = aws_lambda_function.sunomi-ws-lambda-notify.function_name
@@ -47,18 +49,18 @@ resource "aws_lambda_function" "sunomi-upload-flow" {
     }
   }
   
-  tracing_config {
-    mode = "Active"
-  }
+  # tracing_config {
+  #   mode = "Active"
+  # }
 
 }
 
 # Add event invoke config to control retries
-resource "aws_lambda_function_event_invoke_config" "upload_flow_retry" {
-  function_name                = aws_lambda_function.sunomi-upload-flow.function_name
-  maximum_retry_attempts       = 0
-  maximum_event_age_in_seconds = 60
-}
+# resource "aws_lambda_function_event_invoke_config" "upload_flow_retry" {
+#   function_name                = aws_lambda_function.sunomi-upload-flow.function_name
+#   maximum_retry_attempts       = 0
+#   maximum_event_age_in_seconds = 60
+# }
 
 resource "aws_iam_role" "sunomi-upload-flow-role" {
   name = "sunomi-upload-flow-role"

@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 # Environment variables
 dynamodb_connections_table = os.environ.get("dynamodb_connections_table")
 websocket_api_endpoint = os.environ.get("websocket_api_endpoint")
+publish_lambda_name = os.environ.get("publish_lambda_name")
 
 if not dynamodb_connections_table:
     raise ValueError("dynamodb_connections_table environment variable is required")
@@ -15,6 +16,7 @@ if not websocket_api_endpoint:
 
 # Initialize AWS clients
 dynamodb = boto3.resource("dynamodb")
+lambda_client = boto3.client('lambda')
 table = dynamodb.Table(dynamodb_connections_table)
 apigatewaymanagementapi = boto3.client(
     'apigatewaymanagementapi',
@@ -58,6 +60,19 @@ def send_to_connection(connection_id, data):
             print(f"Error sending message: {str(e)}")
         return False
 
+def invoke_completion_lambda(event_data):
+    """Invoke the completion lambda function"""
+    try:
+        response = lambda_client.invoke(
+            FunctionName=publish_lambda_name,
+            InvocationType='Event', 
+            Payload=json.dumps(event_data)
+        )
+        return True
+    except ClientError as e:
+        print(f"Error invoking completion lambda: {str(e)}")
+        return False
+
 def lambda_handler(event, context):
     try:
         if isinstance(event, str):
@@ -68,6 +83,10 @@ def lambda_handler(event, context):
         video_id = event_data.get('videoId')
         if not video_id:
             raise ValueError("videoId is required in the event")
+
+        # Check if status is COMPLETED and invoke the completion lambda
+        if publish_lambda_name and event_data.get('status') == "COMPLETED":
+            invoke_completion_lambda(event_data)
 
         connection_id = get_connection_id(video_id)
         if not connection_id:

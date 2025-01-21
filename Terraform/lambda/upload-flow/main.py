@@ -3,6 +3,42 @@ import json
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
+def start_transcription_job(video_id, s3_bucket_name):
+    """
+    Start an AWS Transcribe job with automatic language detection
+    """
+    try:
+        transcribe_client = boto3.client('transcribe')
+
+        job_name = f"transcribe-{video_id}"
+        output_key = f"{video_id}/transcripts/transcription"
+        input_s3_uri = f"s3://{s3_bucket_name}/{video_id}/original.mp4"
+
+        response = transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': input_s3_uri},
+            OutputBucketName=s3_bucket_name,
+            OutputKey=output_key,
+            IdentifyLanguage=True,
+            Subtitles={
+                'Formats': ['vtt']
+            }
+        )
+
+        return {
+            'statusCode': 200,
+            'jobName': job_name,
+            'status': response['TranscriptionJob']['TranscriptionJobStatus']
+        }
+
+    except ClientError as e:
+        return {
+            'statusCode': 500,
+            'error': str(e)
+        }
+
+
+
 def lambda_handler(event, context):
     try:
         record = event['Records'][0]
@@ -46,6 +82,10 @@ def lambda_handler(event, context):
                 }
             },
         )
+
+        start_transcription_job(video_id, s3_bucket_name)
+
+
 
         return {
             "statusCode": 200,
