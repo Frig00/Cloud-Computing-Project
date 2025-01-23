@@ -23,18 +23,38 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
-data "archive_file" "sunomi-upload-flow" {
+data "archive_file" "sunomi-start-transcoder" {
   type        = "zip"
-  source_file = "lambda/upload-flow/main.py"
-  output_path = "lambda/out/upload-flow.zip"
+  source_file = "lambda/start-transcoder/main.py"
+  output_path = "lambda/out/start-transcoder.zip"
 }
 
-resource "aws_lambda_function" "sunomi-upload-flow" {
-  filename      = data.archive_file.sunomi-upload-flow.output_path
-  function_name = "sunomi-upload-flow"
-  role          = aws_iam_role.sunomi-upload-flow-role.arn
-  handler       = "main.lambda_handler"
-  runtime       = "python3.13"
+data "archive_file" "sunomi-start-transcription" {
+  type        = "zip"
+  source_file = "lambda/start-transcription/main.py"
+  output_path = "lambda/out/start-transcription.zip"
+}
+
+data "archive_file" "sunomi-start-rekognition" {
+  type        = "zip"
+  source_file = "lambda/start-rekognition/main.py"
+  output_path = "lambda/out/start-rekognition.zip"
+}
+
+data "archive_file" "sunomi-rekognition-results" {
+  type        = "zip"
+  source_file = "lambda/rekognition-results/main.py"
+  output_path = "lambda/out/rekognition-results.zip"
+}
+
+
+resource "aws_lambda_function" "sunomi-start-transcoder" {
+  filename         = data.archive_file.sunomi-start-transcoder.output_path
+  function_name    = "sunomi-start-transcoder"
+  role             = aws_iam_role.sunomi-start-transcoder-role.arn
+  handler          = "main.lambda_handler"
+  runtime          = "python3.13"
+  source_code_hash = filebase64sha256(data.archive_file.sunomi-start-transcoder.output_path)
 
   timeout = 60
 
@@ -48,22 +68,50 @@ resource "aws_lambda_function" "sunomi-upload-flow" {
       SECURITY_GROUPS         = aws_security_group.sunomi-ecs-sg-transcoder.id
     }
   }
-  
-  # tracing_config {
-  #   mode = "Active"
-  # }
-
 }
 
-# Add event invoke config to control retries
-# resource "aws_lambda_function_event_invoke_config" "upload_flow_retry" {
-#   function_name                = aws_lambda_function.sunomi-upload-flow.function_name
-#   maximum_retry_attempts       = 0
-#   maximum_event_age_in_seconds = 60
-# }
+resource "aws_lambda_function" "sunomi-start-transcription" {
+  filename         = data.archive_file.sunomi-start-transcription.output_path
+  function_name    = "sunomi-start-transcription"
+  role             = aws_iam_role.sunomi-start-transcription-role.arn
+  handler          = "main.lambda_handler"
+  runtime          = "python3.13"
+  source_code_hash = filebase64sha256(data.archive_file.sunomi-start-transcription.output_path)
 
-resource "aws_iam_role" "sunomi-upload-flow-role" {
-  name = "sunomi-upload-flow-role"
+  timeout = 60
+}
+
+resource "aws_lambda_function" "sunomi-start-rekognition" {
+  filename         = data.archive_file.sunomi-start-rekognition.output_path
+  function_name    = "sunomi-start-rekognition"
+  role             = aws_iam_role.sunomi-start-rekognition-role.arn
+  handler          = "main.lambda_handler"
+  runtime          = "python3.13"
+  source_code_hash = filebase64sha256(data.archive_file.sunomi-start-rekognition.output_path)
+
+  timeout = 60
+
+  environment {
+    variables = {
+      SNS_TOPIC_ARN         = aws_sns_topic.moderation_results.arn
+      REKOGNITION_ROLE_ARN  = aws_iam_role.rekognition_role.arn
+    }
+  }
+}
+
+resource "aws_lambda_function" "sunomi-rekognition-results" {
+  filename         = data.archive_file.sunomi-rekognition-results.output_path
+  function_name    = "sunomi-rekognition-results"
+  role             = aws_iam_role.sunomi-rekognition-results-role.arn
+  handler          = "main.lambda_handler"
+  runtime          = "python3.13"
+  source_code_hash = filebase64sha256(data.archive_file.sunomi-rekognition-results.output_path)
+  timeout          = 60
+}
+
+
+resource "aws_iam_role" "sunomi-start-transcoder-role" {
+  name = "sunomi-start-transcoder-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -79,9 +127,104 @@ resource "aws_iam_role" "sunomi-upload-flow-role" {
   })
 }
 
-resource "aws_iam_role_policy" "sunomi-upload-flow-policy" {
-  name = "sunomi-upload-flow-policy"
-  role = aws_iam_role.sunomi-upload-flow-role.id
+resource "aws_iam_role" "sunomi-start-transcription-role" {
+  name = "sunomi-start-transcription-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "sunomi-start-rekognition-role" {
+  name = "sunomi-start-rekognition-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "sunomi-rekognition-results-role" {
+  name = "sunomi-rekognition-results-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_role_policy" "sunomi-start-transcription-policy" {
+  name = "sunomi-transcribe-policy"
+  role = aws_iam_role.sunomi-start-transcription-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "transcribe:StartTranscriptionJob",
+          "transcribe:GetTranscriptionJob",
+          "transcribe:ListTranscriptionJobs",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}/*"
+        ]
+      }
+    ]
+  })
+}
+
+
+resource "aws_iam_role_policy" "sunomi-start-transcoder-policy" {
+  name = "sunomi-start-transcoder-policy"
+  role = aws_iam_role.sunomi-start-transcoder-role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -112,26 +255,252 @@ resource "aws_iam_role_policy" "sunomi-upload-flow-policy" {
   })
 }
 
+resource "aws_iam_role_policy" "sunomi-start-rekognition-policy" {
+  name = "sunomi-start-rekognition-policy"
+  role = aws_iam_role.sunomi-start-rekognition-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "s3:GetObject"
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.video_bucket.bucket}/*"
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "rekognition:StartContentModeration"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "sunomi-rekognition-results-policy" {
+  name = "sunomi-rekognition-results-policy"
+  role = aws_iam_role.sunomi-rekognition-results-role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Subscribe",
+          "sns:Receive"
+        ]
+        Resource = [
+          aws_sns_topic.moderation_results.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rekognition:GetContentModeration"
+        ]
+        Resource = [
+          "*"
+        ]
+      }
+    ]
+  })
+}
+
+
+resource "aws_sns_topic" "video_upload_topic" {
+  name = "video-upload-notifications"
+}
+
+resource "aws_sns_topic_policy" "default" {
+  arn = aws_sns_topic.video_upload_topic.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "AllowS3ToPublishToSNS"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action = "SNS:Publish"
+        Resource = aws_sns_topic.video_upload_topic.arn
+        Condition = {
+          ArnLike = {
+            "aws:SourceArn": aws_s3_bucket.video_bucket.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Single S3 Bucket Notification to SNS
 resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = aws_s3_bucket.video_bucket.id
 
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.sunomi-upload-flow.arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = "original.mp4"
+  topic {
+    topic_arn     = aws_sns_topic.video_upload_topic.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_suffix = "original.mp4"
   }
 }
 
+# SNS Topic Subscriptions
+resource "aws_sns_topic_subscription" "transcription" {
+  topic_arn = aws_sns_topic.video_upload_topic.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.sunomi-start-transcription.arn
+}
+
+resource "aws_sns_topic_subscription" "transcoder" {
+  topic_arn = aws_sns_topic.video_upload_topic.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.sunomi-start-transcoder.arn
+}
+
+resource "aws_sns_topic_subscription" "rekognition" {
+  topic_arn = aws_sns_topic.video_upload_topic.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.sunomi-start-rekognition.arn
+}
+
+resource "aws_sns_topic_subscription" "rekognition_results" {
+  topic_arn = aws_sns_topic.moderation_results.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.sunomi-rekognition-results.arn
+}
+
+# Lambda Permissions for SNS
+resource "aws_lambda_permission" "with_sns_transcription" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sunomi-start-transcription.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.video_upload_topic.arn
+}
+
+resource "aws_lambda_permission" "with_sns_transcoder" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sunomi-start-transcoder.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.video_upload_topic.arn
+}
+
+resource "aws_lambda_permission" "with_sns_rekognition" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sunomi-start-rekognition.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.video_upload_topic.arn
+}
+
+resource "aws_lambda_permission" "with_sns_rekognition_results" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sunomi-rekognition-results.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.moderation_results.arn
+}
+
+locals {
+  lambda_functions = [
+    aws_lambda_function.sunomi-start-transcoder,
+    aws_lambda_function.sunomi-start-transcription,
+    aws_lambda_function.sunomi-start-rekognition
+  ]
+  lambda_roles = [
+    aws_iam_role.sunomi-start-transcoder-role,
+    aws_iam_role.sunomi-start-transcription-role,
+    aws_iam_role.sunomi-start-rekognition-role,
+    aws_iam_role.sunomi-rekognition-results-role
+  ]
+}
+
 resource "aws_lambda_permission" "allow_s3" {
+  count         = length(local.lambda_functions)
   statement_id  = "AllowS3Invoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.sunomi-upload-flow.function_name
+  function_name = local.lambda_functions[count.index].function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.video_bucket.arn
 }
 
 # Add CloudWatch Logs policy to role
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = aws_iam_role.sunomi-upload-flow-role.name
+  count      = length(local.lambda_roles)
+  role       = local.lambda_roles[count.index].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_sns_topic" "moderation_results" {
+  name = "video-moderation-results"
+}
+
+resource "aws_sns_topic_policy" "moderation_results" {
+  arn = aws_sns_topic.moderation_results.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowRekognitionToPublish"
+        Effect = "Allow"
+        Principal = {
+          Service = "rekognition.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.moderation_results.arn
+      }
+    ]
+  })
+}
+
+# IAM Role for Rekognition
+resource "aws_iam_role" "rekognition_role" {
+  name = "rekognition-service-role"
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "rekognition.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# IAM Role Policy for Rekognition
+resource "aws_iam_role_policy" "rekognition_policy" {
+  name = "rekognition-service-policy"
+  role = aws_iam_role.rekognition_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "sns:Publish"
+        ]
+        Resource = [
+          "${aws_s3_bucket.video_bucket.arn}/*",
+          aws_sns_topic.moderation_results.arn
+        ]
+      }
+    ]
+  })
 }
