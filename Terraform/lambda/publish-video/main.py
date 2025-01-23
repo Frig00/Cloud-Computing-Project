@@ -9,11 +9,11 @@ def lambda_handler(event, context):
     db_user = os.environ['DB_USER']
     db_password = os.environ['DB_PASSWORD']
 
-
-    if isinstance(event, str):
-        event_data = json.loads(event)
+    message = json.loads(event['Records'][0]['Sns']['Message'])
+    if isinstance(message, str):
+        event_data = json.loads(message)
     else:
-        event_data = event
+        event_data = message
         
     video_id = event_data.get('videoId')
     if not video_id:

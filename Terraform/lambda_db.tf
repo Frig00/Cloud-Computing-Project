@@ -115,3 +115,4 @@ resource "null_resource" "create_venv_publish_video" {
     working_dir = "lambda/publish-video"
   }
 }
+

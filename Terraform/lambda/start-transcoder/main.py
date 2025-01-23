@@ -11,7 +11,7 @@ def lambda_handler(event, context):
         object_key = record['s3']['object']['key']
 
         s3_bucket_name = bucket_name
-        status_lambda = os.environ['STATUS_LAMBDA']
+        status_topic = os.environ['STATUS_TOPIC']
         cluster_name = os.environ['ECS_CLUSTER_NAME']
         task_definition = os.environ['ECS_TASK_DEFINITION']
         task_container_name = os.environ['ECS_TASK_CONTAINER_NAME']
@@ -28,7 +28,7 @@ def lambda_handler(event, context):
                 "environment": [
                     {"name": "S3_BUCKET_NAME", "value": s3_bucket_name},
                     {"name": "VIDEO_ID", "value": video_id},
-                    {"name": "STATUS_LAMBDA", "value": status_lambda},
+                    {"name": "STATUS_TOPIC", "value": status_topic},
                     {"name": "VIDEO_PATH", "value": object_key},
                 ],
             }

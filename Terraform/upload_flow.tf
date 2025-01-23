@@ -60,7 +60,7 @@ resource "aws_lambda_function" "sunomi-start-transcoder" {
 
   environment {
     variables = {
-      STATUS_LAMBDA           = aws_lambda_function.sunomi-ws-lambda-notify.function_name
+      STATUS_TOPIC            = aws_sns_topic.transcoder_status.arn
       ECS_CLUSTER_NAME        = aws_ecs_cluster.sunomi-ecs-cluster-transcoder.name
       ECS_TASK_DEFINITION     = aws_ecs_task_definition.sunomi-ecs-tdf-transcoder.arn
       ECS_TASK_CONTAINER_NAME = var.sunomi-ecs-tdf-transcoder-container-name
@@ -503,4 +503,28 @@ resource "aws_iam_role_policy" "rekognition_policy" {
       }
     ]
   })
+}
+
+# Add SNS subscription for publish-video Lambda with filter policy
+resource "aws_sns_topic_subscription" "publish_video_subscription" {
+  topic_arn = aws_sns_topic.transcoder_status.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.publish_video.arn
+  filter_policy = jsonencode({
+    status = [
+      {
+        prefix = "COMPLETED"
+      }
+    ]
+  })
+  filter_policy_scope = "MessageBody"
+}
+
+# Add permission for SNS to invoke Lambda
+resource "aws_lambda_permission" "allow_sns_publish_video" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.publish_video.arn
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.transcoder_status.arn
 }

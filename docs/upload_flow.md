@@ -1,5 +1,45 @@
 # Flusso di upload (su AWS)
 ```mermaid
+graph TD
+    %% Storage and Initial Trigger
+    S3[S3 Video Bucket] -->|Object created event notification| SNS1[video-upload-notifications SNS Topic]
+
+    %% Main Processing Branch
+    SNS1 -->|Triggers| L1[Start Transcoder Lambda]
+    SNS1 -->|Triggers| L2[Start Transcription Lambda]
+    SNS1 -->|Triggers| L3[Start Rekognition Lambda]
+
+    %% Transcoder Flow
+    L1 -->|Starts| ECS[ECS Transcoder Task]
+    ECS -->|Publishes status| SNS2[transcoder-status-topic SNS Topic]
+    SNS2 -->|Filter: *| WS[WebSocket Notify Lambda]
+    SNS2 -->|Filter: COMPLETED| PV[Publish Video Lambda]
+
+    %% Rekognition Flow
+    L3 -->|Starts job| REK[AWS Rekognition]
+    REK -->|Publishes results| SNS3[video-moderation-results SNS Topic]
+    SNS3 --> RES[Rekognition Results Lambda]
+
+    %% WebSocket Flow
+    WS --> DDB[(DynamoDB Connections)]
+    WS --> API[API Gateway WebSocket]
+
+    %% Database Updates
+    PV --> RDS[(RDS Database)]
+
+    %% Styling
+    classDef sns fill:#ff9900,stroke:#232f3e,color:white
+    classDef lambda fill:#6b3182,stroke:#232f3e,color:white
+    classDef storage fill:#3b48cc,stroke:#232f3e,color:white
+    classDef aws fill:#232f3e,stroke:#232f3e,color:white
+
+    class SNS1,SNS2,SNS3 sns
+    class L1,L2,L3,WS,PV,RES lambda
+    class S3,DDB,RDS storage
+    class ECS,REK,API aws
+```
+
+```mermaid
 sequenceDiagram
     Frontend->>+Controller: Richiede Presigned-URL per upload video
     Controller->>+S3: Presigned-URL

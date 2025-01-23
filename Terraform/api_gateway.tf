@@ -109,11 +109,13 @@ resource "aws_iam_policy" "sunomi-ws-notify-lambda-policy" {
           "dynamodb:GetItem",
           "dynamodb:Scan",
           "execute-api:ManageConnections",
-          "execute-api:Invoke"
+          "execute-api:Invoke",
+          "sns:Subscribe"
         ]
         Resource = [
           aws_dynamodb_table.sunomi-ws-connections.arn,
-          "${aws_apigatewayv2_api.sunomi-ws.execution_arn}/*"
+          "${aws_apigatewayv2_api.sunomi-ws.execution_arn}/*",
+          aws_sns_topic.transcoder_status.arn
         ]
       }
     ]
@@ -233,6 +235,22 @@ resource "aws_lambda_permission" "sunomi-ws-disconnect-permission" {
   function_name = aws_lambda_function.sunomi-ws-lambda-disconnect.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.sunomi-ws.execution_arn}/*/*"
+}
+
+# Add SNS subscription for notify Lambda
+resource "aws_sns_topic_subscription" "lambda_notification" {
+  topic_arn = aws_sns_topic.transcoder_status.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.sunomi-ws-lambda-notify.arn
+}
+
+# Add permission for SNS to invoke Lambda
+resource "aws_lambda_permission" "with_sns" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sunomi-ws-lambda-notify.arn
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.transcoder_status.arn
 }
 
 # Production stage for the WebSocket API

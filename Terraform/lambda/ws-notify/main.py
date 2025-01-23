@@ -60,33 +60,17 @@ def send_to_connection(connection_id, data):
             print(f"Error sending message: {str(e)}")
         return False
 
-def invoke_completion_lambda(event_data):
-    """Invoke the completion lambda function"""
-    try:
-        response = lambda_client.invoke(
-            FunctionName=publish_lambda_name,
-            InvocationType='Event', 
-            Payload=json.dumps(event_data)
-        )
-        return True
-    except ClientError as e:
-        print(f"Error invoking completion lambda: {str(e)}")
-        return False
-
 def lambda_handler(event, context):
     try:
-        if isinstance(event, str):
-            event_data = json.loads(event)
+        message = json.loads(event['Records'][0]['Sns']['Message'])
+        if isinstance(message, str):
+            event_data = json.loads(message)
         else:
-            event_data = event
+            event_data = message
             
         video_id = event_data.get('videoId')
         if not video_id:
             raise ValueError("videoId is required in the event")
-
-        # Check if status is COMPLETED and invoke the completion lambda
-        if publish_lambda_name and event_data.get('status') == "COMPLETED":
-            invoke_completion_lambda(event_data)
 
         connection_id = get_connection_id(video_id)
         if not connection_id:

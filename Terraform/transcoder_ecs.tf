@@ -26,6 +26,11 @@ resource "aws_iam_role" "sunomi-ecs-task-role" {
   })
 }
 
+# Add SNS Topic for status updates
+resource "aws_sns_topic" "transcoder_status" {
+  name = "transcoder-status-topic"
+}
+
 # Add after the existing role definition
 resource "aws_iam_role_policy" "ecs-ecr-policy" {
   name = "sunomi-ecs-ecr-policy"
@@ -57,13 +62,6 @@ resource "aws_iam_role_policy" "ecs-ecr-policy" {
       {
         Effect = "Allow"
         Action = [
-          "lambda:InvokeFunction"
-        ]
-        Resource = aws_lambda_function.sunomi-ws-lambda-notify.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "s3:GetObject",
           "s3:HeadObject",
           "s3:ListBucket",
@@ -73,6 +71,13 @@ resource "aws_iam_role_policy" "ecs-ecr-policy" {
           "${aws_s3_bucket.video_bucket.arn}/*",
           aws_s3_bucket.video_bucket.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.transcoder_status.arn
       }
     ]
   })
@@ -108,7 +113,7 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-transcoder" {
           value = ""
         },
         {
-          name  = "STATUS_LAMBDA"
+          name  = "STATUS_TOPIC"
           value = ""
         },
         {
