@@ -21,3 +21,4 @@ src/mysql/data
 .terraform/
 *.hcl
 terraform/lambda/**/*.zip
+Terraform/lambda-layers/mysql/layer/python/

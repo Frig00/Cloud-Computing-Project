@@ -53,6 +53,11 @@ resource "aws_iam_role_policy_attachment" "lambda_rds_access" {
   policy_arn = aws_iam_policy.lambda_rds_access.arn
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_rds_access_rekognition_results" {
+  role       = aws_iam_role.sunomi-rekognition-results-role.name
+  policy_arn = aws_iam_policy.lambda_rds_access.arn
+}
+
 # ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "sunomi-ecs-task-execution-role"
@@ -106,4 +111,24 @@ resource "aws_iam_policy" "s3_access_policy" {
 resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
+}
+
+resource "aws_iam_role_policy" "ecs_task_execution_cloudwatch_policy" {
+  name = "sunomi-ecs-cloudwatch-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
 }

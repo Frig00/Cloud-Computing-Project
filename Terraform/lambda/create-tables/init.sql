@@ -95,4 +95,3 @@ create table if not exists views
     constraint views_ibfk_2
         foreign key (userId) references users (userId)
 );
-

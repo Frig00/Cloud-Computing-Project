@@ -107,6 +107,22 @@ resource "aws_lambda_function" "sunomi-rekognition-results" {
   runtime          = "python3.13"
   source_code_hash = filebase64sha256(data.archive_file.sunomi-rekognition-results.output_path)
   timeout          = 60
+
+  layers = [aws_lambda_layer_version.mysql_layer.arn]
+
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
+
+   environment {
+    variables = {
+      DB_HOST     = aws_db_instance.free_db.address
+      DB_NAME     = aws_db_instance.free_db.db_name
+      DB_USER     = aws_db_instance.free_db.username
+      DB_PASSWORD = aws_db_instance.free_db.password
+    }
+  }
 }
 
 
@@ -176,6 +192,11 @@ resource "aws_iam_role" "sunomi-rekognition-results-role" {
       }
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access_rekognition_results" {
+  role       = aws_iam_role.sunomi-rekognition-results-role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 
@@ -347,7 +368,7 @@ resource "aws_sns_topic_policy" "default" {
 
 # Single S3 Bucket Notification to SNS
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = aws_s3_bucket.video_bucket.id
+  bucket = aws_s3_bucket.video_bucket.bucket
 
   topic {
     topic_arn     = aws_sns_topic.video_upload_topic.arn
