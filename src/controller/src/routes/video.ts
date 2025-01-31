@@ -31,6 +31,8 @@ const AllInfosVideoSchema = Type.Object({
   likes: Type.Number(),
   userHasLiked: Type.Boolean(),
   views: Type.Number(),
+  moderationTypes: Type.Array(Type.String()),
+  has_transcription: Type.Boolean()
 });
 
 // Video Comment Schema and Type
@@ -179,7 +181,7 @@ export default async function videoRoutes(app: FastifyInstance) {
       onRequest: [app.authenticate],
       schema: {
         description: "Get detailed information about a specific video",
-        summary: "Retrieves comprehensive details of a video including likes and view count",
+        summary: "Retrieves comprehensive details of a video including likes, view count and others infos",
         tags: ["Video"],
         params: IdVideoSchema,
         response: {
@@ -209,7 +211,9 @@ export default async function videoRoutes(app: FastifyInstance) {
             uploadDate: video.uploadDate.toISOString(),
             likes: video.totalLikes,
             userHasLiked: video.userHasLiked,
-            views: video.totalViews
+            views: video.totalViews,
+            moderationTypes: video.moderationTypes,
+            has_transcription: video.has_transcription
           });
         }
       } catch (error) {

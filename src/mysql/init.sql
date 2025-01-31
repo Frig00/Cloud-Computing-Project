@@ -39,7 +39,6 @@ create table if not exists videos
     uploadDate        datetime                      not null,
     status            enum ('PROCESSING', 'PUBLIC') not null,
     description       text                          null,
-    has_transcription tinyint(1) default 0          not null,
     constraint videos_ibfk_1
         foreign key (userId) references users (userId)
             on delete cascade

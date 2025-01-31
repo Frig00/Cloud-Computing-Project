@@ -22,49 +22,55 @@ export class VideoService {
   }
 
   /**
-   * Get a video by its ID and check if the user has liked it
-   * @param videoId - ID of the video
-   * @param userId - ID of the user
-   */
-  static async getVideoById(videoId: string, userId: string) {
-    const video = await prisma.videos.findUnique({
-      where: { id: videoId, status: "PUBLIC" },
-      include: {
-        likes: {
-          where: {
-            userId: userId,
-          },
-          take: 1,
+ * Get a video by its ID and check if the user has liked it
+ * @param videoId - ID of the video
+ * @param userId - ID of the user
+ */
+static async getVideoById(videoId: string, userId: string) {
+  const video = await prisma.videos.findUnique({
+    where: { id: videoId, status: "PUBLIC" },
+    include: {
+      likes: {
+        where: {
+          userId: userId,
+        },
+        take: 1,
+      },
+      video_moderation: { 
+        select: {
+          type: true
+        }
+      }
+    },
+  });
+
+  const videoCounts = await prisma.videos.findUnique({
+    where: { id: videoId, status: "PUBLIC" },
+    select: {
+      _count: {
+        select: {
+          likes: true,
+          views: true,
         },
       },
-    });
+    },
+  });
 
-    const videoCounts = await prisma.videos.findUnique({
-      where: { id: videoId, status: "PUBLIC" },
-      select: {
-        _count: {
-          select: {
-            likes: true,
-            views: true,
-          },
-        },
-      },
-    });
+  if (!video || !videoCounts) return null;
 
-    if (!video || !videoCounts) return null;
+  const totalLikes = videoCounts._count.likes;
+  const userHasLiked = video.likes.length === 1;
+  const totalViews = videoCounts._count.views;
+  const moderationTypes = video.video_moderation.map(m => m.type);
 
-    const totalLikes = videoCounts._count.likes;
-    const userHasLiked = video.likes.length === 1;
-    const totalViews = videoCounts._count.views;
-
-    return {
-      ...video,
-      totalLikes,
-      userHasLiked,
-      totalViews,
-    };
-  }
-
+  return {
+    ...video,
+    totalLikes,
+    userHasLiked,
+    totalViews,
+    moderationTypes,
+  };
+}
   /**
    * Retrieve all public videos by a specific user
    * @param userId - ID of the user
