@@ -28,11 +28,15 @@ import "@fontsource/geist-sans/600.css";
 import "@fontsource/geist-sans/700.css";
 import "@fontsource/geist-sans/800.css";
 import "@fontsource/geist-sans/900.css";
-import { API_BASE_PATH } from "./lib/consts.ts";
 import Profile from "./components/Profile.tsx";
+import configService, { getApiUrl } from "./services/configService.tsx";
+
+
+
+await configService.init().catch(console.error);
 
 DefaultConfig.config = new Configuration({
-  basePath: API_BASE_PATH,
+  basePath: getApiUrl(),
 });
 
 const theme = createTheme({

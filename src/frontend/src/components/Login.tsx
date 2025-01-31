@@ -3,10 +3,10 @@ import { GitHub as GitHubIcon } from '@mui/icons-material';
 import MuiCard from "@mui/material/Card";
 import { useAuth } from "../services/authService";
 import { useNavigate, useLocation } from "react-router";
-import { GITHUB_LOGIN_URL } from "@/lib/consts";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { enqueueSnackbar } from "notistack";
+import { getGithubLoginUrl } from "@/services/configService";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -91,7 +91,7 @@ export default function Login() {
   };
 
   const onGithubLogin = () => {
-    window.location.href = GITHUB_LOGIN_URL;
+    window.location.href = getGithubLoginUrl();
   };
 
   useEffect(() => {

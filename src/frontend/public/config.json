@@ -1,0 +1,6 @@
+{
+    "apiUrl": "http://localhost:3000",
+    "videoUrl": "http://localhost:9000",
+    "githubLoginUrl": "http://localhost:3000/auth/github",
+    "webSocketUrl": "ws://localhost:3000"
+}

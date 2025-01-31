@@ -5,6 +5,13 @@ resource "aws_apigatewayv2_api" "sunomi-ws" {
   route_selection_expression = "$request.body.action"
 }
 
+# Production stage for the WebSocket API
+resource "aws_apigatewayv2_stage" "sunomi-ws-stage" {
+  api_id      = aws_apigatewayv2_api.sunomi-ws.id
+  name        = "production"
+  auto_deploy = true
+}
+
 # DynamoDB table to store WebSocket connection IDs
 resource "aws_dynamodb_table" "sunomi-ws-connections" {
   name         = "sunomi-ws-connections"
@@ -251,11 +258,4 @@ resource "aws_lambda_permission" "with_sns" {
   function_name = aws_lambda_function.sunomi-ws-lambda-notify.arn
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.transcoder_status.arn
-}
-
-# Production stage for the WebSocket API
-resource "aws_apigatewayv2_stage" "sunomi-ws-stage" {
-  api_id      = aws_apigatewayv2_api.sunomi-ws.id
-  name        = "production"
-  auto_deploy = true
 }
