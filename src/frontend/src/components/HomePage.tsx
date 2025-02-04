@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Button, Container, Typography } from "@mui/material";
 import VideoThumbnail from "./VideoThumbnail";
 import { useQuery } from "@tanstack/react-query";
@@ -6,95 +5,112 @@ import { VideoAllVideosGet200ResponseInner, VideoApi } from "../api";
 import { thumbnailSrc } from "../lib/consts";
 import { useEffect, useState } from "react";
 
+const PAGE_SIZE = 100;
 
-export default function HomePage() {
+interface VideoListProps {
+  videos: VideoAllVideosGet200ResponseInner[];
+  onLoadMore: () => void;
+  title?: string;
+  isLoading?: boolean;
+}
 
-  const [skip,setSkip] = useState(0);
-  const [skipS,setSkipS] = useState(0);
-  const [videos,setVideos] = useState<VideoAllVideosGet200ResponseInner[]>([]);
-  const [videosS,setVideosS] = useState<VideoAllVideosGet200ResponseInner[]>([]);
-  const TAKE = 100;
-  const videoApi = new VideoApi();
+const useVideoFetch = (queryKey: string, fetchFn: (skip: number) => Promise<VideoAllVideosGet200ResponseInner[]>) => {
+  const [skip, setSkip] = useState(0);
+  const [videos, setVideos] = useState<VideoAllVideosGet200ResponseInner[]>([]);
 
   const { isPending, error, data } = useQuery({
-    queryKey: ["videoAllVideosGet",skip,TAKE],
-    queryFn: () => videoApi.videoAllVideosGet({skip: skip,take: TAKE}),
+    queryKey: [queryKey, skip, PAGE_SIZE],
+    queryFn: () => fetchFn(skip)
   });
 
-  
-  const { isPending: isPending2, error: error2, data: data2 } = useQuery({
-    queryKey: ["videoSubscriptionsGet",skip,TAKE],
-    queryFn: () => videoApi.videoSubscriptionsGet({skip: skipS, take: TAKE}),
-  });
-
-  
-
-    useEffect(() => {
-      if (data) {
-        setVideos([...(videos || []),...data.map((video) => video)]);
-      }
-    }, [data]);
-
-    useEffect(() => {
-      if (data2) {
-        setVideosS([...(videosS || []),...data2.map((video) => video)]);
-      }
-    }, [data2]);
-
-    useEffect(() => {
+  useEffect(() => {
+    // Reset videos when query key changes
+    return () => {
       setVideos([]);
-      setVideosS([]);
       setSkip(0);
-      setSkipS(0);
-    }, []);
+    };
+  }, [queryKey]);
 
-    if (isPending) return "Loading...";
-    if (error) return "An error has occurred: " + error.message;
-    if (isPending2) return "Loading...";
-    if (error2) return "An error has occurred: " + error2.message;
-  
+  useEffect(() => {
+    if (data) {
+      setVideos(prev => skip === 0 ? data : [...prev, ...data]);
+    }
+  }, [data, skip]);
 
-  const handleLoadMore = () => {setSkip(skip + TAKE);};
-  const handleLoadMoreS = () => {setSkipS(skipS + TAKE);};
+  return { videos, isLoading: isPending, error, loadMore: () => setSkip(skip + PAGE_SIZE) };
+};
 
+const VideoList = ({ videos, onLoadMore, title, isLoading }: VideoListProps) => (
+  <>
+    {title && videos.length > 0 && (
+      <Typography variant="h4" sx={{ marginTop: "1rem" }}>{title}</Typography>
+    )}
+    <div className="flex gap-2 flex-wrap m-2">
+      {videos?.map((video) => (
+        <VideoThumbnail
+          id={video.id}
+          src={thumbnailSrc(video.id)}
+          title={video.title}
+          user={video.userId}
+          key={video.id}
+          variant="small"
+        />
+      ))}
+    </div>
+    {videos.length > 0 && (
+      <Button
+        variant="outlined"
+        color="primary"
+        sx={{ marginTop: "0.5rem" }}
+        onClick={onLoadMore}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Loading...' : 'Load More'}
+      </Button>
+    )}
+  </>
+);
+
+export default function HomePage() {
+  const videoApi = new VideoApi();
+
+  const {
+    videos: subscribedVideos,
+    isLoading: isLoadingSubscribed,
+    error: errorSubscribed,
+    loadMore: loadMoreSubscribed
+  } = useVideoFetch(
+    "videoSubscriptionsGet",
+    (skip) => videoApi.videoSubscriptionsGet({ skip, take: PAGE_SIZE })
+  );
+
+  const {
+    videos: allVideos,
+    isLoading: isLoadingAll,
+    error: errorAll,
+    loadMore: loadMoreAll
+  } = useVideoFetch(
+    "videoAllVideosGet",
+    (skip) => videoApi.videoAllVideosGet({ skip, take: PAGE_SIZE })
+  );
+
+  if (errorAll || errorSubscribed) 
+    return `An error has occurred: ${errorAll?.message || errorSubscribed?.message}`;
 
   return (
     <Container maxWidth="xl">
-      {videosS.length > 0 && (<Typography variant="h4" sx={{ marginTop: "1rem" }}> Subscribed </Typography>)}
-        <div className="flex gap-2 flex-wrap m-2">
-        {videosS?.map((video, index) => (
-          <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={`${video.id}-${index}`} variant="small" />
-        ))}
-        </div>
-        {videosS.length > 0 && (
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{
-            marginTop: "0.5rem",
-          }}
-          onClick={handleLoadMoreS}
-        >
-          Load More
-        </Button>
-      )}
-      <Typography variant="h4" sx={{ marginTop: "1rem" }}> More Videos </Typography>
-      <div className="flex gap-2 flex-wrap m-2">
-        {videos?.map((video, index) => (
-          <VideoThumbnail id={video.id} src={thumbnailSrc(video.id)} title={video.title} user={video.userId} key={`${video.id}-${index}`} variant="small" />
-        ))}
-      </div>
-      <Button
-          variant="outlined"
-          color="primary"
-          sx={{
-            marginTop: "0.5rem",
-          }}
-          onClick={handleLoadMore}
-        >
-          Load More
-        </Button>
+      <VideoList
+        videos={subscribedVideos}
+        onLoadMore={loadMoreSubscribed}
+        title="Subscribed"
+        isLoading={isLoadingSubscribed}
+      />
+      <VideoList
+        videos={allVideos}
+        onLoadMore={loadMoreAll}
+        title="More Videos"
+        isLoading={isLoadingAll}
+      />
     </Container>
-    
   );
 }
