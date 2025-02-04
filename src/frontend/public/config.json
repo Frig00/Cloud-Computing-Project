@@ -1,6 +1,6 @@
 {
     "apiUrl": "https://api.sunomi.eu",
-    "videoUrl": "https://drowuca0mz6vm.cloudfront.net",
+    "videoUrl": "https://video.sunomi.eu",
     "githubLoginUrl": "",
-    "webSocketUrl": ""
+    "webSocketUrl": "wss://ws.sunomi.eu/"
 }

@@ -11,9 +11,9 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 resource "aws_cloudfront_cache_policy" "optimized_caching" {
   name        = "SunomiOptimizedCachingPolicy"
   comment     = "Policy with optimized caching settings"
-  min_ttl     = 1
-  max_ttl     = 31536000
-  default_ttl = 86400
+  min_ttl     = 60
+  max_ttl     = 86400
+  default_ttl = 300
 
   parameters_in_cache_key_and_forwarded_to_origin {
     enable_accept_encoding_brotli = true
@@ -43,6 +43,9 @@ resource "aws_cloudfront_distribution" "cdn_video" {
 
   enabled             = true
   is_ipv6_enabled    = true
+  aliases = ["video.sunomi.eu"]
+
+  
 
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
@@ -64,7 +67,9 @@ resource "aws_cloudfront_distribution" "cdn_video" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = aws_acm_certificate_validation.cert_frontend_validation.certificate_arn
+    ssl_support_method  = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2018"
   }
 }
 
