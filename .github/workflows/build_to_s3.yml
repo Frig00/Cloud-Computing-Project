@@ -22,11 +22,11 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: ${{ matrix.service }}
+        working-directory: ./src/${{ matrix.service }}
 
       - name: Build Project
         run: npm run build
-        working-directory: ${{ matrix.service }}
+        working-directory: ./src/${{ matrix.service }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
