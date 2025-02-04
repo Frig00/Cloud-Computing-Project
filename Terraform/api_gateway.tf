@@ -282,7 +282,7 @@ resource "aws_apigatewayv2_api_mapping" "websocket" {
 
 resource "aws_route53_record" "ws" {
   zone_id = var.route53_hosted_zone_id
-  name    = "api.sunomi.eu"
+  name    = "ws.sunomi.eu"
   type    = "A"
 
   alias {

@@ -42,3 +42,4 @@ jobs:
 
       - name: Deploy to S3
         run: aws s3 sync dist/ s3://sunomi-frontend-bucket --delete
+        working-directory: ./src/${{ matrix.service }}
