@@ -50,6 +50,7 @@ resource "aws_cloudfront_distribution" "cdn_video" {
     target_origin_id       = "S3Origin"
     viewer_protocol_policy = "redirect-to-https"
     compress = true
+    response_headers_policy_id = "60669652-455b-4ae9-85a4-c4c02393f86c"
 
     cache_policy_id = aws_cloudfront_cache_policy.optimized_caching.id
 
