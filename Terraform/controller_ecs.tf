@@ -13,11 +13,13 @@ resource "aws_ecs_cluster" "sunomi-ecs-cluster-controller" {
 resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
   family                   = "sunomi-ecs-tdf-controller"
   requires_compatibilities = ["FARGATE"]
-  network_mode            = "awsvpc"
-  cpu                     = 1024  # 1 vCPU
-  memory                  = 3072  # 3 GB
-  execution_role_arn      = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn           = aws_iam_role.ecs_task_execution_role.arn
+  network_mode             = "awsvpc"
+  cpu                      = 1024 # 1 vCPU
+  memory                   = 3072 # 3 GB
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+
+
 
   container_definitions = jsonencode([
     {
@@ -27,20 +29,35 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
       portMappings = [
         {
           containerPort = 3000
-          hostPort     = 3000
-          protocol     = "tcp"
-          appProtocol = "http"
-          name         = "controller-3000-tcp"
+          hostPort      = 3000
+          protocol      = "tcp"
+          appProtocol   = "http"
+          name          = "controller-3000-tcp"
         }
       ]
       environment = [
         {
-          name  = "DB_CONNECTION"
-          value = "mysql://${aws_db_instance.free_db.username}:${aws_db_instance.free_db.password}@${aws_db_instance.free_db.address}:3306/${aws_db_instance.free_db.db_name}"
+          name  = "DB_HOST"
+          value = "${aws_db_instance.free_db.address}:${aws_db_instance.free_db.port}"
+        },
+        { name  = "DB_NAME",
+          value = aws_db_instance.free_db.db_name
         },
         {
-          name = "S3_BUCKET_NAME"
+          name  = "S3_BUCKET_NAME"
           value = aws_s3_bucket.video_bucket.bucket
+        },
+        {
+          name  = "DB_SECRET"
+          value = aws_secretsmanager_secret.db_credentials.name
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.region
+        },
+        {
+          name  = "JWT_SECRET"
+          value = aws_secretsmanager_secret.jwt_secret.name
         }
       ]
       logConfiguration = {
@@ -64,7 +81,7 @@ resource "aws_lb" "controller" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets           = aws_subnet.public.*.id
+  subnets            = aws_subnet.public.*.id
 }
 
 # ALB Listener
@@ -96,13 +113,13 @@ resource "aws_lb_target_group" "controller" {
 
 # Updated ECS Service
 resource "aws_ecs_service" "sunomi-controller" {
-  name                              = "sunomi-controller"
-  cluster                           = aws_ecs_cluster.sunomi-ecs-cluster-controller.id
-  task_definition                   = aws_ecs_task_definition.sunomi-ecs-tdf-controller.arn
-  desired_count                     = 1
-  launch_type                       = "FARGATE"
-  health_check_grace_period_seconds = 300
-  deployment_maximum_percent        = 200
+  name                               = "sunomi-controller"
+  cluster                            = aws_ecs_cluster.sunomi-ecs-cluster-controller.id
+  task_definition                    = aws_ecs_task_definition.sunomi-ecs-tdf-controller.arn
+  desired_count                      = 1
+  launch_type                        = "FARGATE"
+  health_check_grace_period_seconds  = 300
+  deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 100
 
   network_configuration {

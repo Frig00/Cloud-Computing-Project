@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import prisma from "../data/prisma";
+import { getPrisma } from "../data/prisma";
 
 // Configuration for GitHub OAuth
 const config = {
@@ -60,7 +60,7 @@ export class GitHubService {
         const githubUserData = await userResponse.json();
 
         // Check if user already exists in the database
-        const existingUser = await prisma.users.findUnique({
+        const existingUser = await getPrisma().users.findUnique({
             where: { userId: githubUserData.login },
             include: { githubUsers: true }
         });
@@ -75,7 +75,7 @@ export class GitHubService {
         }
 
         // Create a new user in the database
-        const newUser = await prisma.users.create({
+        const newUser = await getPrisma().users.create({
             data: {
                 userId: githubUserData.login,
                 name: githubUserData.name,

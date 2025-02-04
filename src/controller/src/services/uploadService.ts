@@ -2,8 +2,8 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as amqp from "amqplib";
 import * as crypto from "crypto";
-import prisma from "../data/prisma";
 import { videos_status } from "@prisma/client";
+import { getPrisma } from "../data/prisma";
 
 // UploadService class
 export class UploadService {
@@ -164,7 +164,7 @@ export class UploadService {
    * @returns Boolean indicating if the video is transcoded
    */
   static async isVideoTranscoded(videoID: string): Promise<boolean> {
-    const video = await prisma.videos.findUnique({
+    const video = await getPrisma().videos.findUnique({
       where: { id: videoID, status: "PUBLIC" },
     });
     return !!video;
@@ -179,7 +179,7 @@ export class UploadService {
    * @param videoStatus - Status of the video
    */
   static async uploadVideo(videoID: string, title: string, user: string, description: string, videoStatus: videos_status) {
-    await prisma.videos.create({
+    await getPrisma().videos.create({
       data: {
         id: videoID,
         userId: user,
@@ -203,7 +203,7 @@ export class UploadService {
    */
   static async updateVideoStatus(videoID: string, status: videos_status) {
     try {
-      await prisma.videos.update({
+      await getPrisma().videos.update({
         where: { id: videoID },
         data: { status },
       });

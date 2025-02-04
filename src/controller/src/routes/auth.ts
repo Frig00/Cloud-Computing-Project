@@ -3,7 +3,7 @@ import { Static, Type } from "@sinclair/typebox";
 import { UserService } from "../services/userService";
 import { GitHubService } from "../services/githubService";
 import { JWTPayload } from "../plugins/auth";
-import prisma from "../data/prisma";
+import { getPrisma } from "../data/prisma";
 
 // Schema for login request
 const LoginRequestSchema = Type.Object({
@@ -215,7 +215,7 @@ export default async function authRoutes(app: FastifyInstance) {
         return reply.status(500).send({ error: "Unauthorized" });
       }
 
-      const user = await prisma.users.findUnique({
+      const user = await getPrisma().users.findUnique({
         where: { userId: userId },
       });
 

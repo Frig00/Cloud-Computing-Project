@@ -1,16 +1,16 @@
 import { FastifyInstance } from "fastify";
-import prisma from "../data/prisma";
 import bcrypt from "bcrypt";
+import PrismaInstance, { getPrisma } from "../data/prisma";
 
 export class UserService {
   // Get all users from the database
   static async getAllUsers() {
-    return prisma.users.findMany();
+    return getPrisma().users.findMany();
   }
 
   // Create a new user in the database
   static async createUser(userId: string, name: string, password: string) {
-    return prisma.users.create({
+    return getPrisma().users.create({
       data: {
         userId,
         name,
@@ -21,7 +21,7 @@ export class UserService {
 
   // Login a user and return a JWT token
   static async login(userId: string, password: string, fastify: FastifyInstance) {
-    const user = await prisma.users.findUnique({ where: { userId }, include: { githubUsers: true } });
+    const user = await getPrisma().users.findUnique({ where: { userId }, include: { githubUsers: true } });
     if (!user) throw new Error("User not found");
 
     if (user.githubUsers) throw new Error("User has a GitHub account linked");
@@ -35,7 +35,7 @@ export class UserService {
   // Sign up a new user with hashed password
   static async signUp(name: string, username: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.users.create({
+    const user = await getPrisma().users.create({
       data: {
         userId: username,
         name,
@@ -48,14 +48,14 @@ export class UserService {
 
   // Get a user by their ID
   static async getUserById(userId: string) {
-    return prisma.users.findUnique({
+    return getPrisma().users.findUnique({
       where: { userId },
     });
   }
 
   // Update user profile (name and/or password)
   static async updateUserProfile(userId: string, data: { name?: string; password?: string }, fastify: FastifyInstance) {
-    const user = await prisma.users.findUnique({ where: { userId } });
+    const user = await getPrisma().users.findUnique({ where: { userId } });
     if (!user) throw new Error("User not found");
 
     const token = fastify.jwt.sign({ id: user.userId });
@@ -67,7 +67,7 @@ export class UserService {
     if (data.name) updateData.name = data.name;
     if (data.password) updateData.password = await bcrypt.hash(data.password, 10);
 
-    return prisma.users.update({
+    return getPrisma().users.update({
       where: { userId },
       data: updateData,
     });
@@ -75,7 +75,7 @@ export class UserService {
 
   // Delete a user by their ID
   static async deleteUser(userId: string) {
-    return prisma.users.delete({
+    return getPrisma().users.delete({
       where: { userId },
     });
   }
@@ -85,7 +85,7 @@ export class UserService {
   static async subscribe(subscriberId: string, subscribedToId: string, isUserSubscribed: boolean) {
     try {
       if (isUserSubscribed) {
-        await prisma.subscriptions.upsert({
+        await getPrisma().subscriptions.upsert({
           where: {
             subscriberId_subscribedToId: {
               subscriberId,
@@ -99,7 +99,7 @@ export class UserService {
           update: {},
         });
       } else {
-        await prisma.subscriptions.delete({
+        await getPrisma().subscriptions.delete({
           where: {
             subscriberId_subscribedToId: {
               subscriberId,
@@ -117,7 +117,7 @@ export class UserService {
 
 
   static async isUserSubscribed(selfUserId: string, userId: string) {
-    const subscription = await prisma.subscriptions.findUnique({
+    const subscription = await getPrisma().subscriptions.findUnique({
       where: {
         subscriberId_subscribedToId: {
           subscriberId: selfUserId,

@@ -1,11 +1,41 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DB_CONNECTION,
-    },
-  },
-});
+export default class PrismaInstance {
+  private static instance: PrismaInstance;
+  private prismaClient: PrismaClient | null = null;
 
-export default prisma;
+  private constructor() {}
+
+  static getInstance(): PrismaInstance {
+    if (!PrismaInstance.instance) {
+      PrismaInstance.instance = new PrismaInstance();
+    }
+    return PrismaInstance.instance;
+  }
+
+  initialize(connectionString?: string): void {
+    if (this.prismaClient) {
+      return;
+    }
+
+    this.prismaClient = new PrismaClient({
+      datasources: {
+        db: {
+          url: connectionString,
+        },
+      },
+    });
+  }
+
+  get client(): PrismaClient {
+    if (!this.prismaClient) {
+      throw new Error('Prisma client not initialized. Call initialize() first.');
+    }
+    return this.prismaClient;
+  }
+}
+
+
+export function getPrisma(): PrismaClient {
+  return PrismaInstance.getInstance().client;
+}

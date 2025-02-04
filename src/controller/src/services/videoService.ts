@@ -1,8 +1,8 @@
 import { timeStamp } from "console";
-import prisma from "../data/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { subscribe } from "diagnostics_channel";
 import { videos_status } from "@prisma/client";
+import { getPrisma } from "../data/prisma";
 
 export class VideoService {
   /**
@@ -11,7 +11,7 @@ export class VideoService {
    * @param take - Number of videos to take
    */
   static async getAllVideos(skip: number, take: number) {
-    return await prisma.videos.findMany({
+    return await getPrisma().videos.findMany({
       where: { status: "PUBLIC" },
       orderBy: {
         uploadDate: "desc",
@@ -27,7 +27,7 @@ export class VideoService {
  * @param userId - ID of the user
  */
 static async getVideoById(videoId: string, userId: string) {
-  const video = await prisma.videos.findUnique({
+  const video = await getPrisma().videos.findUnique({
     where: { id: videoId, status: "PUBLIC" },
     include: {
       likes: {
@@ -44,7 +44,7 @@ static async getVideoById(videoId: string, userId: string) {
     },
   });
 
-  const videoCounts = await prisma.videos.findUnique({
+  const videoCounts = await getPrisma().videos.findUnique({
     where: { id: videoId, status: "PUBLIC" },
     select: {
       _count: {
@@ -77,7 +77,7 @@ static async getVideoById(videoId: string, userId: string) {
    */
   static async getVideosByUserId(userId: string) {
     try {
-      const videos = await prisma.videos.findMany({
+      const videos = await getPrisma().videos.findMany({
         where: {
           userId: userId,
           status: "PUBLIC",
@@ -109,7 +109,7 @@ static async getVideoById(videoId: string, userId: string) {
     console.log("Search conditions:", searchConditions);
 
     try {
-      return await prisma.videos.findMany({
+      return await getPrisma().videos.findMany({
         where: {
           OR: searchConditions,
           status: "PUBLIC",
@@ -130,7 +130,7 @@ static async getVideoById(videoId: string, userId: string) {
   static async likeVideo(videoId: string, userId: string, isLiking: boolean) {
     try {
       if (isLiking) {
-        await prisma.likes.upsert({
+        await getPrisma().likes.upsert({
           where: {
             videoId_userId: {
               videoId,
@@ -144,7 +144,7 @@ static async getVideoById(videoId: string, userId: string) {
           update: {},
         });
       } else {
-        await prisma.likes.delete({
+        await getPrisma().likes.delete({
           where: {
             videoId_userId: {
               videoId,
@@ -154,7 +154,7 @@ static async getVideoById(videoId: string, userId: string) {
         }).catch(() => null); // Return null if like doesn't exist
       }
 
-      const updatedLikesCount = await prisma.likes.count({
+      const updatedLikesCount = await getPrisma().likes.count({
         where: {
           videoId,
         },
@@ -174,7 +174,7 @@ static async getVideoById(videoId: string, userId: string) {
    * @param content - Content of the comment
    */
   static async addComment(videoId: string, userId: string, content: string) {
-    return await prisma.comments.create({
+    return await getPrisma().comments.create({
       data: {
         id: uuidv4(),
         videoId,
@@ -193,7 +193,7 @@ static async getVideoById(videoId: string, userId: string) {
    */
   static async getComments(videoId: string, skip: number, take: number) {
     try {
-      const video = await prisma.videos.findUnique({
+      const video = await getPrisma().videos.findUnique({
         where: { id: videoId, status: "PUBLIC" },
         include: {
           comments: {
@@ -237,7 +237,7 @@ static async getVideoById(videoId: string, userId: string) {
    * @param userId - ID of the user
    */
   static async incrementViewCount(videoId: string, userId: string) {
-    return await prisma.views.upsert({
+    return await getPrisma().views.upsert({
       where: {
         videoId_userId: {
           videoId,
@@ -261,7 +261,7 @@ static async getVideoById(videoId: string, userId: string) {
    */
   static async getSubscriptionVideos(subscriberId: string, skip: number, take: number) {
     console.log("Subscriber ID:", subscriberId);
-    return await prisma.videos.findMany({
+    return await getPrisma().videos.findMany({
       where: {
         status: "PUBLIC",
         users: {
@@ -286,7 +286,7 @@ static async getVideoById(videoId: string, userId: string) {
    */
   static async deleteVideo(videoId: string, userId: string) {
     try {
-      const video = await prisma.videos.findUnique({
+      const video = await getPrisma().videos.findUnique({
         where: { id: videoId },
       });
 
@@ -299,7 +299,7 @@ static async getVideoById(videoId: string, userId: string) {
       }
 
 
-      return await prisma.$transaction(async (tx) => {
+      return await getPrisma().$transaction(async (tx) => {
         // Delete all related comments
         await tx.comments.deleteMany({
           where: { videoId }

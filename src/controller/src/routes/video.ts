@@ -31,7 +31,7 @@ const AllInfosVideoSchema = Type.Object({
   likes: Type.Number(),
   userHasLiked: Type.Boolean(),
   views: Type.Number(),
-  moderationTypes: Type.Array(Type.String()),
+  moderationTypes: Type.Array(Type.String())
 });
 
 // Video Comment Schema and Type
@@ -211,7 +211,7 @@ export default async function videoRoutes(app: FastifyInstance) {
             likes: video.totalLikes,
             userHasLiked: video.userHasLiked,
             views: video.totalViews,
-            moderationTypes: video.moderationTypes,
+            moderationTypes: video.moderationTypes
           });
         }
       } catch (error) {

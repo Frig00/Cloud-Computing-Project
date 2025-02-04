@@ -5,7 +5,7 @@ resource "aws_lambda_function" "db_init" {
   handler          = "main.lambda_handler"
   runtime          = "python3.13"
   source_code_hash = filebase64sha256(data.archive_file.packaging_dependecies.output_path)
-  timeout = 60
+  timeout          = 60
 
   layers = [aws_lambda_layer_version.mysql_layer.arn]
 
@@ -18,8 +18,8 @@ resource "aws_lambda_function" "db_init" {
     variables = {
       DB_HOST     = aws_db_instance.free_db.address
       DB_NAME     = aws_db_instance.free_db.db_name
-      DB_USER     = aws_db_instance.free_db.username
-      DB_PASSWORD = aws_db_instance.free_db.password
+      REGION_NAME = var.region
+      SECRET_NAME = aws_secretsmanager_secret.db_credentials.name
     }
   }
 }
@@ -29,7 +29,7 @@ resource "aws_lambda_invocation" "db_init" {
   input = jsonencode({
     action = "initialize"
   })
-  depends_on = [ data.archive_file.packaging_dependecies ]
+  depends_on = [data.archive_file.packaging_dependecies]
 }
 
 resource "null_resource" "copy_layer_files" {
@@ -44,12 +44,12 @@ resource "null_resource" "copy_layer_files" {
       
       Copy-Item -Path $source -Destination $destination -Recurse -Force
     EOT
-    
+
     interpreter = ["PowerShell", "-Command"]
     working_dir = "lambda-layers/mysql"
   }
 
-  depends_on = [ null_resource.create_venv ]
+  depends_on = [null_resource.create_venv]
 }
 
 data "archive_file" "mysql-layer" {
@@ -57,14 +57,14 @@ data "archive_file" "mysql-layer" {
   output_path = "lambda/out/mysql-layer.zip"
   source_dir  = "lambda-layers/mysql/layer"
 
-  depends_on = [ null_resource.copy_layer_files ]
+  depends_on = [null_resource.copy_layer_files]
 }
 
 resource "aws_lambda_layer_version" "mysql_layer" {
   filename            = data.archive_file.mysql-layer.output_path
-  layer_name         = "mysql-layer"
+  layer_name          = "mysql-layer"
   compatible_runtimes = ["python3.13"]
-  description        = "Installs PyMySQL for Lambda functions"
+  description         = "Installs PyMySQL for Lambda functions"
 
   source_code_hash = filebase64sha256(data.archive_file.mysql-layer.output_path)
 }
@@ -79,11 +79,11 @@ data "archive_file" "packaging_dependecies" {
 
 
 resource "aws_lambda_function" "publish_video" {
-  filename         = data.archive_file.packaging_dependecies_publish_video.output_path
-  function_name    = "publish-video"
-  role             = aws_iam_role.lambda_role.arn
-  handler          = "main.lambda_handler"
-  runtime          = "python3.13"
+  filename      = data.archive_file.packaging_dependecies_publish_video.output_path
+  function_name = "publish-video"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.13"
 
   layers = [aws_lambda_layer_version.mysql_layer.arn]
 
@@ -96,8 +96,8 @@ resource "aws_lambda_function" "publish_video" {
     variables = {
       DB_HOST     = aws_db_instance.free_db.address
       DB_NAME     = aws_db_instance.free_db.db_name
-      DB_USER     = aws_db_instance.free_db.username
-      DB_PASSWORD = aws_db_instance.free_db.password
+      REGION_NAME = var.region
+      SECRET_NAME = aws_secretsmanager_secret.db_credentials.name
     }
   }
 }
