@@ -1,6 +1,6 @@
 {
     "apiUrl": "https://api.sunomi.eu",
     "videoUrl": "https://video.sunomi.eu",
-    "githubLoginUrl": "",
+    "githubLoginUrl": "https://api.sunomi.eu/auth/github",
     "webSocketUrl": "wss://ws.sunomi.eu/"
 }

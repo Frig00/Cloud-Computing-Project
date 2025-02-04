@@ -1,12 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { getPrisma } from "../data/prisma";
+import { githubConfig } from "..";
 
 // Configuration for GitHub OAuth
-const config = {
-    clientId: process.env.GITHUB_CLIENT_ID!,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    redirectUri: process.env.CTRL_BASE_URL + '/auth/github/callback',
-}
+
 
 export class GitHubService {
 
@@ -17,8 +14,8 @@ export class GitHubService {
     static authenticateWithGitHub() {
         const githubAuthUrl = 'https://github.com/login/oauth/authorize';
         const params = new URLSearchParams({
-            client_id: config.clientId,
-            redirect_uri: config.redirectUri,
+            client_id: githubConfig.clientId!,
+            redirect_uri: githubConfig.redirectUri!,
             scope: 'read:user'
         });
 
@@ -40,8 +37,8 @@ export class GitHubService {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                client_id: config.clientId,
-                client_secret: config.clientSecret,
+                client_id: githubConfig.clientId,
+                client_secret: githubConfig.clientSecret,
                 code: code
             })
         });

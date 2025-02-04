@@ -4,11 +4,11 @@ import { AuthLoginPost200ResponseUser } from "@/api";
 
 interface UserAvatarProps {
     user: AuthLoginPost200ResponseUser | null;
-    userId: string;
+    userId: string | null;
  }
 
 
-export default function UserAvatar({ user ,userId}: UserAvatarProps) {
+export default function UserAvatar({ user, userId}: UserAvatarProps) {
     const firstLetters = (name: string)  => {
         const names = name.split(" ");
         return names.map((n) => n[0]).join("").toUpperCase();
@@ -33,9 +33,10 @@ export default function UserAvatar({ user ,userId}: UserAvatarProps) {
         ) : (
           <Avatar>{firstLetters(user.name ?? "A")}</Avatar>
         )}
+        {userId && (
         <Typography variant="body1" marginLeft={2} fontWeight="bold">
           {userId}
-        </Typography>
+        </Typography>)}
       </Box>
         
        

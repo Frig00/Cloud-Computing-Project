@@ -58,6 +58,10 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
         {
           name  = "JWT_SECRET"
           value = aws_secretsmanager_secret.jwt_secret.name
+        },
+        {
+          name  = "GITHUB_SECRETS"
+          value = aws_secretsmanager_secret.github_secrets.name
         }
       ]
       logConfiguration = {

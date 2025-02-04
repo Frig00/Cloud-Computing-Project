@@ -80,6 +80,14 @@ export default function Transcription({videoId, onCueClick, currentTime}: Transc
         );
     }
 
+    if (!cues || cues.length === 0) {
+        return (
+            <Card variant="outlined" className="subtitle-panel" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                <Typography>Video has no transcription</Typography>
+            </Card>
+        );
+    }
+
     return (<Card
         variant="outlined"
         className="subtitle-panel"

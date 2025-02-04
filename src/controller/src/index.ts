@@ -23,6 +23,17 @@ const secretClient = new SecretsManagerClient({
   region: process.env.AWS_REGION
 })
 
+export const githubConfig: {
+  clientId: string | null,
+  clientSecret: string | null,
+  redirectUri: string | null
+} = {
+  clientId: null,
+  clientSecret: null,
+  redirectUri: null, //'https://api.sunomi.eu/auth/github/callback',
+}
+
+
 const startServer = async () => {
   try {
     let connectionString = process.env.DB_CONNECTION;
@@ -32,7 +43,15 @@ const startServer = async () => {
       connectionString = "mysql://" + secretDb.username + ":" + secretDb.password + "@" + process.env.DB_HOST + "/" + process.env.DB_NAME;
     }
     const jwtSecretData = await secretClient.send(new GetSecretValueCommand({ SecretId: process.env.JWT_SECRET, VersionStage: "AWSCURRENT" }));
-
+    
+    const githubSecretData = await secretClient.send(new GetSecretValueCommand({ SecretId: process.env.GITHUB_SECRETS, VersionStage: "AWSCURRENT" }));
+    if (githubSecretData.SecretString) {
+      const githubSecret = JSON.parse(githubSecretData.SecretString);
+      githubConfig.clientId = githubSecret.clientId;
+      githubConfig.clientSecret = githubSecret.clientSecret;
+      githubConfig.redirectUri = githubSecret.redirectUri;
+    }
+    
     PrismaInstance.getInstance().initialize(connectionString);
 
 

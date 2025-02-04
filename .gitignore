@@ -22,3 +22,4 @@ src/mysql/data
 *.hcl
 terraform/lambda/**/*.zip
 Terraform/lambda-layers/mysql/layer/python/
+Terraform/github_secrets.json

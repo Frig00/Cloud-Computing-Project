@@ -6,6 +6,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { AccountCircle, FileUpload } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
 import { useAuth } from "../../services/authService";
+import UserAvatar from "../UserAvatar";
 
 const SearchIconWrapper = styled("div")(({ theme }) => ({
   padding: theme.spacing(0, 2),
@@ -157,7 +158,7 @@ function App() {
                 </IconButton>
               </Link>
               <IconButton size="large" edge="end" aria-label="account of current user" aria-controls={menuId} aria-haspopup="true" onClick={handleProfileMenuOpen} color="inherit">
-                <AccountCircle />
+                <UserAvatar user={auth.user} userId={null}/>
               </IconButton>
             </div>
           </Toolbar>
