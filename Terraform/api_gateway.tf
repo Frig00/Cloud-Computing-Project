@@ -286,8 +286,8 @@ resource "aws_route53_record" "ws" {
   type    = "A"
 
   alias {
-    name                   = aws_lb.controller.dns_name
-    zone_id               = "Z32O12XQLNTSW2"  # This is the fixed zone_id for eu-west-1 ALBs
+    name                   = aws_apigatewayv2_domain_name.websocket_api.domain_name
+    zone_id                = var.route53_hosted_zone_id
     evaluate_target_health = true
   }
 }

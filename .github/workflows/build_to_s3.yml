@@ -24,10 +24,6 @@ jobs:
         run: npm install
         working-directory: ./src/${{ matrix.service }}
 
-      - name: Install docker
-        run: | 
-          sudo apt-get update
-          sudo apt-get install docker.io -y
 
       - name: Build swagger
         run: npm run gen-api-ubuntu
