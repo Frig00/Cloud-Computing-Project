@@ -286,8 +286,17 @@ resource "aws_route53_record" "ws" {
   type    = "A"
 
   alias {
-    name                   = aws_apigatewayv2_domain_name.websocket_api.domain_name
-    zone_id                = var.route53_hosted_zone_id
+    name                   = aws_apigatewayv2_domain_name.websocket_api.domain_name_configuration[0].target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.websocket_api.domain_name_configuration[0].hosted_zone_id
     evaluate_target_health = true
   }
+}
+
+
+output "target_domain_name" {
+  value = aws_apigatewayv2_domain_name.websocket_api.domain_name_configuration[0].target_domain_name
+}
+
+output "hosted_zone_id" {
+  value = aws_apigatewayv2_domain_name.websocket_api.domain_name_configuration[0].hosted_zone_id
 }

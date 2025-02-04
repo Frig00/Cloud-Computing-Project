@@ -1,5 +1,5 @@
 {
-    "apiUrl": "https://sunomi-controller-alb-1483588834.eu-west-1.elb.amazonaws.com",
+    "apiUrl": "https://api.sunomi.eu",
     "videoUrl": "https://drowuca0mz6vm.cloudfront.net",
     "githubLoginUrl": "",
     "webSocketUrl": ""
