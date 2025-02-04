@@ -8,3 +8,4 @@ export const masterPlaylistSrc = (videoId: string) => `${getVideoUrl()}/${videoI
 export const thumbnailSrc = (videoId: string) => `${getVideoUrl()}/${videoId}/thumbnail.jpg`;
 export const uploadSseEndpointUrl = (videoId: string) => `${getWebSocketUrl()}?videoId=${videoId}`;
 export const uploadSseEndpointUrlSse = (videoId: string) => `${getApiUrl()}/upload/sse/${videoId}`;
+export const transcriptionUrl = (videoId: string) => `${getVideoUrl()}/${videoId}/transcripts/transcription.vtt`;

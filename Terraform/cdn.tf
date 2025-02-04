@@ -73,6 +73,19 @@ resource "aws_cloudfront_distribution" "cdn_video" {
   }
 }
 
+
+resource "aws_route53_record" "video" {
+  zone_id = var.route53_hosted_zone_id
+  name    = "video.sunomi.eu"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.cdn_video.domain_name
+    zone_id                = aws_cloudfront_distribution.cdn_video.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
 resource "aws_cloudfront_distribution" "cdn_frontend" {
   origin {
     domain_name              = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
@@ -122,5 +135,17 @@ resource "aws_cloudfront_distribution" "cdn_frontend" {
     acm_certificate_arn = aws_acm_certificate_validation.cert_frontend_validation.certificate_arn
     ssl_support_method  = "sni-only"
     minimum_protocol_version = "TLSv1.2_2018"
+  }
+}
+
+resource "aws_route53_record" "frontend" {
+  zone_id = var.route53_hosted_zone_id
+  name    = "www.sunomi.eu"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.cdn_frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.cdn_frontend.hosted_zone_id
+    evaluate_target_health = false
   }
 }

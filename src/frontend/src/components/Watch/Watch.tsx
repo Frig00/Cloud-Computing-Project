@@ -5,14 +5,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { UserApi, VideoApi } from "../../api";
 import { useQuery } from "@tanstack/react-query";
-import { parseVTT, sampleVTT } from "../Bench/Bench";
-import clsx from "clsx";
 
-import AWSTranscribe from "../../assets/aws_transcribe.svg";
+
 import { masterPlaylistSrc } from "../../lib/consts";
 import { Subscriptions, SubscriptionsOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
 import CommentSection from "./CommentSection";
 import { formatDistanceToNow } from "date-fns";
+import Transcription from "./Transcription";
 
 type Quality = {
   height: number;
@@ -56,13 +55,7 @@ export default function Watch() {
   const [subscribed,setSubscribed] = useState(false);
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
-  const [cues, setCues] = useState<Array<{
-    start: number;
-    end: number;
-    text: string;
-    formattedStart: string;
-  }> | null>(null);
-  const [activeCue, setActiveCue] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(0);
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
@@ -162,46 +155,18 @@ export default function Watch() {
     };
   }, [initPlayer]);
 
-  useEffect(() => {
-    setCues(parseVTT(sampleVTT));
-  }, []);
+  
 
-  useEffect(() => {
-    if (!activeCue) return;
-    const container = document.querySelector(".subtitle-container") as HTMLElement;
-    const containerRect = container.getBoundingClientRect();
-    const cueElement = document.querySelector(`.subtitle-cue[data-index="${activeCue}"]`);
-    const elementRect = cueElement!.getBoundingClientRect();
-
-    const offsetTop = elementRect.top - containerRect.top + container.scrollTop;
-
-    container.scrollTo({
-      top: offsetTop,
-      behavior: "smooth", // or "auto"
-    });
-  }, [activeCue]);
+  
 
   const formatBitrate = (bitrate: number) => {
     return `${(bitrate / 1000000).toFixed(2)} Mbps`;
   };
 
-  const onTimeUpdate = () => {
-    // get the first cue that starts after the current time
-    const currentTime = videoElement?.currentTime;
-    if (!currentTime || !cues) return;
-    const nextCue = cues?.find((cue) => cue.start > currentTime);
-    if (nextCue) {
-      const index = cues.indexOf(nextCue) - 1;
-      setActiveCue(index);
-    }
-  };
-
-  const handleCueClick = (index: number) => {
-    setActiveCue(index);
-    if (videoElement) {
-      videoElement.currentTime = cues![index].start;
-    }
-  };
+  const onTimeUpdate = useCallback(() => {
+    if (!videoElement) return;
+    setCurrentTime(videoElement.currentTime);
+  }, [videoElement]);
 
   if (isPending) return "Loading...";
 
@@ -218,7 +183,10 @@ export default function Watch() {
  
   }
   
-  
+  const setVideoTime = (time: number) => {
+    if (!videoElement) return;
+    videoElement.currentTime = time;
+  }
 
 
 
@@ -297,45 +265,7 @@ export default function Watch() {
               lg: 12,
             }}
           >
-            <Card
-              variant="outlined"
-              className="subtitle-panel"
-              sx={{ overflowY: "scroll" }}
-            >
-              <div className="subtitle-container">
-                {cues
-                  ? cues.map((cue, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        marginBottom: "8px",
-                      }}
-                      className={clsx("subtitle-cue", activeCue == index ? "active" : null)}
-                      data-index={index}
-                      onClick={() => handleCueClick(index)}
-                    >
-                      <div className="cue-time">{cue.formattedStart}</div>
-                      <div>{cue.text}</div>
-                    </div>
-                  ))
-                  : null}
-              </div>
-              <div className="subtitle-pb">
-                <img
-                  src={AWSTranscribe}
-                  alt="AWS Transcribe"
-                  style={{
-                    width: "48px",
-                    borderRadius: "4px",
-                  }}
-                />
-                <span>
-                  Powered by
-                  <br />
-                  <b>AWS Transcribe</b>
-                </span>
-              </div>
-            </Card>
+            <Transcription videoId={videoId} onCueClick={setVideoTime} currentTime={currentTime} />
           </Grid>
 
           <Grid

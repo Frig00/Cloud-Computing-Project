@@ -1,27 +1,7 @@
 import boto3
-from botocore.exceptions import ClientError
 import json
 import os
 import pymysql
-
-def get_secret(secret_name, region_name):
-
-
-    # Create a Secrets Manager client
-    client = boto3.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
-    except ClientError as e:
-        raise e
-
-    secret = get_secret_value_response['SecretString']
-    return secret
 
 def lambda_handler(event, context):
     rekognition = boto3.client('rekognition')
@@ -46,14 +26,8 @@ def lambda_handler(event, context):
             
             db_host = os.environ['DB_HOST']
             db_name = os.environ['DB_NAME']
-            secret_name = os.environ['SECRET_NAME']
-            region_name = os.environ['REGION_NAME']
-
-            secret = get_secret(secret_name, region_name)
-            secret_dict = json.loads(secret)  # Convert JSON string to a dictionary
-            db_user = secret_dict["username"]
-            db_password = secret_dict["password"]
-
+            db_user = os.environ['DB_USER']
+            db_password = os.environ['DB_PASSWORD']
             conn = pymysql.connect(host=db_host, user=db_user, password=db_password, database=db_name)
             try:
                 with conn.cursor() as cursor:
