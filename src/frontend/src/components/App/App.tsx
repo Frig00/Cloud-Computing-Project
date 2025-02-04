@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import "./App.css";
 import { alpha, AppBar, Box, IconButton, InputBase, Menu, MenuItem, styled, Toolbar, Typography } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { AccountCircle, FileUpload } from "@mui/icons-material";
+import { AccountCircle, FileUpload, Logout } from "@mui/icons-material";
 import { LogInIcon } from "lucide-react";
 import { useAuth } from "../../services/authService";
 import UserAvatar from "../UserAvatar";
@@ -78,6 +78,11 @@ function App() {
     navigate("/");
   };
 
+  const upload = () => {
+    handleMenuClose();
+    navigate("/upload");
+  };
+
   const goToProfile = () => {
     handleMenuClose();
     navigate("/profile?userId=" + auth.user?.userId);
@@ -102,8 +107,10 @@ function App() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={logout}>Logout</MenuItem>
-      <MenuItem onClick={goToProfile}>My account</MenuItem>
+      
+              <MenuItem onClick={upload}><FileUpload sx={{marginRight: "12px"}}/>Upload</MenuItem>
+      <MenuItem onClick={logout}><Logout sx={{marginRight: "12px"}}/>Logout</MenuItem>
+      <MenuItem onClick={goToProfile}><AccountCircle sx={{marginRight: "12px"}}/>My account</MenuItem>
     </Menu>
   );
 
@@ -142,21 +149,6 @@ function App() {
               />
             </Search>
             <div className="actions">
-              <Link to="/login">
-                <IconButton aria-label="login" size="large" color="inherit">
-                  <LogInIcon />
-                </IconButton>
-              </Link>
-              <Link to={"/search? q=" + searchedTitle}>
-                <IconButton aria-label="search" size="large" color="inherit">
-                  <SearchIcon />
-                </IconButton>
-              </Link>
-              <Link to="/upload">
-                <IconButton aria-label="upload" size="large" color="inherit">
-                  <FileUpload />
-                </IconButton>
-              </Link>
               <IconButton size="large" edge="end" aria-label="account of current user" aria-controls={menuId} aria-haspopup="true" onClick={handleProfileMenuOpen} color="inherit">
                 <UserAvatar user={auth.user} userId={null}/>
               </IconButton>
