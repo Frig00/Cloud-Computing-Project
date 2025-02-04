@@ -24,10 +24,13 @@ jobs:
         run: npm install
         working-directory: ./src/${{ matrix.service }}
 
-      - name: Build swagger
-        run: npm run gen-api
-        working-directory: ./src/${{ matrix.service }}
+      - name: Install docker
+        run: sudo apt-get update
+        run: sudo apt-get install docker.io -y
 
+      - name: Build swagger
+        run: npm run gen-api-ubuntu
+        working-directory: ./src/${{ matrix.service }}
 
       - name: Build Project
         run: npm run build

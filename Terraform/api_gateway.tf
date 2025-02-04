@@ -259,3 +259,35 @@ resource "aws_lambda_permission" "with_sns" {
   principal     = "sns.amazonaws.com"
   source_arn    = aws_sns_topic.transcoder_status.arn
 }
+
+
+
+### Setup WebSocket with custom domain name and Route 53
+
+resource "aws_apigatewayv2_domain_name" "websocket_api" {
+  domain_name = "ws.sunomi.eu"
+
+  domain_name_configuration {
+    certificate_arn = aws_acm_certificate_validation.cert_controller_validation.certificate_arn
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+  }
+}
+
+resource "aws_apigatewayv2_api_mapping" "websocket" {
+  api_id          = aws_apigatewayv2_api.sunomi-ws.id
+  domain_name     = aws_apigatewayv2_domain_name.websocket_api.id
+  stage           = aws_apigatewayv2_stage.sunomi-ws-stage.id
+}
+
+resource "aws_route53_record" "ws" {
+  zone_id = var.route53_hosted_zone_id
+  name    = "api.sunomi.eu"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.controller.dns_name
+    zone_id               = "Z32O12XQLNTSW2"  # This is the fixed zone_id for eu-west-1 ALBs
+    evaluate_target_health = true
+  }
+}

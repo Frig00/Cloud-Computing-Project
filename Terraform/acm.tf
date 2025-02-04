@@ -55,7 +55,7 @@ resource "aws_acm_certificate_validation" "cert_controller_validation" {
   }
 }
 
-resource "aws_route53_record" "www" {
+resource "aws_route53_record" "api" {
   zone_id = "Z05564128L0HRRR5IZVP"
   name    = "api.sunomi.eu"
   type    = "A"

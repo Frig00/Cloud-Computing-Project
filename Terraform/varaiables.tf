@@ -26,6 +26,10 @@ variable "public_subnet_cidrs" {
   ]
 }
 
+variable "route53_hosted_zone_id" {
+  default = "Z05564128L0HRRR5IZVP"
+}
+
 
 variable "project_name" {
     default = "sunomi"
