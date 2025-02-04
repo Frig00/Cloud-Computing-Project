@@ -282,13 +282,9 @@ export default async function videoRoutes(app: FastifyInstance) {
       }
 
       const searchWords = q.split(/\s+/); // Split input into words
-      console.log("Search words:", searchWords);
-
       try {
         const videos = await VideoService.searchVideos(searchWords); // Pass array of words to the service
-        if (videos.length === 0) {
-          reply.status(404).send({ error: "No videos found with the given title" });
-        } else {
+        
           reply.send(
             videos.map(({ id, userId, title, uploadDate }) => ({
               id,
@@ -297,7 +293,6 @@ export default async function videoRoutes(app: FastifyInstance) {
               uploadDate: uploadDate.toString(),
             })),
           );
-        }
       } catch (error) {
         console.error("Error searching videos:", error);
         reply.status(500).send({ error: "Internal server error" });
