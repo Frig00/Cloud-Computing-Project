@@ -68,11 +68,6 @@ class UploadService {
     });
 
     await upload;
-    await uploadApi.uploadTranscodeVideoPost({
-      uploadTranscodeVideoPostRequest: {
-        videoID: videoId,
-      },
-    });
     return {
       videoId,
     };
@@ -127,7 +122,7 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
       description,
     );
 
-    UploadService.getTranscodeProgressSse(videoId, token, (progress) => {
+    UploadService.getTranscodeProgress(videoId, (progress) => {
       setTranscodeProgress(progress);
     });
   };

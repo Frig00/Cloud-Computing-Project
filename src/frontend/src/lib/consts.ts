@@ -6,5 +6,5 @@ import { getApiUrl, getVideoUrl, getWebSocketUrl } from "@/services/configServic
 
 export const masterPlaylistSrc = (videoId: string) => `${getVideoUrl()}/video/${videoId}/master.m3u8`;
 export const thumbnailSrc = (videoId: string) => `${getVideoUrl()}/video/${videoId}/thumbnail.jpg`;
-export const uploadSseEndpointUrl = (videoId: string) => `${getWebSocketUrl()}/upload/ws/${videoId}`;
+export const uploadSseEndpointUrl = (videoId: string) => `${getWebSocketUrl()}?videoId=${videoId}`;
 export const uploadSseEndpointUrlSse = (videoId: string) => `${getApiUrl()}/upload/sse/${videoId}`;

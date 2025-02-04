@@ -48,11 +48,9 @@ class ConfigService {
     }
 }
 
-const configService = ConfigService.getInstance();
+export const getApiUrl = () => ConfigService.getInstance().getConfig().apiUrl;
+export const getVideoUrl = () => ConfigService.getInstance().getConfig().videoUrl;
+export const getGithubLoginUrl = () => ConfigService.getInstance().getConfig().githubLoginUrl;
+export const getWebSocketUrl = () => ConfigService.getInstance().getConfig().webSocketUrl;
 
-export const getApiUrl = () => configService.getConfig().apiUrl;
-export const getVideoUrl = () => configService.getConfig().videoUrl;
-export const getGithubLoginUrl = () => configService.getConfig().githubLoginUrl;
-export const getWebSocketUrl = () => configService.getConfig().webSocketUrl;
-
-export default configService;
+export default ConfigService;

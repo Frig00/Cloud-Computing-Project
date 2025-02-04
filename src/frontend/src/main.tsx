@@ -30,48 +30,64 @@ import "@fontsource/geist-sans/800.css";
 import "@fontsource/geist-sans/900.css";
 import Profile from "./components/Profile.tsx";
 import configService, { getApiUrl } from "./services/configService.tsx";
+import ConfigService from "./services/configService.tsx";
 
 
 
-await configService.init().catch(console.error);
 
-DefaultConfig.config = new Configuration({
-  basePath: getApiUrl(),
-});
 
-const theme = createTheme({
-  typography: {
-    fontFamily: "'Geist Sans', sans-serif",
-  },
-});
 
-const queryClient = new QueryClient();
+async function initializeApp() {
+  try {
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter basename="/cloudwatch-web">
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/sign-up" element={<SignUp />} />
-                <Route path="/" element={<App />} errorElement={<ErrorPage />}>
-                  <Route element={<ProtectedRoute />}>
-                    <Route index element={<HomePage />} />
-                    <Route path="watch" element={<Watch />} />
-                    <Route path="upload" element={<Upload />} />
-                    <Route path="search" element={<Search />} />
-                    <Route path="profile" element={<Profile />} />
-                  </Route>
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </AuthProvider>
-    </SnackbarProvider>
-  </StrictMode>
-);
+    await ConfigService.getInstance().init();
+
+    DefaultConfig.config = new Configuration({
+      basePath: getApiUrl(),
+    });
+
+    const theme = createTheme({
+      typography: {
+        fontFamily: "'Geist Sans', sans-serif",
+      },
+    });
+    
+    const queryClient = new QueryClient();
+
+    createRoot(document.getElementById("root")!).render(
+      <StrictMode>
+        <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <BrowserRouter basename="/cloudwatch-web">
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/sign-up" element={<SignUp />} />
+                    <Route path="/" element={<App />} errorElement={<ErrorPage />}>
+                      <Route element={<ProtectedRoute />}>
+                        <Route index element={<HomePage />} />
+                        <Route path="watch" element={<Watch />} />
+                        <Route path="upload" element={<Upload />} />
+                        <Route path="search" element={<Search />} />
+                        <Route path="profile" element={<Profile />} />
+                      </Route>
+                    </Route>
+                  </Routes>
+                </BrowserRouter>
+              </ThemeProvider>
+            </QueryClientProvider>
+          </AuthProvider>
+        </SnackbarProvider>
+      </StrictMode>
+    );
+  } catch (error) {
+    console.error("Failed to initialize app", error);
+    createRoot(document.getElementById('root')!).render(
+      <div>Failed to load application configuration</div>
+    );
+  }
+}
+
+initializeApp()
