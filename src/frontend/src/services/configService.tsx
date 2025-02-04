@@ -24,9 +24,9 @@ class ConfigService {
         if (this.initialized) return;
 
         const getBasePath = () => {
-            if (import.meta.env?.BASE_URL) {
-              return import.meta.env.BASE_URL;
-            }
+//            if (import.meta.env?.BASE_URL) {
+//              return import.meta.env.BASE_URL;
+//            }
             return window.location.origin;
           };
 

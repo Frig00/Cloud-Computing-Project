@@ -1,5 +1,3 @@
-
-
 resource "aws_cloudfront_origin_access_control" "oac" {
   name                              = "sunomi-video-oac"
   description                       = "OAC of video bucket"
@@ -36,7 +34,7 @@ resource "aws_cloudfront_cache_policy" "optimized_caching" {
 }
 
 
-resource "aws_cloudfront_distribution" "cdn" {
+resource "aws_cloudfront_distribution" "cdn_video" {
   origin {
     domain_name              = aws_s3_bucket.video_bucket.bucket_regional_domain_name
     origin_id                = "S3Origin"
@@ -53,6 +51,53 @@ resource "aws_cloudfront_distribution" "cdn" {
     viewer_protocol_policy = "redirect-to-https"
     compress = true
 
+    cache_policy_id = aws_cloudfront_cache_policy.optimized_caching.id
+
+
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
+
+resource "aws_cloudfront_distribution" "cdn_frontend" {
+  origin {
+    domain_name              = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
+    origin_id                = "S3Origin"
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+  }
+
+  enabled             = true
+  is_ipv6_enabled    = true
+
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+    custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3Origin"
+    viewer_protocol_policy = "redirect-to-https"
+    compress = true
+    
     cache_policy_id = aws_cloudfront_cache_policy.optimized_caching.id
 
 

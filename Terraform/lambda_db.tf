@@ -66,7 +66,7 @@ resource "aws_lambda_layer_version" "mysql_layer" {
   compatible_runtimes = ["python3.13"]
   description         = "Installs PyMySQL for Lambda functions"
 
-  source_code_hash = filebase64sha256(data.archive_file.mysql-layer.output_path)
+//  source_code_hash = filebase64sha256(data.archive_file.mysql-layer.output_path)
 }
 
 
@@ -103,8 +103,6 @@ resource "aws_lambda_function" "publish_video" {
 }
 
 
-
-
 data "archive_file" "packaging_dependecies_publish_video" {
   type        = "zip"
   source_file = "lambda/publish-video/main.py"
@@ -122,6 +120,7 @@ resource "null_resource" "create_venv" {
       $env:Path = "$PWD\.venv\Scripts;$env:Path"
       
       python -m pip install -r requirements.txt
+
     EOT
     interpreter = ["PowerShell", "-Command"]
     working_dir = "lambda-layers/mysql"

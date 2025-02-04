@@ -180,7 +180,7 @@ export default async function authRoutes(app: FastifyInstance) {
             path: "/",
             maxAge: 3600,
           })
-          .redirect("http://localhost:5173/cloudwatch-web/login?useCookie=1");
+          .redirect("http://localhost:5173/login?useCookie=1");
       } catch (error) {
         reply.status(500).send(error);
       }

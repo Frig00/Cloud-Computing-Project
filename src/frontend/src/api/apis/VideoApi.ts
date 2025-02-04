@@ -463,7 +463,7 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      * Get detailed information about a specific video
-     * Retrieves comprehensive details of a video including likes and view count
+     * Retrieves comprehensive details of a video including likes, view count and others infos
      */
     async videoVideoIdGetRaw(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoVideoIdGet200Response>> {
         if (requestParameters['videoId'] == null) {
@@ -497,7 +497,7 @@ export class VideoApi extends runtime.BaseAPI {
 
     /**
      * Get detailed information about a specific video
-     * Retrieves comprehensive details of a video including likes and view count
+     * Retrieves comprehensive details of a video including likes, view count and others infos
      */
     async videoVideoIdGet(requestParameters: VideoVideoIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoVideoIdGet200Response> {
         const response = await this.videoVideoIdGetRaw(requestParameters, initOverrides);

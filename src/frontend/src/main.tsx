@@ -61,7 +61,7 @@ async function initializeApp() {
             <QueryClientProvider client={queryClient}>
               <ThemeProvider theme={theme}>
                 <CssBaseline />
-                <BrowserRouter basename="/cloudwatch-web">
+                <BrowserRouter >
                   <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/sign-up" element={<SignUp />} />

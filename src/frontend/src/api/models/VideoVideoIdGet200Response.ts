@@ -67,6 +67,12 @@ export interface VideoVideoIdGet200Response {
      * @memberof VideoVideoIdGet200Response
      */
     views: number;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof VideoVideoIdGet200Response
+     */
+    moderationTypes: Array<string>;
 }
 
 /**
@@ -81,6 +87,7 @@ export function instanceOfVideoVideoIdGet200Response(value: object): value is Vi
     if (!('likes' in value) || value['likes'] === undefined) return false;
     if (!('userHasLiked' in value) || value['userHasLiked'] === undefined) return false;
     if (!('views' in value) || value['views'] === undefined) return false;
+    if (!('moderationTypes' in value) || value['moderationTypes'] === undefined) return false;
     return true;
 }
 
@@ -102,6 +109,7 @@ export function VideoVideoIdGet200ResponseFromJSONTyped(json: any, ignoreDiscrim
         'likes': json['likes'],
         'userHasLiked': json['userHasLiked'],
         'views': json['views'],
+        'moderationTypes': json['moderationTypes'],
     };
 }
 
@@ -124,6 +132,7 @@ export function VideoVideoIdGet200ResponseToJSONTyped(value?: VideoVideoIdGet200
         'likes': value['likes'],
         'userHasLiked': value['userHasLiked'],
         'views': value['views'],
+        'moderationTypes': value['moderationTypes'],
     };
 }
 
