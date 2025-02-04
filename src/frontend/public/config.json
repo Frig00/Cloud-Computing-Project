@@ -1,6 +1,6 @@
 {
-    "apiUrl": "http://sunomi-controller-alb-1394964636.eu-west-1.elb.amazonaws.com",
-    "videoUrl": "http://localhost:9000",
-    "githubLoginUrl": "sunomi-controller-alb-1394964636.eu-west-1.elb.amazonaws.com/auth/github",
-    "webSocketUrl": "wss://pbblveglb4.execute-api.eu-west-1.amazonaws.com/production/"
+    "apiUrl": "https://sunomi-controller-alb-1483588834.eu-west-1.elb.amazonaws.com",
+    "videoUrl": "https://drowuca0mz6vm.cloudfront.net",
+    "githubLoginUrl": "",
+    "webSocketUrl": ""
 }

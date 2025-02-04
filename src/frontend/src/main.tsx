@@ -50,6 +50,15 @@ async function initializeApp() {
       typography: {
         fontFamily: "'Geist Sans', sans-serif",
       },
+      palette: {
+        mode: "light",
+        primary: {
+          main: "#b08968",
+        },
+        secondary: {
+          main: "#ddb892",
+        }
+      },
     });
     
     const queryClient = new QueryClient();

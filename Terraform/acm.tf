@@ -4,15 +4,15 @@
 // create_before_destroy = true
 
 // aws_route53_record
-
-
-resource "aws_acm_certificate" "cert" {
+# Certificate for CloudFront (must be in us-east-1)
+resource "aws_acm_certificate" "cert_frontend" {
+  provider = aws.us_east_1
   domain_name       = "sunomi.eu"
   subject_alternative_names = ["*.sunomi.eu"]
   validation_method = "DNS"
 
   tags = {
-    Name = "ACM Certificate"
+    Name = "ACM Certificate Frontend"
   }
 
   lifecycle {
@@ -20,16 +20,40 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
-# Validate ACM certificate
-resource "aws_acm_certificate_validation" "cert_validation" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = [for record in aws_acm_certificate.cert.domain_validation_options : record.resource_record_name]
+resource "aws_acm_certificate_validation" "cert_frontend_validation" {
+  provider = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.cert_frontend.arn
+  validation_record_fqdns = [for record in aws_acm_certificate.cert_frontend.domain_validation_options : record.resource_record_name]
   
   timeouts {
     create = "1h"
   }
 }
 
+# Certificate for ALB (must be in eu-west-1)
+resource "aws_acm_certificate" "cert_controller" {
+  domain_name       = "sunomi.eu"
+  subject_alternative_names = ["*.sunomi.eu"]  
+  validation_method = "DNS"
+
+  tags = {
+    Name = "ACM Certificate Controller"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "cert_controller_validation" {
+  provider = aws.eu_west_1  # Explicitly specify eu-west-1 provider
+  certificate_arn         = aws_acm_certificate.cert_controller.arn
+  validation_record_fqdns = [for record in aws_acm_certificate.cert_controller.domain_validation_options : record.resource_record_name]
+  
+  timeouts {
+    create = "1h"
+  }
+}
 
 resource "aws_route53_record" "www" {
   zone_id = "Z05564128L0HRRR5IZVP"

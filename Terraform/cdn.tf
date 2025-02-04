@@ -76,6 +76,9 @@ resource "aws_cloudfront_distribution" "cdn_frontend" {
 
   enabled             = true
   is_ipv6_enabled    = true
+  aliases = ["sunomi.eu", "www.sunomi.eu"]
+  default_root_object = "index.html"
+
 
   custom_error_response {
     error_code            = 403
@@ -110,6 +113,8 @@ resource "aws_cloudfront_distribution" "cdn_frontend" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = aws_acm_certificate_validation.cert_frontend_validation.certificate_arn
+    ssl_support_method  = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2018"
   }
 }
