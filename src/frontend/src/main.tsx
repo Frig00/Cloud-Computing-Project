@@ -53,13 +53,13 @@ async function initializeApp() {
       palette: {
         mode: "light",
         primary: {
-          main: "#a27767",
-          contrastText: "#554440",
+          main: "#415a77",
+          contrastText: "#1b263b",
 
         },
         background: {
-          default: "#f1efe4", // Custom Background Color
-          paper: "#f1efe4",
+          default: "#e0e1dd", // Custom Background Color
+          paper: "#e0e1dd",
         },
       },
     });
