@@ -1,7 +1,10 @@
 name: Deploy React-Vite frontend to S3
 
 on:
-  workflow_dispatch:
+    push:
+    paths:
+      - 'src/frontend/**'
+    workflow_dispatch:
  
 jobs:        
   build:

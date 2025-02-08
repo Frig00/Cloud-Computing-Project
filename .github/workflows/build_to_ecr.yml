@@ -1,6 +1,10 @@
 name: Build Docker images and push to ECR
 
 on:
+  push:
+    paths:
+      - 'src/controller/**'
+      - 'src/transcoder-aws/**'
   workflow_dispatch:
  
 jobs:        

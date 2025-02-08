@@ -39,10 +39,6 @@ variable "environment" {
     default = "demo"
 }
 
-variable "db_instance_class" {
-  default = "db.c6gd.medium"
-}
-
 variable "ecr_transcoder" {
   default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/transcoder-aws:latest"
 }

@@ -6,7 +6,6 @@ import json
 
 def get_secret(secret_name, region_name):
 
-
     # Create a Secrets Manager client
     client = boto3.client(
         service_name='secretsmanager',
@@ -14,14 +13,13 @@ def get_secret(secret_name, region_name):
     )
 
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response["SecretString"]
+        return json.loads(secret)  # Convert JSON string to dictionary
     except ClientError as e:
+        print(f"Error retrieving secret: {e}")
         raise e
 
-    secret = get_secret_value_response['SecretString']
-    return secret
 
 def lambda_handler(event, context):
     secret_name = os.environ['SECRET_NAME']
@@ -30,9 +28,8 @@ def lambda_handler(event, context):
     db_name = os.environ['DB_NAME']
 
     secret = get_secret(secret_name, region_name)
-    secret_dict = json.loads(secret)  # Convert JSON string to a dictionary
-    db_user = secret_dict["username"]
-    db_password = secret_dict["password"]
+    db_user = secret["username"]
+    db_password = secret["password"]
 
 
 

@@ -58,7 +58,8 @@ resource "aws_iam_policy" "lambda_rds_access" {
           "rds-db:connect",
           "rds:DescribeDBInstances"
         ]
-        Resource = aws_db_instance.free_db.arn
+        #Resource = aws_db_instance.free_db.arn
+        Resource = aws_rds_cluster.sunomi_db_cluster.arn
       },
       {
         Effect = "Allow"

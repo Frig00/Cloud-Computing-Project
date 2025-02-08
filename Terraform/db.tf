@@ -1,41 +1,59 @@
-#resource "aws_secretsmanager_secret" "db_credentials" {
-#  name = "${var.project_name}-db-credentials-${var.environment}-unipv-cloud-${random_id.hash.hex}"
-#  force_overwrite_replica_secret = true
-#}
-#
-#resource "aws_secretsmanager_secret_version" "db_credentials_version" {
-#  secret_id     = aws_secretsmanager_secret.db_credentials.id
-#  secret_string = jsonencode({
-#    username = var.db_master_credentials.username
-#    password = var.db_master_credentials.password
-#  })
-#}
-#
-#resource "aws_db_subnet_group" "sunomi_db_subnet_group" {
-#  name       = "${var.project_name}-db-subnet-group-${random_id.hash.hex}"
-#  subnet_ids = aws_subnet.private[*].id
-#
-#  tags = {
-#    Name = "${var.project_name}-db-subnet-group"
-#  }
-#}
-#
-#
-#resource "aws_rds_cluster" "sunomi_db_cluster" {
-#  cluster_identifier      = "${var.project_name}-db-cluster-unipv-cloud-${random_id.hash.hex}"
-#  engine                  = "mysql"
-#  engine_version          = "8.4.3"
-#  db_cluster_instance_class = var.db_instance_class
-#  master_username         = jsondecode(aws_secretsmanager_secret_version.db_credentials_version.secret_string)["username"]
-#  master_password         = jsondecode(aws_secretsmanager_secret_version.db_credentials_version.secret_string)["password"]
-#  database_name           = "${var.project_name}_db"
-#  db_subnet_group_name    = aws_db_subnet_group.sunomi_db_subnet_group.name
-#  vpc_security_group_ids  = [aws_security_group.db.id]
-#  storage_encrypted       = true
-#  skip_final_snapshot     = true
-#  allocated_storage       = 200
-#  storage_type            = "gp3"
-#  tags = {
-#    Name = "${var.project_name}-db-cluster"
-#  }
-#}
+# DB Subnet Group
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name       = "${var.project_name}-db-subnet-group-${var.environment}"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name = "${var.project_name}-db-subnet-group"
+  }
+}
+
+
+resource "aws_rds_cluster" "sunomi_db_cluster" {
+  cluster_identifier      = "${var.project_name}-db-cluster"
+  engine                  = "aurora-mysql"
+  engine_version          = "8.0.mysql_aurora.3.05.2"
+  database_name           = "${var.project_name}_database"
+
+  # Network & Security
+  db_subnet_group_name    = aws_db_subnet_group.db_subnet_group.name
+  vpc_security_group_ids  = [aws_security_group.db_sg.id]
+
+  # Credentials from Secrets Manager
+  master_username         = jsondecode(aws_secretsmanager_secret_version.db_credentials_version.secret_string)["username"]
+  master_password         = jsondecode(aws_secretsmanager_secret_version.db_credentials_version.secret_string)["password"]
+
+  # Production settings
+  backup_retention_period = 7
+  preferred_backup_window = "02:00-03:00"
+  skip_final_snapshot    = true
+  final_snapshot_identifier = "${var.project_name}-final-snapshot"
+  storage_encrypted      = true
+
+  tags = {
+    Name = "${var.project_name}-db-cluster"
+    Environment = "production"
+  }
+}
+
+resource "aws_rds_cluster_instance" "cluster_instances" {
+  count               = 3
+  identifier          = "sunomi-db-${count.index + 1}"
+  cluster_identifier  = aws_rds_cluster.sunomi_db_cluster.id
+  instance_class      = "db.r5.large"
+  engine              = aws_rds_cluster.sunomi_db_cluster.engine
+  engine_version      = aws_rds_cluster.sunomi_db_cluster.engine_version
+  
+  # Ensure instances are in different AZs
+  availability_zone   = element(data.aws_availability_zones.available.names, count.index)
+
+  tags = {
+    Name = "${var.project_name}-instance-${count.index + 1}"
+    Role = count.index == 0 ? "writer" : "reader"
+  }
+}
+
+# Get available AZs
+data "aws_availability_zones" "available" {
+  state = "available"
+}

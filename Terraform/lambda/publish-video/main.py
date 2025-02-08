@@ -31,9 +31,8 @@ def lambda_handler(event, context):
     region_name = os.environ['REGION_NAME']
 
     secret = get_secret(secret_name, region_name)
-    secret_dict = json.loads(secret)  # Convert JSON string to a dictionary
-    db_user = secret_dict["username"]
-    db_password = secret_dict["password"]
+    db_user = secret["username"]
+    db_password = secret["password"]
 
 
     message = json.loads(event['Records'][0]['Sns']['Message'])
