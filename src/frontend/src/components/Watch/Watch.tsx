@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Button, Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography, Alert } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -56,6 +56,7 @@ export default function Watch() {
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
+  const [hasConfirmedSensitiveContent, setHasConfirmedSensitiveContent] = useState(false);
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
@@ -188,6 +189,41 @@ export default function Watch() {
     videoElement.currentTime = time;
   }
 
+  const SensitiveContentWarning = ({ moderationTypes, onConfirm }: { moderationTypes: string[], onConfirm: () => void }) => {
+    return (
+      <Alert 
+        severity="warning"
+        
+      >
+        <Stack spacing={2}>
+          <Typography variant="h6">
+            Content Warning
+          </Typography>
+          <Typography variant="body1">
+            This video may contain sensitive content related to:
+          </Typography>
+          <ul style={{ margin: 0 }}>
+            {moderationTypes.map((type, index) => (
+              <li key={index}>{type}</li>
+            ))}
+          </ul>
+          <Button 
+            variant="contained" 
+            color="warning" 
+            size="large" 
+            fullWidth 
+            onClick={onConfirm}
+            sx={{
+              mt: 2,
+              fontWeight: 'bold'
+            }}
+          >
+            I Understand and Wish to Continue
+          </Button>
+        </Stack>
+      </Alert>
+    );
+  };
 
 
   return (
@@ -200,7 +236,14 @@ export default function Watch() {
           }}
         >
           <Stack>
-            <video ref={refCallback} controls onTimeUpdate={onTimeUpdate} />
+            {data.moderationTypes && data.moderationTypes.length > 0 && !hasConfirmedSensitiveContent ? (
+              <SensitiveContentWarning 
+                moderationTypes={data.moderationTypes}
+                onConfirm={() => setHasConfirmedSensitiveContent(true)}
+              />
+            ) : (
+              <video ref={refCallback} controls onTimeUpdate={onTimeUpdate} />
+            )}
 
             <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
               <Stack>

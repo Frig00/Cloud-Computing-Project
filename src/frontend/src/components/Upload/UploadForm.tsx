@@ -1,11 +1,12 @@
 import { ChangeEvent, useState } from "react";
-import { Box, Button, LinearProgress, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import { Stack } from "@mui/system";
 import Confetti from "react-confetti-boom";
 import { UploadApi } from "../../api";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { uploadSseEndpointUrl, uploadSseEndpointUrlSse } from "../../lib/consts";
 import { useAuth } from "@/services/authService";
+import { ProgressBar } from "./UploadProgress";
 
 export interface VideoProgress {
   videoId: string;
@@ -14,6 +15,15 @@ export interface VideoProgress {
   } | null;
   status: "TRANSCODING" | "UPLOADING" | "COMPLETED" | "ERROR";
   error: string | null;
+}
+
+enum UploadState {
+  INITIAL = "INITIAL",
+  UPLOADING = "UPLOADING",
+  PROVISIONING = "PROVISIONING",
+  TRANSCODING = "TRANSCODING",
+  COMPLETED = "COMPLETED",
+  ERROR = "ERROR"
 }
 
 interface UploadFormProps {
@@ -102,7 +112,7 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
   const [title, setTitle] = useState(file.name.substring(0, file.name.lastIndexOf(".")));
   const [description, setDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadDeterminate, setUploadDeterminate] = useState(true);
+  const [uploadState, setUploadState] = useState<UploadState>(UploadState.INITIAL);
   const [transcodeProgress, setTranscodeProgress] = useState<VideoProgress | null>(null);
   const token = useAuth().token;
 
@@ -110,21 +120,77 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
   const handleDescriptionChange = (event: ChangeEvent<HTMLInputElement>) => setDescription(event.target.value);
 
   const onUpload = async () => {
-    setUploadDeterminate(false);
+    setUploadState(UploadState.UPLOADING);
 
-    const { videoId } = await UploadService.uploadVideo(
-      file,
-      (progress) => {
-        setUploadProgress(progress);
-        setUploadDeterminate(true);
-      },
-      title,
-      description,
-    );
+    try {
+      const { videoId } = await UploadService.uploadVideo(
+        file,
+        (progress) => {
+          setUploadProgress(progress);
+        },
+        title,
+        description,
+      );
 
-    UploadService.getTranscodeProgress(videoId, (progress) => {
-      setTranscodeProgress(progress);
-    });
+      setUploadState(UploadState.PROVISIONING);
+
+      UploadService.getTranscodeProgressSse(videoId, token, (progress) => {
+        setTranscodeProgress(progress);
+        if (progress.status === "TRANSCODING") {
+          setUploadState(UploadState.TRANSCODING);
+        } else if (progress.status === "COMPLETED") {
+          setUploadState(UploadState.COMPLETED);
+        } else if (progress.status === "ERROR") {
+          setUploadState(UploadState.ERROR);
+        }
+      });
+    } catch (error) {
+      setUploadState(UploadState.ERROR);
+      console.error("Upload failed:", error);
+    }
+  };
+
+  const renderProgress = () => {
+    switch (uploadState) {
+      case UploadState.INITIAL:
+        return null;
+      
+      case UploadState.UPLOADING:
+        return <ProgressBar label="Upload Progress" progress={uploadProgress} />;
+      
+      case UploadState.PROVISIONING:
+        return <ProgressBar label="Provisioning transcoding task" progress={0} indeterminate />;
+      
+      case UploadState.TRANSCODING:
+        if (!transcodeProgress?.progress) return null;
+        return Object.entries(transcodeProgress.progress).map(([resolution, progress]) => (
+          <ProgressBar key={resolution} label={`Processing ${resolution}`} progress={progress} />
+        ));
+      
+      case UploadState.COMPLETED:
+        return (
+          <>
+            <Confetti 
+              mode="boom" 
+              particleCount={250} 
+              effectInterval={3000} 
+              colors={["#ff577f", "#ff884b", "#ffd384", "#fff9b0"]} 
+              launchSpeed={1.8} 
+              spreadDeg={60} 
+            />
+            <Typography variant="h5" gutterBottom>
+              Video Processing Completed
+            </Typography>
+          </>
+        );
+      
+      case UploadState.ERROR:
+        return (
+          <Typography color="error" variant="body1">
+            {transcodeProgress?.error || "An error occurred during upload"}
+          </Typography>
+        );
+    }
   };
 
   return (
@@ -133,21 +199,37 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
         Upload Video
       </Typography>
       <Box component="form" noValidate autoComplete="off">
-        <TextField fullWidth label="Video Title" variant="outlined" margin="normal" value={title} onChange={handleTitleChange} />
-        <TextField fullWidth label="Video Description" variant="outlined" margin="normal" multiline rows={4} value={description} onChange={handleDescriptionChange} />
+        <TextField 
+          fullWidth 
+          label="Video Title" 
+          variant="outlined" 
+          margin="normal" 
+          value={title} 
+          onChange={handleTitleChange} 
+        />
+        <TextField 
+          fullWidth 
+          label="Video Description" 
+          variant="outlined" 
+          margin="normal" 
+          multiline 
+          rows={4} 
+          value={description} 
+          onChange={handleDescriptionChange} 
+        />
 
         <Stack
-          spacing={{
-            xs: 1,
-            sm: 2,
-          }}
+          spacing={{ xs: 1, sm: 2 }}
           direction="row"
           useFlexGap
-          sx={{
-            flexWrap: "wrap",
-          }}
+          sx={{ flexWrap: "wrap" }}
         >
-          <Button variant="contained" color="primary" onClick={onUpload}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={onUpload}
+            disabled={uploadState !== UploadState.INITIAL}
+          >
             Upload
           </Button>
           <Button variant="contained" color="primary" onClick={onCancel}>
@@ -155,42 +237,7 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
           </Button>
         </Stack>
 
-        <Box
-          sx={{
-            mt: 2,
-          }}
-        >
-          <Typography variant="body2" gutterBottom>
-            Upload Progress
-          </Typography>
-          <LinearProgress variant={uploadDeterminate ? "determinate" : "indeterminate"} value={uploadProgress} />
-        </Box>
-
-        {transcodeProgress &&
-          transcodeProgress.status === "TRANSCODING" &&
-          transcodeProgress.progress != null &&
-          Object.entries(transcodeProgress.progress).map(([resolution, progress]) => (
-            <Box
-              sx={{
-                mt: 2,
-              }}
-              key={resolution}
-            >
-              <Typography variant="body2" gutterBottom>
-                Processing {resolution}
-              </Typography>
-              <LinearProgress variant="determinate" value={progress} />
-            </Box>
-          ))}
-
-        {transcodeProgress && transcodeProgress.status === "COMPLETED" && (
-          <>
-            <Confetti mode="boom" particleCount={250} effectInterval={3000} colors={["#ff577f", "#ff884b", "#ffd384", "#fff9b0"]} launchSpeed={1.8} spreadDeg={60} />
-            <Typography variant="h5" gutterBottom>
-              Video Processing Completed
-            </Typography>
-          </>
-        )}
+        {renderProgress()}
       </Box>
     </>
   );

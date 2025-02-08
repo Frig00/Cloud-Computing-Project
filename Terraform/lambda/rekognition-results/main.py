@@ -6,7 +6,6 @@ from botocore.exceptions import ClientError
 
 def get_secret(secret_name, region_name):
 
-
     # Create a Secrets Manager client
     client = boto3.client(
         service_name='secretsmanager',
@@ -14,14 +13,12 @@ def get_secret(secret_name, region_name):
     )
 
     try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response["SecretString"]
+        return json.loads(secret)  # Convert JSON string to dictionary
     except ClientError as e:
+        print(f"Error retrieving secret: {e}")
         raise e
-
-    secret = get_secret_value_response['SecretString']
-    return secret
 
 def lambda_handler(event, context):
     rekognition = boto3.client('rekognition')
@@ -46,6 +43,9 @@ def lambda_handler(event, context):
             
             db_host = os.environ['DB_HOST']
             db_name = os.environ['DB_NAME']
+            secret_name = os.environ['SECRET_NAME']
+            region_name = os.environ['REGION_NAME']
+
             secret = get_secret(secret_name, region_name)
             db_user = secret["username"]
             db_password = secret["password"]
