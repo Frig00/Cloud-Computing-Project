@@ -94,18 +94,6 @@ class UploadService {
       console.log("WebSocket connection closed");
     };
   }
-
-  static async getTranscodeProgressSse(videoId: string, authToken: string | null, onProgress: (progress: VideoProgress) => void) {
-    fetchEventSource(uploadSseEndpointUrlSse(videoId), {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      openWhenHidden: true,
-      onmessage(ev) {
-        onProgress(JSON.parse(ev.data));
-      },
-    });
-  }
 }
 
 export default function UploadForm({ file, onCancel }: UploadFormProps) {
@@ -134,7 +122,7 @@ export default function UploadForm({ file, onCancel }: UploadFormProps) {
 
       setUploadState(UploadState.PROVISIONING);
 
-      UploadService.getTranscodeProgressSse(videoId, token, (progress) => {
+      UploadService.getTranscodeProgress(videoId, (progress) => {
         setTranscodeProgress(progress);
         if (progress.status === "TRANSCODING") {
           setUploadState(UploadState.TRANSCODING);
