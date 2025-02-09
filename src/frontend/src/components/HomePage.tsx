@@ -42,31 +42,41 @@ const useVideoFetch = (queryKey: string, fetchFn: (skip: number) => Promise<Vide
 
 const VideoList = ({ videos, onLoadMore, title, isLoading }: VideoListProps) => (
   <>
-    {title && videos.length > 0 && (
+    {title && (
       <Typography variant="h4" sx={{ marginTop: "1rem" }}>{title}</Typography>
     )}
-    <div className="flex gap-2 flex-wrap m-2">
-      {videos?.map((video) => (
-        <VideoThumbnail
-          id={video.id}
-          src={thumbnailSrc(video.id)}
-          title={video.title}
-          user={video.userId}
-          key={video.id}
-          variant="small"
-        />
-      ))}
-    </div>
-    {videos.length > 0 && (
-      <Button
-        variant="outlined"
-        color="primary"
-        sx={{ marginTop: "0.5rem" }}
-        onClick={onLoadMore}
-        disabled={isLoading}
+    {videos.length === 0 ? (
+      <Typography 
+        variant="body1" 
+        color="text.secondary" 
+        sx={{ margin: "1rem" }}
       >
-        {isLoading ? 'Loading...' : 'Load More'}
-      </Button>
+        No videos available
+      </Typography>
+    ) : (
+      <>
+        <div className="flex gap-2 flex-wrap m-2">
+          {videos?.map((video) => (
+            <VideoThumbnail
+              id={video.id}
+              src={thumbnailSrc(video.id)}
+              title={video.title}
+              user={video.userId}
+              key={video.id}
+              variant="small"
+            />
+          ))}
+        </div>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ marginTop: "0.5rem" }}
+          onClick={onLoadMore}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Loading...' : 'Load More'}
+        </Button>
+      </>
     )}
   </>
 );
