@@ -8,10 +8,6 @@ on:
  
 jobs:        
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [frontend]
     runs-on: ubuntu-latest
 
     steps:
@@ -25,16 +21,15 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: ./src/${{ matrix.service }}
-
+        working-directory: ./src/frontend
 
       - name: Build swagger
         run: npm run gen-api-ubuntu
-        working-directory: ./src/${{ matrix.service }}
+        working-directory: ./src/frontend
 
       - name: Build Project
         run: npm run build
-        working-directory: ./src/${{ matrix.service }}
+        working-directory: ./src/frontend
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -45,4 +40,4 @@ jobs:
 
       - name: Deploy to S3
         run: aws s3 sync dist/ s3://sunomi-frontend-bucket --delete
-        working-directory: ./src/${{ matrix.service }}
+        working-directory: ./src/frontend

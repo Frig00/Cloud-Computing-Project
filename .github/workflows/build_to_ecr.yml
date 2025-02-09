@@ -31,18 +31,36 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2.0.1
 
       - name: Build and push Docker images
+        id: build-image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ matrix.service }}
           IMAGE_TAG: ${{ github.sha }}
-
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG $REPOSITORY
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest $REPOSITORY
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker tag $REGISTRY/$REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:latest
           docker push $REGISTRY/$REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         working-directory: ./src
 
-#      - name: Deploy to ECS
-#        run: |
-#          aws ecs update-service --cluster ecs-cluster --service ${{ matrix.service }} --force-new-deployment
+      - name: Download task definition
+        if: matrix.service == 'controller'
+        run: |
+          aws ecs describe-task-definition --task-definition sunomi-ecs-tdf-controller --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        if: matrix.service == 'controller'
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: controller
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        if: matrix.service == 'controller'
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: sunomi-controller
+          cluster: sunomi-ecs-cluster-controller
