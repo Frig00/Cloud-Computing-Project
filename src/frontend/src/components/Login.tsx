@@ -7,6 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import { enqueueSnackbar } from "notistack";
 import { getGithubLoginUrl } from "@/services/configService";
+import { ResponseError } from "@/api";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -81,7 +82,13 @@ export default function Login() {
 
       onLoginSuccessful();
     } catch (error) {
-      enqueueSnackbar(JSON.stringify(error), {variant: 'error'});
+      if (error instanceof ResponseError) {
+        var errorData = await error.response.json()
+        const errorMessage = errorData.error || error.message;
+        enqueueSnackbar(errorMessage, {variant: 'error'});
+      } else {
+        enqueueSnackbar(JSON.stringify(error), {variant: 'error'});
+      }
     }
   };
 

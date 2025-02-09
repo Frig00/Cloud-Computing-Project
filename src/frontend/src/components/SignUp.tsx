@@ -1,7 +1,7 @@
 import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Link, Stack, styled, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import MuiCard from "@mui/material/Card";
-import { AuthApi } from "@/api";
+import { AuthApi, ResponseError } from "@/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/services/authService";
 import { enqueueSnackbar } from "notistack";
@@ -106,7 +106,7 @@ export default function SignIn() {
     const authApi = new AuthApi();
     try {
 
-       await authApi.authSignupPost({
+      await authApi.authSignupPost({
         authSignupPostRequest: {
           userId: username,
           password: psw,
@@ -114,14 +114,20 @@ export default function SignIn() {
         },
       });
 
-      
-      
-      
+
+
+
       navigate("/login");
-      
-      
-    } catch (error){
-      enqueueSnackbar(JSON.stringify(error), {variant: 'error'});
+
+
+    } catch (error) {
+      if (error instanceof ResponseError) {
+        var errorData = await error.response.json()
+        const errorMessage = errorData.error || error.message;
+        enqueueSnackbar(errorMessage, { variant: 'error' });
+      } else {
+        enqueueSnackbar(JSON.stringify(error), { variant: 'error' });
+      }
     }
   };
 
