@@ -58,7 +58,7 @@ async function initializeApp() {
 
         },
         background: {
-          default: "#e0e1dd", // Custom Background Color
+          default: "#e0e1dd",
           paper: "#e0e1dd",
         },
       },

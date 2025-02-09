@@ -38,7 +38,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: "inherit",
   "& .MuiInputBase-input": {
     padding: theme.spacing(1, 1, 1, 0),
-    // vertical padding + font size from searchIcon
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create("width"),
     width: "100%",
@@ -107,23 +106,17 @@ function App() {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      
-              <MenuItem onClick={upload}><FileUpload sx={{marginRight: "12px"}}/>Upload</MenuItem>
-      <MenuItem onClick={logout}><Logout sx={{marginRight: "12px"}}/>Logout</MenuItem>
-      <MenuItem onClick={goToProfile}><AccountCircle sx={{marginRight: "12px"}}/>My account</MenuItem>
+
+      <MenuItem onClick={upload}><FileUpload sx={{ marginRight: "12px" }} />Upload</MenuItem>
+      <MenuItem onClick={logout}><Logout sx={{ marginRight: "12px" }} />Logout</MenuItem>
+      <MenuItem onClick={goToProfile}><AccountCircle sx={{ marginRight: "12px" }} />My account</MenuItem>
     </Menu>
   );
 
   return (
     <>
-      <Box
-        sx={{
-          flexGrow: 1,
-          position: "sticky",
-          top: 0,
-        }}
-      >
-        <AppBar position="static">
+      
+        <AppBar position="sticky">
           <Toolbar
             sx={{
               justifyContent: "space-between",
@@ -150,13 +143,12 @@ function App() {
             </Search>
             <div className="actions">
               <IconButton size="large" edge="end" aria-label="account of current user" aria-controls={menuId} aria-haspopup="true" onClick={handleProfileMenuOpen} color="inherit">
-                <UserAvatar user={auth.user} userId={null}/>
+                <UserAvatar user={auth.user} userId={null} />
               </IconButton>
             </div>
           </Toolbar>
         </AppBar>
         {renderMenu}
-      </Box>
       <Outlet />
     </>
   );

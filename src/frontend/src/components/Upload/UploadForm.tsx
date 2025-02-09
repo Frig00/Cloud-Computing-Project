@@ -48,11 +48,9 @@ class UploadService {
       },
     });
 
-    const newUrl = url.replace("minio:9000", "localhost:9005"); //TEMPORARY, just for local testing
-
     const upload = new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("PUT", newUrl);
+      xhr.open("PUT", url);
       xhr.setRequestHeader("Content-Type", file.type);
 
       xhr.upload.onprogress = (event) => {

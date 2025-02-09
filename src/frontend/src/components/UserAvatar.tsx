@@ -8,7 +8,7 @@ interface UserAvatarProps {
  }
 
 
-export default function UserAvatar({ user, userId}: UserAvatarProps) {
+export default function UserAvatar({ user, userId }: UserAvatarProps) {
     const firstLetters = (name: string)  => {
         const names = name.split(" ");
         return names.map((n) => n[0]).join("").toUpperCase();

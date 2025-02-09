@@ -1,72 +1,65 @@
 import { Button, Container, Typography } from "@mui/material";
-import VideoThumbnail from "./VideoThumbnail";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { VideoAllVideosGet200ResponseInner, VideoApi } from "../api";
 import { thumbnailSrc } from "../lib/consts";
-import { useEffect, useState } from "react";
+import VideoThumbnail from "./VideoThumbnail";
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 10;
+
+type Video = VideoAllVideosGet200ResponseInner;
 
 interface VideoListProps {
-  videos: VideoAllVideosGet200ResponseInner[];
+  videos: Video[];
   onLoadMore: () => void;
+  hasNextPage?: boolean;
   title?: string;
   isLoading?: boolean;
 }
 
-const useVideoFetch = (queryKey: string, fetchFn: (skip: number) => Promise<VideoAllVideosGet200ResponseInner[]>) => {
-  const [skip, setSkip] = useState(0);
-  const [videos, setVideos] = useState<VideoAllVideosGet200ResponseInner[]>([]);
-
-  const { isPending, error, data } = useQuery({
-    queryKey: [queryKey, skip, PAGE_SIZE],
-    queryFn: () => fetchFn(skip)
+const useVideoQuery = (queryKey: string[], queryFn: (skip: number) => Promise<Video[]>) => {
+  return useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam = 0 }) => queryFn(pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => 
+      lastPage.length >= PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
   });
-
-  useEffect(() => {
-    // Reset videos when query key changes
-    return () => {
-      setVideos([]);
-      setSkip(0);
-    };
-  }, [queryKey]);
-
-  useEffect(() => {
-    if (data) {
-      setVideos(prev => skip === 0 ? data : [...prev, ...data]);
-    }
-  }, [data, skip]);
-
-  return { videos, isLoading: isPending, error, loadMore: () => setSkip(skip + PAGE_SIZE) };
 };
 
-const VideoList = ({ videos, onLoadMore, title, isLoading }: VideoListProps) => (
-  <>
-    {title && (
-      <Typography variant="h4" sx={{ marginTop: "1rem" }}>{title}</Typography>
-    )}
-    {videos.length === 0 ? (
-      <Typography 
-        variant="body1" 
-        color="text.secondary" 
-        sx={{ margin: "1rem" }}
-      >
-        No videos available
-      </Typography>
-    ) : (
+const VideoList: React.FC<VideoListProps> = ({ 
+  videos, 
+  onLoadMore, 
+  hasNextPage, 
+  title, 
+  isLoading 
+}) => {
+  if (videos.length === 0) {
+    return (
       <>
-        <div className="flex gap-2 flex-wrap m-2">
-          {videos?.map((video) => (
-            <VideoThumbnail
-              id={video.id}
-              src={thumbnailSrc(video.id)}
-              title={video.title}
-              user={video.userId}
-              key={video.id}
-              variant="small"
-            />
-          ))}
-        </div>
+        {title && <Typography variant="h4" sx={{ marginTop: "1rem" }}>{title}</Typography>}
+        <Typography variant="body1" color="text.secondary" sx={{ margin: "1rem" }}>
+          No videos available
+        </Typography>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {title && <Typography variant="h4" sx={{ marginTop: "1rem" }}>{title}</Typography>}
+      <div className="flex gap-2 flex-wrap m-2">
+        {videos.map((video) => (
+          <VideoThumbnail
+            key={video.id}
+            id={video.id}
+            src={thumbnailSrc(video.id)}
+            title={video.title}
+            user={video.userId}
+            variant="small"
+          />
+        ))}
+      </div>
+      {hasNextPage && (
         <Button
           variant="outlined"
           color="primary"
@@ -76,50 +69,64 @@ const VideoList = ({ videos, onLoadMore, title, isLoading }: VideoListProps) => 
         >
           {isLoading ? 'Loading...' : 'Load More'}
         </Button>
-      </>
-    )}
-  </>
-);
+      )}
+    </>
+  );
+};
 
 export default function HomePage() {
   const videoApi = new VideoApi();
 
   const {
-    videos: subscribedVideos,
-    isLoading: isLoadingSubscribed,
-    error: errorSubscribed,
-    loadMore: loadMoreSubscribed
-  } = useVideoFetch(
-    "videoSubscriptionsGet",
+    data: subscribedData,
+    fetchNextPage: fetchNextSubscribed,
+    hasNextPage: hasNextSubscribed,
+    isFetchingNextPage: isFetchingNextSubscribed,
+    status: subscribedStatus
+  } = useVideoQuery(
+    ["videoSubscriptionsGet"],
     (skip) => videoApi.videoSubscriptionsGet({ skip, take: PAGE_SIZE })
   );
 
   const {
-    videos: allVideos,
-    isLoading: isLoadingAll,
-    error: errorAll,
-    loadMore: loadMoreAll
-  } = useVideoFetch(
-    "videoAllVideosGet",
+    data: allVideosData,
+    fetchNextPage: fetchNextAll,
+    hasNextPage: hasNextAll,
+    isFetchingNextPage: isFetchingNextAll,
+    status: allVideosStatus
+  } = useVideoQuery(
+    ["videoAllVideosGet"],
     (skip) => videoApi.videoAllVideosGet({ skip, take: PAGE_SIZE })
   );
 
-  if (errorAll || errorSubscribed) 
-    return `An error has occurred: ${errorAll?.message || errorSubscribed?.message}`;
+  if (allVideosStatus === 'error' || subscribedStatus === 'error') {
+    return (
+      <Container maxWidth="xl">
+        <Typography color="error" sx={{ margin: "2rem 0" }}>
+          An error has occurred loading videos
+        </Typography>
+      </Container>
+    );
+  }
+
+  const subscribedVideos = subscribedData?.pages.flatMap(page => page) ?? [];
+  const allVideos = allVideosData?.pages.flatMap(page => page) ?? [];
 
   return (
     <Container maxWidth="xl">
       <VideoList
         videos={subscribedVideos}
-        onLoadMore={loadMoreSubscribed}
+        onLoadMore={() => fetchNextSubscribed()}
+        hasNextPage={hasNextSubscribed}
         title="Subscribed"
-        isLoading={isLoadingSubscribed}
+        isLoading={isFetchingNextSubscribed}
       />
       <VideoList
         videos={allVideos}
-        onLoadMore={loadMoreAll}
+        onLoadMore={() => fetchNextAll()}
+        hasNextPage={hasNextAll}
         title="More Videos"
-        isLoading={isLoadingAll}
+        isLoading={isFetchingNextAll}
       />
     </Container>
   );

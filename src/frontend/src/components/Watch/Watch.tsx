@@ -1,17 +1,15 @@
-/* eslint-disable prettier/prettier */
-import { Button, Card, Container, Grid2 as Grid, Link, Stack, ToggleButton, ToggleButtonGroup, Typography, Alert } from "@mui/material";
+import { Button, Card, Container, Grid2 as Grid, Stack, ToggleButton, ToggleButtonGroup, Typography, Alert } from "@mui/material";
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { UserApi, VideoApi } from "../../api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-
+import { useQuery } from "@tanstack/react-query";
 import { masterPlaylistSrc } from "../../lib/consts";
 import { Subscriptions, SubscriptionsOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
 import CommentSection from "./CommentSection";
 import { formatDistanceToNow } from "date-fns";
 import Transcription from "./Transcription";
+import { QualitySelector } from "./QualitySelector";
 
 type Quality = {
   height: number;
@@ -24,12 +22,11 @@ type Quality = {
 export default function Watch() {
   const [searchParams] = useSearchParams();
   const videoId = searchParams.get("v")!;
-  const queryClient = useQueryClient();
   const hlsRef = useRef<HLS | null>(null);
   const videoApi = new VideoApi();
   const userApi = new UserApi();
 
-  const { isPending, error, data } = useQuery({
+  const { isPending, error, data: videoData } = useQuery({
     queryKey: ["videoVideoIdGet", videoId],
     queryFn: () =>
       videoApi.videoVideoIdGet({
@@ -37,24 +34,24 @@ export default function Watch() {
       }),
   });
 
-  
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { isPending: isPending2, error: error2, data: data2 } = useQuery({
-    queryKey: ["userUserIdSubscribeGet",data?.userId],
+  const { 
+    isPending: isSubscriptionPending, 
+    error: subscriptionError, 
+    data: subscriptionData 
+  } = useQuery({
+    queryKey: ["userUserIdSubscribeGet", videoData?.userId],
     queryFn: () => {
-      if (data?.userId) {
-        return userApi.userUserIdSubscribeGet({ userId: data.userId });
+      if (videoData?.userId) {
+        return userApi.userUserIdSubscribeGet({ userId: videoData.userId });
       }
       return Promise.reject(new Error("User ID is undefined"));
     },
   });
 
-  
-  
-  const [formats, setFormats] = useState<string[]>(() => []);
-  const [likes,setLikes] = useState(0);
-  const [subscribed,setSubscribed] = useState(false);
+  const [selectedActions, setSelectedActions] = useState<string[]>(() => []);
+  const [likes, setLikes] = useState(0);
+  const [isLiked, setIsLiked] = useState(false); 
+  const [subscribed, setSubscribed] = useState(false);
   const [qualities, setQualities] = useState<Quality[]>([]);
   const [currentQuality, setCurrentQuality] = useState<Quality | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -62,43 +59,37 @@ export default function Watch() {
 
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
 
-  
   useEffect(() => {
-    setLikes(data?.likes ?? 0);
-    setSubscribed(data2?.subscriptionStatus ?? false);
-    setFormats((prevArray) => {
-      let newArray = [...prevArray];
+    setLikes(videoData?.likes ?? 0);
+    setIsLiked(videoData?.userHasLiked ?? false); 
+    setSubscribed(subscriptionData?.subscriptionStatus ?? false);
+    setSelectedActions((prevActions) => {
+      let newActions = [...prevActions];
   
-      // Manage "like" status
-      if (data?.userHasLiked && !newArray.includes("like")) {
-        newArray.push("like");
-      } else if (!data?.userHasLiked && newArray.includes("like")) {
-        newArray = newArray.filter((item) => item !== "like");
+      if (videoData?.userHasLiked && !newActions.includes("like")) {
+        newActions.push("like");
+      } else if (!videoData?.userHasLiked && newActions.includes("like")) {
+        newActions = newActions.filter((item) => item !== "like");
       }
   
-      // Manage "subscribe" status
-      if (data2?.subscriptionStatus && !newArray.includes("subscribe")) {
-        newArray.push("subscribe");
-      } else if (!data2?.subscriptionStatus && newArray.includes("subscribe")) {
-        newArray = newArray.filter((item) => item !== "subscribe");
+      if (subscriptionData?.subscriptionStatus && !newActions.includes("subscribe")) {
+        newActions.push("subscribe");
+      } else if (!subscriptionData?.subscriptionStatus && newActions.includes("subscribe")) {
+        newActions = newActions.filter((item) => item !== "subscribe");
       }
   
-      return newArray;
+      return newActions;
     });
-  }, [data, data2]);
-  
-  
+  }, [videoData, subscriptionData]);
 
-  // Ref callback
   const refCallback = (element: HTMLVideoElement) => {
     if (element) {
       setVideoElement(element);
     }
   };
 
-
-  const handleFormat = (event: React.MouseEvent<HTMLElement>, newFormats: string[]) => {
-    setFormats(newFormats);
+  const handleFormat = (event: React.MouseEvent<HTMLElement>, newActions: string[]) => {
+    setSelectedActions(newActions);
   };
 
   const src = masterPlaylistSrc(videoId);
@@ -158,14 +149,6 @@ export default function Watch() {
     };
   }, [initPlayer]);
 
-  
-
-  
-
-  const formatBitrate = (bitrate: number) => {
-    return `${(bitrate / 1000000).toFixed(2)} Mbps`;
-  };
-
   const onTimeUpdate = useCallback(() => {
     if (!videoElement) return;
     setCurrentTime(videoElement.currentTime);
@@ -175,25 +158,34 @@ export default function Watch() {
 
   if (error) return "An error has occurred: " + error.message;
 
-  async function handleLike (){
-    const newLikes = await videoApi.videoVideoIdLikePost({videoId: videoId,videoVideoIdLikePostRequest: {isLiking: !data?.userHasLiked}});
+  async function handleLike() {
+    const newLikes = await videoApi.videoVideoIdLikePost({
+      videoId: videoId,
+      videoVideoIdLikePostRequest: { isLiking: !isLiked }
+    });
     setLikes(newLikes.likes);
-    if (formats.includes("like")) {
-      setFormats(formats.filter((item) => item !== "like"));
-    } else {
-      setFormats([...formats, "like"]);
-    }
-
-    await queryClient.invalidateQueries({
-      queryKey: ["videoVideoIdGet", videoId]
+    setIsLiked(!isLiked);
+    setSelectedActions(prev => {
+      if (!isLiked) {
+        return [...prev, 'like'];
+      } else {
+        return prev.filter(format => format !== 'like');
+      }
     });
   }
 
-  
-  async function handleSubscribe (){
-    await userApi.userUserIdSubscribePost({userId: data?.userId ?? "", userUserIdSubscribePostRequest: {isUserSubscribed: !data2?.subscriptionStatus}});
-    await queryClient.invalidateQueries({
-      queryKey: ["userUserIdSubscribeGet", data?.userId]
+  async function handleSubscribe() {
+    await userApi.userUserIdSubscribePost({
+      userId: videoData?.userId ?? "", 
+      userUserIdSubscribePostRequest: { isUserSubscribed: !subscribed }
+    });
+    setSubscribed(!subscribed);
+    setSelectedActions(prev => {
+      if (!subscribed) {
+        return [...prev, 'subscribe'];
+      } else {
+        return prev.filter(format => format !== 'subscribe');
+      }
     });
   }
   
@@ -238,6 +230,9 @@ export default function Watch() {
     );
   };
 
+  const handleQualityChange = (index: number) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = index;
+  };
 
   return (
     <Container maxWidth="xl" className="mt-4">
@@ -249,9 +244,9 @@ export default function Watch() {
           }}
         >
           <Stack>
-            {data.moderationTypes && data.moderationTypes.length > 0 && !hasConfirmedSensitiveContent ? (
+            {videoData.moderationTypes && videoData.moderationTypes.length > 0 && !hasConfirmedSensitiveContent ? (
               <SensitiveContentWarning 
-                moderationTypes={data.moderationTypes}
+                moderationTypes={videoData.moderationTypes}
                 onConfirm={() => setHasConfirmedSensitiveContent(true)}
               />
             ) : (
@@ -261,13 +256,13 @@ export default function Watch() {
             <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
               <Stack>
                 <Typography variant="h1" marginTop={"0.5rem"} fontWeight={700} fontSize={"1.5rem"}>
-                  {data.title}
+                  {videoData.title}
                 </Typography>
                 <Typography variant="body1" className="mt-2">
-                  {data.userId}
+                  {videoData.userId}
                 </Typography>
               </Stack>
-              <ToggleButtonGroup color="primary" aria-label="Basic button group" value={formats} onChange={handleFormat}>
+              <ToggleButtonGroup color="primary" aria-label="Basic button group" value={selectedActions} onChange={handleFormat}>
                 <ToggleButton
                   value="subscribe"
                   onClick={handleSubscribe}
@@ -275,8 +270,8 @@ export default function Watch() {
                     gap: "0.5rem",
                   }}
                 >
-                  {formats.includes("subscribe") ? <Subscriptions /> : <SubscriptionsOutlined />}
-                  <span>{formats.includes("subscribe") ? "Subscribed" : "Subscribe"}</span>
+                  {selectedActions.includes("subscribe") ? <Subscriptions /> : <SubscriptionsOutlined />}
+                  <span>{selectedActions.includes("subscribe") ? "Subscribed" : "Subscribe"}</span>
                 </ToggleButton>
                 <ToggleButton
                   value="like"
@@ -285,7 +280,7 @@ export default function Watch() {
                     gap: "0.5rem",
                   }}
                 >
-                  {formats.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
+                  {selectedActions.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
                   <span>Like ({likes})</span>
                 </ToggleButton>
               </ToggleButtonGroup>
@@ -298,9 +293,9 @@ export default function Watch() {
             >
               <Stack>
                 <Typography component="span" variant="body2" color="text.secondary">
-                  {`${formatDistanceToNow(data.uploadDate, { addSuffix: true })} — ${data.views} views`}
+                  {`${formatDistanceToNow(videoData.uploadDate, { addSuffix: true })} — ${videoData.views} views`}
                 </Typography>
-                <span>{data.description}</span>
+                <span>{videoData.description}</span>
               </Stack>
             </Card>
           </Stack>
@@ -330,47 +325,12 @@ export default function Watch() {
               lg: 12,
             }}
           >
-              {/* Display available qualities */}
               {qualities.length > 0 && (
-                <table
-                  style={{
-                    width: "100%",
-                  }}
-                  className="quality-grid"
-                >
-                  <thead>
-                    <tr>
-                      <th>Quality</th>
-                      <th>Resolution</th>
-                      <th>Bitrate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {qualities.map((quality) => (
-                      <tr
-                        key={quality.index}
-                        style={{
-                          backgroundColor: currentQuality?.index === quality.index ? "#e0e0e0" : "transparent",
-                        }}
-                      >
-                        <td>
-                          <Link
-                            href="#"
-                            onClick={() => {
-                              if (hlsRef.current) hlsRef.current.currentLevel = quality.index;
-                            }}
-                          >
-                            {quality.name}
-                          </Link>
-                        </td>
-                        <td>
-                          {quality.width}x{quality.height}
-                        </td>
-                        <td>{formatBitrate(quality.bitrate)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <QualitySelector
+                  qualities={qualities}
+                  currentQuality={currentQuality}
+                  onQualityChange={handleQualityChange}
+                />
               )}
           </Grid>
         </Grid>
