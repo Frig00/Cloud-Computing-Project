@@ -26,12 +26,17 @@ resource "aws_lambda_function" "db_init" {
   }
 }
 
+resource "time_sleep" "wait_for_db" {
+  depends_on = [aws_rds_cluster.sunomi_db_cluster]
+  destroy_duration = "30s"
+}
+
 resource "aws_lambda_invocation" "db_init" {
   function_name = aws_lambda_function.db_init.function_name
   input = jsonencode({
     action = "initialize"
   })
-  depends_on = [data.archive_file.packaging_dependecies]
+  depends_on = [data.archive_file.packaging_dependecies, time_sleep.wait_for_db]
 }
 
 resource "null_resource" "copy_layer_files" {
