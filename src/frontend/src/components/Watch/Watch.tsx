@@ -4,7 +4,7 @@ import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { UserApi, VideoApi } from "../../api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 
 import { masterPlaylistSrc } from "../../lib/consts";
@@ -24,6 +24,7 @@ type Quality = {
 export default function Watch() {
   const [searchParams] = useSearchParams();
   const videoId = searchParams.get("v")!;
+  const queryClient = useQueryClient();
   const hlsRef = useRef<HLS | null>(null);
   const videoApi = new VideoApi();
   const userApi = new UserApi();
@@ -38,6 +39,7 @@ export default function Watch() {
 
   
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { isPending: isPending2, error: error2, data: data2 } = useQuery({
     queryKey: ["userUserIdSubscribeGet",data?.userId],
     queryFn: () => {
@@ -176,12 +178,23 @@ export default function Watch() {
   async function handleLike (){
     const newLikes = await videoApi.videoVideoIdLikePost({videoId: videoId,videoVideoIdLikePostRequest: {isLiking: !data?.userHasLiked}});
     setLikes(newLikes.likes);
+    if (formats.includes("like")) {
+      setFormats(formats.filter((item) => item !== "like"));
+    } else {
+      setFormats([...formats, "like"]);
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ["videoVideoIdGet", videoId]
+    });
   }
 
   
   async function handleSubscribe (){
-    userApi.userUserIdSubscribePost({userId: data?.userId ?? "", userUserIdSubscribePostRequest: {isUserSubscribed: !subscribed}});
- 
+    await userApi.userUserIdSubscribePost({userId: data?.userId ?? "", userUserIdSubscribePostRequest: {isUserSubscribed: !data2?.subscriptionStatus}});
+    await queryClient.invalidateQueries({
+      queryKey: ["userUserIdSubscribeGet", data?.userId]
+    });
   }
   
   const setVideoTime = (time: number) => {
