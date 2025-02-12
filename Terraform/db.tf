@@ -26,8 +26,8 @@ resource "aws_rds_cluster" "sunomi_db_cluster" {
   # Production settings
   backup_retention_period = 7
   preferred_backup_window = "02:00-03:00"
-  skip_final_snapshot    = true
-  final_snapshot_identifier = "${var.project_name}-final-snapshot"
+  skip_final_snapshot    = false
+  final_snapshot_identifier = "${var.project_name}-final-snapshot-${formatdate("YYYY-MM-DD-hh-mm", timestamp())}"
   storage_encrypted      = true
 
   tags = {
