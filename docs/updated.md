@@ -56,7 +56,7 @@ sequenceDiagram
     Controller->>+Frontend: Presigned-URL
     Frontend-->>+S3: Uploads file to S3
     Note over S3: Triggers s3:ObjectCreated:Put event
-    S3->>+Transcoder: Adds event to SQS queue
+    S3->>+Transcoder: Adds event to SNS topic
     Note over Transcoder: Transcoding starts
     Transcoder--)Controller: Report progresso su queue (x10)
     Controller--)Frontend: Report progresso su SSE (x10)
