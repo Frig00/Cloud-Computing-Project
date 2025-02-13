@@ -3,6 +3,26 @@ import pymysql
 import boto3
 from botocore.exceptions import ClientError
 import json
+import time
+from functools import wraps
+
+def retry_with_backoff(retries=3, backoff_in_seconds=1):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            x = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except (pymysql.Error, pymysql.OperationalError) as e:
+                    if x == retries:
+                        raise
+                    wait = (backoff_in_seconds * 2 ** x)
+                    print(f"Database connection attempt {x + 1} failed. Retrying in {wait} seconds...")
+                    time.sleep(wait)
+                    x += 1
+        return wrapper
+    return decorator
 
 def get_secret(secret_name, region_name):
 
@@ -20,6 +40,14 @@ def get_secret(secret_name, region_name):
         print(f"Error retrieving secret: {e}")
         raise e
 
+@retry_with_backoff(retries=5, backoff_in_seconds=2)
+def connect_to_database(host, user, password, database):
+    return pymysql.connect(
+        host=host,
+        user=user,
+        password=password,
+        database=database
+    )
 
 def lambda_handler(event, context):
     secret_name = os.environ['SECRET_NAME']
