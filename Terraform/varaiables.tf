@@ -46,3 +46,7 @@ variable "ecr_transcoder" {
 variable "ecr_controller" {
   default = "886436942768.dkr.ecr.eu-west-1.amazonaws.com/controller:latest"
 }
+
+variable "use_free_db" {
+  default = true
+}

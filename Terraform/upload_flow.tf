@@ -119,8 +119,8 @@ resource "aws_lambda_function" "sunomi-rekognition-results" {
     variables = {
       #DB_HOST     = aws_db_instance.free_db.address
       #DB_NAME     = aws_db_instance.free_db.db_name
-      DB_HOST     = aws_rds_cluster.sunomi_db_cluster.endpoint
-      DB_NAME     = aws_rds_cluster.sunomi_db_cluster.database_name
+      DB_HOST     = local.db_host
+      DB_NAME     = local.db_name
       REGION_NAME = var.region
       SECRET_NAME = aws_secretsmanager_secret.db_credentials.name
     }

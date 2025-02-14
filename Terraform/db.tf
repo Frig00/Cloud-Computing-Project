@@ -10,10 +10,11 @@ resource "aws_db_subnet_group" "db_subnet_group" {
 
 
 resource "aws_rds_cluster" "sunomi_db_cluster" {
+  count                   = var.use_free_db ? 0 : 1
   cluster_identifier      = "${var.project_name}-db-cluster"
   engine                  = "aurora-mysql"
   engine_version          = "8.0.mysql_aurora.3.05.2"
-  database_name           = "${var.project_name}_database"
+  database_name           = local.db_name
 
   # Network & Security
   db_subnet_group_name    = aws_db_subnet_group.db_subnet_group.name
@@ -37,16 +38,18 @@ resource "aws_rds_cluster" "sunomi_db_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "cluster_instances" {
-  count               = 3
+  lifecycle {
+    create_before_destroy = true
+  }
+  count               = var.use_free_db ? 0 : 3
   identifier          = "sunomi-db-${count.index + 1}"
-  cluster_identifier  = aws_rds_cluster.sunomi_db_cluster.id
+  cluster_identifier  = aws_rds_cluster.sunomi_db_cluster[0].id
   instance_class      = "db.r5.large"
-  engine              = aws_rds_cluster.sunomi_db_cluster.engine
-  engine_version      = aws_rds_cluster.sunomi_db_cluster.engine_version
+  engine              = aws_rds_cluster.sunomi_db_cluster[0].engine
+  engine_version      = aws_rds_cluster.sunomi_db_cluster[0].engine_version
   
   # Ensure instances are in different AZs
   availability_zone   = element(data.aws_availability_zones.available.names, count.index)
-
   tags = {
     Name = "${var.project_name}-instance-${count.index + 1}"
     Role = count.index == 0 ? "writer" : "reader"

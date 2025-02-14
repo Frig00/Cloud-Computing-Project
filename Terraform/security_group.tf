@@ -24,7 +24,7 @@ resource "aws_security_group" "public" {
 
 resource "aws_security_group" "db_sg" {
   name = "${var.project_name}-db-sg"
-  description = "Security group for RDS cluster"
+  description = "Security group for RDS instances"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -50,6 +50,13 @@ resource "aws_security_group" "lambda_sg" {
   name        = "lambda_db_init_sg"
   description = "Security group for Lambda function to access RDS"
   vpc_id      = aws_vpc.main.id
+  
+ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
 
   egress {
     from_port   = 0

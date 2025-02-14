@@ -59,7 +59,7 @@ resource "aws_iam_policy" "lambda_rds_access" {
           "rds:DescribeDBInstances"
         ]
         #Resource = aws_db_instance.free_db.arn
-        Resource = aws_rds_cluster.sunomi_db_cluster.arn
+        Resource = var.use_free_db ? aws_db_instance.free_db[0].arn : aws_rds_cluster.sunomi_db_cluster[0].arn
       },
       {
         Effect = "Allow"

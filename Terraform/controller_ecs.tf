@@ -38,13 +38,11 @@ resource "aws_ecs_task_definition" "sunomi-ecs-tdf-controller" {
       environment = [
         {
           name  = "DB_HOST"
-          #value = "${aws_db_instance.free_db.address}:${aws_db_instance.free_db.port}"
-          value = "${aws_rds_cluster.sunomi_db_cluster.endpoint}:${aws_rds_cluster.sunomi_db_cluster.port}"
+          value = local.db_host
         },
         { 
           name  = "DB_NAME",
-          #value = aws_db_instance.free_db.db_name
-          value = aws_rds_cluster.sunomi_db_cluster.database_name
+          value = local.db_name
         },
         {
           name  = "S3_BUCKET_NAME"
