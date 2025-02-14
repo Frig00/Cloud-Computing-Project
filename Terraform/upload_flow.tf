@@ -201,6 +201,11 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_access_rekognition_results
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_rekognition_secrets_policy" {
+  role       = aws_iam_role.sunomi-rekognition-results-role.name
+  policy_arn = aws_iam_policy.secrets_manager_policy.arn
+}
+
 
 resource "aws_iam_role_policy" "sunomi-start-transcription-policy" {
   name = "sunomi-transcribe-policy"

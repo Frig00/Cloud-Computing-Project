@@ -26,7 +26,7 @@ def lambda_handler(event, context):
     # Parse SNS message
     message = json.loads(event['Records'][0]['Sns']['Message'])
     job_id = message['JobId']
-    status = message['JobStatus']
+    status = message['Status']
     
     if status == 'SUCCEEDED':
         try:
@@ -38,7 +38,7 @@ def lambda_handler(event, context):
             # Process moderation labels
             moderation_labels = response['ModerationLabels']
             
-            s3_object_name = message['Video']['S3Object']['Name']
+            s3_object_name = message['Video']['S3ObjectName']
             video_id = s3_object_name.split('/')[0]
             
             db_host = os.environ['DB_HOST']
