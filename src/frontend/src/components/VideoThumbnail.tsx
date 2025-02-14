@@ -60,6 +60,7 @@ const VideoThumbnail = (props: VideoThumbnailProps) => {
               style={{
                 height: 169,
                 width: props.variant == "horizontal" || props.variant === "delete" ? 300 : "inherit",
+                overflow: "hidden",
               }}
             >
               <VideoPreview src={masterPlaylistSrc(props.id)} thumbnail={props.src} />
