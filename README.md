@@ -6,6 +6,8 @@
 
 Sunomi is a cloud-native video sharing platform, designed and built as a project for the Cloud Computing course at the University of Pavia.  It mirrors the core functionalities of popular video-sharing services, enabling users to upload, share, and interact with video content, while leveraging the power and scalability of Amazon Web Services (AWS).  This project demonstrates a deep understanding of cloud computing best practices, microservices architecture, serverless technologies, and DevOps principles.
 
+![Homepage screenshot](https://github.com/user-attachments/assets/e4cf899c-65ec-4d3b-81cd-31dd8028429f)
+
 ## Architecture
 
 Sunomi is built on a microservices architecture, deployed on AWS. Key components include:
