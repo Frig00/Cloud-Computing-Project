@@ -25,6 +25,7 @@
     height: 300px;
     display: flex;
     flex-direction: column;
+    background-color: white !important;
 }
 
 .subtitle-pb {

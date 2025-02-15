@@ -281,7 +281,7 @@ export default function Watch() {
                   }}
                 >
                   {selectedActions.includes("like") ? <ThumbUp /> : <ThumbUpOutlined />}
-                  <span>Like ({likes})</span>
+                  <span style={{whiteSpace: "nowrap"}}>Like ({likes})</span>
                 </ToggleButton>
               </ToggleButtonGroup>
             </Stack>

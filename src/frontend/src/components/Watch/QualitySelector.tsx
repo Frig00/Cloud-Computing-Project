@@ -20,7 +20,7 @@ export function QualitySelector({ qualities, currentQuality, onQualityChange }: 
   };
 
   return (
-    <table style={{ width: "100%" }} className="quality-grid">
+    <table style={{ width: "100%" , backgroundColor: "white"}} className="quality-grid">
       <thead>
         <tr>
           <th>Quality</th>
@@ -33,7 +33,7 @@ export function QualitySelector({ qualities, currentQuality, onQualityChange }: 
           <tr
             key={quality.index}
             style={{
-              backgroundColor: currentQuality?.index === quality.index ? "#e0e0e0" : "transparent",
+              backgroundColor: currentQuality?.index === quality.index ? "aliceblue" : "transparent",
             }}
           >
             <td>
