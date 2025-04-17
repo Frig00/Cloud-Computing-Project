@@ -8,6 +8,8 @@ Sunomi is a cloud-native video sharing platform, designed and built as a project
 
 ![Homepage screenshot](https://github.com/user-attachments/assets/e4cf899c-65ec-4d3b-81cd-31dd8028429f)
 
+[Read the full technical report here!](docs/sunomi-final-report.pdf)
+
 ## Architecture
 ![image](https://github.com/user-attachments/assets/09d5b0e3-400b-47cb-8a40-4c8a57c27819)
 
