@@ -1,7 +1,7 @@
 # Sunomi: A Cloud-Native Video Sharing Platform
 
 [![Build Docker images and push to ECR](https://github.com/ferraridavide/cloud/actions/workflows/build_to_ecr.yml/badge.svg)](https://github.com/ferraridavide/cloud/actions/workflows/build_to_ecr.yml)
-[![Deploy React-Vite frontend to S3](https://github.com/ferraridavide/cloud/actions/workflows/build_to_s3.yml/badge.svg)](https://github.com/ferraridavide/cloud/actions/workflows/build_to_s3.yml)
+[![Deploy frontend to S3 and GitHub Pages](https://github.com/ferraridavide/sunomi/actions/workflows/build_frontend.yml/badge.svg?branch=main)](https://github.com/ferraridavide/sunomi/actions/workflows/build_frontend.yml)
 
 
 Sunomi is a cloud-native video sharing platform, designed and built as a project for the Cloud Computing course at the University of Pavia.  It mirrors the core functionalities of popular video-sharing services, enabling users to upload, share, and interact with video content, while leveraging the power and scalability of Amazon Web Services (AWS).  This project demonstrates a deep understanding of cloud computing best practices, microservices architecture, serverless technologies, and DevOps principles.

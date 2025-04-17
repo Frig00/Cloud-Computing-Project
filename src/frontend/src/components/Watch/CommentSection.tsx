@@ -1,7 +1,7 @@
-import { VideoApi, VideoVideoIdCommentsGet200ResponseCommentsInner } from "@/api";
-import { useAuth } from "@/services/authService";
+import { VideoApi, VideoVideoIdCommentsGet200Response, VideoVideoIdCommentsGet200ResponseCommentsInner } from "@/api";
+import { isDemoMode, useAuth } from "@/services/authService";
 import { Avatar, Box, Button, List, ListItem, ListItemAvatar, ListItemText, TextField, Typography } from "@mui/material";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { InfiniteData, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import UserAvatar from "../UserAvatar";
@@ -18,6 +18,26 @@ export default function CommentSection({ videoId }: CommentSectionProps) {
   const videoApi = new VideoApi();
   const queryClient = useQueryClient();
 
+  const demoComments: InfiniteData<VideoVideoIdCommentsGet200Response> = {
+    pages: [
+      {
+        comments: [
+          {
+            id: "1",
+            text: "I'm so grateful for the opportunity to have presented at my first AWS User Group! Sharing Sunomi, our cloud-native video platform, at Copernico Centrale in Milan was such a blast! ",
+            timeStamp: new Date(2025, 3, 16),
+            user: {
+              userId: "ferraridavide",
+              profilePictureUrl: "https://avatars.githubusercontent.com/u/23432883",
+            },
+          },
+        ],
+      },
+    ],
+    pageParams: []
+  };
+
+
   const {
     data,
     error,
@@ -25,7 +45,7 @@ export default function CommentSection({ videoId }: CommentSectionProps) {
     hasNextPage,
     isFetchingNextPage,
     status
-  } = useInfiniteQuery({
+  } = isDemoMode ? {data: demoComments, error: null, fetchNextPage: () => {}, hasNextPage: false, isFetchingNextPage: false, status: ""} : useInfiniteQuery({
     queryKey: ["videoComments", videoId],
     queryFn: ({ pageParam }) => videoApi.videoVideoIdCommentsGet({
       skip: pageParam,

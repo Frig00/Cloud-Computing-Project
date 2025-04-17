@@ -1,4 +1,4 @@
-import { Box, Button, FormControl, FormLabel, Link, Stack, styled, TextField, Typography } from "@mui/material";
+import { Box, Button, FormControl, FormLabel, Stack, styled, TextField, Typography, Link } from "@mui/material";
 import { GitHub as GitHubIcon } from '@mui/icons-material';
 import MuiCard from "@mui/material/Card";
 import { useAuth } from "../services/authService";
@@ -98,7 +98,8 @@ export default function Login() {
   };
 
   const onGithubLogin = () => {
-    window.location.href = getGithubLoginUrl();
+    //window.location.href = getGithubLoginUrl();
+    enqueueSnackbar("GitHub login is disabled in demo mode", { variant: "info" });
   };
 
   useEffect(() => {
@@ -179,7 +180,9 @@ export default function Login() {
           >
             Don&apos;t have an account? <span>
               <Link
-                href="sign-up"
+                onClick={() => {
+                  navigate("/sign-up");
+                }}
                 variant="body2"
                 sx={{
                   alignSelf: "center",
@@ -189,6 +192,12 @@ export default function Login() {
               </Link>
             </span>
           </Typography>
+          <Typography
+            sx={{
+              textAlign: "center",
+              color: "red"
+            }}
+          >This app is running in demo mode, login with any credential!</Typography>
         </Box>
       </Card>
     </SignInContainer>

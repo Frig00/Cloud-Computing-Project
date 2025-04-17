@@ -13,6 +13,8 @@ interface VideoThumbnailProps {
   title: string;
   user: string;
   variant: "small" | "horizontal" | "delete";
+  disablePreview?: boolean;
+  disableLink?: boolean;
   onDelete?: () => void;
 }
 
@@ -34,38 +36,42 @@ const VideoThumbnail = (props: VideoThumbnailProps) => {
     if (props.onDelete) props.onDelete();
   };
 
+  const thumbWidth = props.variant === "horizontal" || props.variant === "delete" ? 300 : undefined;
+  const clickable = !props.disableLink;
+
   return (
     <>
       <div
-        onClick={() =>
-          navigate("/watch?v=" + props.id, {
-            replace: false,
-          })
-        }
+        onClick={clickable ? () => navigate("/watch?v=" + props.id) : undefined}
         style={{
-          width: props.variant == "horizontal" || props.variant === "delete" ? "100%" : undefined,
+          width: props.variant === "horizontal" || props.variant === "delete" ? "100%" : undefined,
+          cursor: clickable ? 'pointer' : 'default'
         }}
       >
         <Card
           sx={{
             width: props.variant == "small" ? 300 : null,
-            cursor: "pointer",
+            cursor: clickable ? 'pointer' : 'default',
             display: props.variant == "horizontal" || props.variant === "delete" ? "flex" : null,
           }}
         >
-          <CardMedia>
-            <div
-              onMouseOver={() => setHover(true)}
-              onMouseLeave={() => setHover(false)}
-              style={{
-                height: 169,
-                width: props.variant == "horizontal" || props.variant === "delete" ? 300 : "inherit",
-                overflow: "hidden",
-              }}
-            >
-              <VideoPreview src={masterPlaylistSrc(props.id)} thumbnail={props.src} />
-            </div>
-          </CardMedia>
+          {props.disablePreview ? (
+            <CardMedia
+              component="img"
+              image={props.src}
+              sx={{ height: 169, width: thumbWidth, objectFit: 'cover' }}
+            />
+          ) : (
+            <CardMedia>
+              <div
+                onMouseOver={() => setHover(true)}
+                onMouseLeave={() => setHover(false)}
+                style={{ height: 169, width: thumbWidth ?? 'inherit', overflow: 'hidden' }}
+              >
+                <VideoPreview src={masterPlaylistSrc(props.id)} thumbnail={props.src} />
+              </div>
+            </CardMedia>
+          )}
           <CardContent
             sx={{
               padding: "4px",

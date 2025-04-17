@@ -1,6 +1,6 @@
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
 import App from "./components/App/App.tsx";
@@ -31,11 +31,37 @@ import "@fontsource/geist-sans/900.css";
 import Profile from "./components/Profile.tsx";
 import configService, { getApiUrl } from "./services/configService.tsx";
 import ConfigService from "./services/configService.tsx";
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Typography from '@mui/material/Typography';
 
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
-
-
-
+function DemoBadge() {
+  const [open, setOpen] = useState(false);
+  if (!isDemoMode) return null;
+  return (
+    <>
+      <Chip
+        label="This app is in demo mode!"
+        color="warning"
+        size="small"
+        onClick={() => setOpen(true)}
+        sx={{ position: 'fixed', bottom: 16, right: 16, zIndex: 1100 }}
+      />
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Demo Mode</DialogTitle>
+        <DialogContent>
+          <Typography>
+            This application is running in demo mode with no backend available and limited functionality.
+          </Typography>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 async function initializeApp() {
   try {
@@ -49,31 +75,20 @@ async function initializeApp() {
     const theme = createTheme({
       typography: {
         fontFamily: "'Geist Sans', sans-serif",
-      },
-      palette: {
-        mode: "light",
-        primary: {
-          main: "#415a77",
-          contrastText: "#1b263b",
-
-        },
-        background: {
-          default: "#e0e1dd",
-          paper: "#e0e1dd",
-        },
-      },
+      }
     });
     
     const queryClient = new QueryClient();
 
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
+        <DemoBadge />
         <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <ThemeProvider theme={theme}>
                 <CssBaseline />
-                <BrowserRouter >
+                <HashRouter>
                   <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/sign-up" element={<SignUp />} />
@@ -87,7 +102,7 @@ async function initializeApp() {
                       </Route>
                     </Route>
                   </Routes>
-                </BrowserRouter>
+                </HashRouter>
               </ThemeProvider>
             </QueryClientProvider>
           </AuthProvider>

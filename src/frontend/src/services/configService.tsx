@@ -1,3 +1,5 @@
+import { isDemoMode } from "./authService";
+
 interface Config {
     apiUrl: string;
     videoUrl: string;

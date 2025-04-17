@@ -1,10 +1,12 @@
-import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Link, Stack, styled, TextField, Typography } from "@mui/material";
+import { Box, Button, Checkbox, FormControl, FormControlLabel, FormLabel, Stack, styled, TextField, Typography, Link } from "@mui/material";
 import { useState } from "react";
 import MuiCard from "@mui/material/Card";
 import { AuthApi, ResponseError } from "@/api";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/services/authService";
 import { enqueueSnackbar } from "notistack";
+
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -94,6 +96,10 @@ export default function SignIn() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isDemoMode) {
+      navigate('/login');
+      return;
+    }
     if (nameError || usernameError || passwordError) {
       event.preventDefault();
       return;
@@ -175,7 +181,9 @@ export default function SignIn() {
           >
             Already have an account? <span>
               <Link
-                href="login"
+                onClick={() => {
+                  navigate("/login");
+                }}
                 variant="body2"
                 sx={{
                   alignSelf: "center",

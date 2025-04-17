@@ -11,8 +11,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+const demoUser = { userId: "demo", name: "demo", profilePictureUrl: null };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem("jwtToken") || null);
@@ -20,19 +22,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [ready, setReady] = useState(false);
 
-  
   DefaultConfig.config = new Configuration({
     basePath: DefaultConfig.basePath,
     accessToken: token ?? undefined,
   });
   const authApi = new AuthApi(DefaultConfig);
 
-
-  
-
   const logout = () => setToken(null);
 
   const login = async (username: string, password: string) => {
+    if (isDemoMode) {
+      setToken('demo-token');
+      setUser(demoUser);
+      return;
+    }
     const res = await authApi.authLoginPost({
       authLoginPostRequest: {
         userId: username,
@@ -44,7 +47,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loginWithCookie = async () => {
-    const {token, user} = await authApi.authCheckGet({
+    if (isDemoMode) {
+      const demoUser = { userId: 'demo', name: 'Demo User', profilePictureUrl: null };
+      setToken('demo-token');
+      setUser(demoUser);
+      return;
+    }
+    const { token, user } = await authApi.authCheckGet({
       credentials: "include",
     });
     setToken(token);
@@ -61,7 +70,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   useEffect(() => {
-
+    if (isDemoMode) {
+      setUser(demoUser);
+      setReady(true);
+      return;
+    }
     const fetchUser = async () => {
       try {
         const res = await authApi.authCheckGet({
@@ -74,8 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         setReady(true);
       }
-    }
-
+    };
     if (token && !user && !ready) {
       fetchUser();
     } else {
@@ -86,7 +98,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   if (!ready) {
     return "Loading...";
   }
-
 
   return (
     <AuthContext.Provider

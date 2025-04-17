@@ -2,7 +2,7 @@ import { Button, Card, Container, Grid2 as Grid, Stack, ToggleButton, ToggleButt
 import HLS from "hls.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { UserApi, VideoApi } from "../../api";
+import { UserApi, UserUserIdSubscribeGet200Response, VideoApi, VideoVideoIdGet200Response } from "../../api";
 import { useQuery } from "@tanstack/react-query";
 import { masterPlaylistSrc } from "../../lib/consts";
 import { Subscriptions, SubscriptionsOutlined, ThumbUp, ThumbUpOutlined } from "@mui/icons-material";
@@ -10,6 +10,8 @@ import CommentSection from "./CommentSection";
 import { formatDistanceToNow } from "date-fns";
 import Transcription from "./Transcription";
 import { QualitySelector } from "./QualitySelector";
+import { isDemoMode } from "@/services/authService";
+import demo_thumbnail from "../../assets/demo_thumbnail.jpg";
 
 type Quality = {
   height: number;
@@ -26,7 +28,23 @@ export default function Watch() {
   const videoApi = new VideoApi();
   const userApi = new UserApi();
 
-  const { isPending, error, data: videoData } = useQuery({
+  const demoVideo: VideoVideoIdGet200Response = {
+    id: "demo",
+    title: "This was fun!",
+    description: `Sunomi è nato come progetto universitario, ma si è trasformato rapidamente in un percorso stimolante alla scoperta del cloud: costruire una piattaforma di video sharing da zero, in modo cloud-native, senza mai aver messo mano prima ad AWS.
+In questo talk raccontiamo il nostro viaggio: dal primo bucket S3 alla gestione della transcodifica video; dalle notifiche real-time via WebSocket all'esplorazione del serverless; dal Terraform alle CI/CD su GitHub Actions.
+Condivideremo le scelte architetturali, i problemi incontrati, le soluzioni adottate (alcune creative!) e, soprattutto, cosa ci portiamo a casa da questa prima avventura nel cloud.`,
+    uploadDate: new Date(2025, 3, 16),
+    views: 420,
+    likes: 69,
+    userHasLiked: false,
+    userId: "sunomi",
+    moderationTypes: [],
+  };
+
+
+
+  const { isPending, error, data: videoData } = isDemoMode ? {isPending: false, error: null, data: demoVideo} :  useQuery({
     queryKey: ["videoVideoIdGet", videoId],
     queryFn: () =>
       videoApi.videoVideoIdGet({
@@ -34,11 +52,15 @@ export default function Watch() {
       }),
   });
 
+  const demoUser: UserUserIdSubscribeGet200Response = { 
+    subscriptionStatus: true
+  }
+
   const { 
     isPending: isSubscriptionPending, 
     error: subscriptionError, 
     data: subscriptionData 
-  } = useQuery({
+  } = isDemoMode ? {isPending: false, error:null, data: demoUser} : useQuery({
     queryKey: ["userUserIdSubscribeGet", videoData?.userId],
     queryFn: () => {
       if (videoData?.userId) {
@@ -95,7 +117,7 @@ export default function Watch() {
   const src = masterPlaylistSrc(videoId);
   
   const initPlayer = useCallback(() => {
-    if (!videoElement) return;
+    if (!videoElement || isDemoMode) return;
 
     if (hlsRef.current) hlsRef.current.destroy();
     if (HLS.isSupported()) {
@@ -244,10 +266,17 @@ export default function Watch() {
           }}
         >
           <Stack>
-            {videoData.moderationTypes && videoData.moderationTypes.length > 0 && !hasConfirmedSensitiveContent ? (
+            
+            {isDemoMode ? (
+              <img 
+              src={demo_thumbnail} 
+              alt="Demo video thumbnail" 
+              style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }}
+              />
+            ) : videoData.moderationTypes && videoData.moderationTypes.length > 0 && !hasConfirmedSensitiveContent ? (
               <SensitiveContentWarning 
-                moderationTypes={videoData.moderationTypes}
-                onConfirm={() => setHasConfirmedSensitiveContent(true)}
+              moderationTypes={videoData.moderationTypes}
+              onConfirm={() => setHasConfirmedSensitiveContent(true)}
               />
             ) : (
               <video ref={refCallback} controls onTimeUpdate={onTimeUpdate} />

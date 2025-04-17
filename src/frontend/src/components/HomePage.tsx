@@ -3,6 +3,9 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { VideoAllVideosGet200ResponseInner, VideoApi } from "../api";
 import { thumbnailSrc } from "../lib/consts";
 import VideoThumbnail from "./VideoThumbnail";
+import demoThumbnail from "../assets/demo_thumbnail.jpg";
+
+import { isDemoMode } from "@/services/authService";
 
 const PAGE_SIZE = 10;
 
@@ -75,6 +78,23 @@ const VideoList: React.FC<VideoListProps> = ({
 };
 
 export default function HomePage() {
+  if (isDemoMode) {
+    return (
+      <Container maxWidth="xl">
+        <div className="flex gap-2 flex-wrap m-2">
+          <VideoThumbnail
+            id="demo"
+            src={demoThumbnail}
+            title="This was fun!"
+            user="sunomi"
+            variant="small"
+            disablePreview
+          />
+        </div>
+      </Container>
+    );
+  }
+
   const videoApi = new VideoApi();
 
   const {
@@ -113,21 +133,23 @@ export default function HomePage() {
   const allVideos = allVideosData?.pages.flatMap(page => page) ?? [];
 
   return (
+    
     <Container maxWidth="xl">
-      <VideoList
-        videos={subscribedVideos}
-        onLoadMore={() => fetchNextSubscribed()}
-        hasNextPage={hasNextSubscribed}
-        title="Subscribed"
-        isLoading={isFetchingNextSubscribed}
-      />
-      <VideoList
-        videos={allVideos}
-        onLoadMore={() => fetchNextAll()}
-        hasNextPage={hasNextAll}
-        title="More Videos"
-        isLoading={isFetchingNextAll}
-      />
+      
+          <VideoList
+            videos={subscribedVideos}
+            onLoadMore={() => fetchNextSubscribed()}
+            hasNextPage={hasNextSubscribed}
+            title="Subscribed"
+            isLoading={isFetchingNextSubscribed}
+          />
+          <VideoList
+            videos={allVideos}
+            onLoadMore={() => fetchNextAll()}
+            hasNextPage={hasNextAll}
+            title="More Videos"
+            isLoading={isFetchingNextAll}
+          />
     </Container>
   );
 }
